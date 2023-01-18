@@ -21,8 +21,10 @@ executable augslink-service
     main-is:          Main.hs
     other-modules:      Augslink.Service.API
                       , Augslink.Service.Application 
+                      , CommandLine 
     -- other-extensions:
     build-depends:      base ^>=4.16.4.0
+                      , optparse-applicative
                       , servant-server
                       , wai
                       , warp
