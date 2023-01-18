@@ -2,7 +2,7 @@ module Main ( main ) where
 
 import Network.Wai.Handler.Warp (run)
 
-import Augslink.Service.Application (server)
+import AugsLink.Service.Application (server)
 import CommandLine (getOptions)
 
 main :: IO ()

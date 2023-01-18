@@ -1,5 +1,4 @@
-
-module Augslink.Service.API ( API ) where
+module AugsLink.Service.API ( API ) where
 
 import Servant
 
