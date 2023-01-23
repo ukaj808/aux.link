@@ -29,7 +29,7 @@ instance MimeRender HTML RawHtml where
   mimeRender _ = unRaw
 
 type API
-   =    Get '[HTML] RawHtml 
-   :<|> PostRedirect 303 String 
-   :<|> "room" :> Capture "roomid" String :> Get '[HTML] RawHtml 
+   =    Get '[HTML] RawHtml -- Home Page
+   :<|> PostRedirect 303 String -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
+   :<|> "room" :> Capture "roomid" String :> Get '[HTML] RawHtml -- Room (where ws connection?) 
    :<|> "public" :> Raw
