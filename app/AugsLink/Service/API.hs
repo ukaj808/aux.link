@@ -30,6 +30,6 @@ instance MimeRender HTML RawHtml where
 
 type API
    =    Get '[HTML] RawHtml 
-   :<|> PostRedirect 301 String 
+   :<|> PostRedirect 303 String 
    :<|> "room" :> Capture "roomid" String :> Get '[HTML] RawHtml 
    :<|> "public" :> Raw
