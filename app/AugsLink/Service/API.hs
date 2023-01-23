@@ -1,7 +1,7 @@
-module AugsLink.Service.API ( API ) where
+module AugsLink.Service.API
+  ( API
+  ) where
 
 import Servant
 
-type API = "static" :> Raw
-
-
+type API = "public" :> Raw

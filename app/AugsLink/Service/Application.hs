@@ -6,10 +6,11 @@ import Servant (Server, serveDirectoryWebApp)
 import Servant.Server (serve)
 
 import AugsLink.Service.API (API)
+import CommandLine (Options (staticFilePath))
 
 
-handlers :: Server API
-handlers = serveDirectoryWebApp undefined
+handlers :: Options -> Server API
+handlers opts = serveDirectoryWebApp (staticFilePath opts)
 
-server :: Application
-server = serve (Proxy @API) handlers
+server :: Options -> Application
+server opts = serve (Proxy @API) (handlers opts)
