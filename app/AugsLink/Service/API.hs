@@ -7,6 +7,7 @@ module AugsLink.Service.API
   ) where
 
 import Data.ByteString.Lazy as Lazy
+import GHC.TypeNats (Nat)
 import Network.HTTP.Media ((//), (/:))
 import Servant
 
@@ -18,6 +19,9 @@ newtype RawHtml =
     { unRaw :: Lazy.ByteString
     }
 
+type PostRedirect (code :: Nat) loc
+   = Verb 'POST code '[ JSON] (Headers '[ Header "Location" loc] NoContent)
+
 instance Accept HTML where
   contentType _ = "text" // "html" /: ("charset", "utf-8")
 
@@ -25,4 +29,7 @@ instance MimeRender HTML RawHtml where
   mimeRender _ = unRaw
 
 type API
-   = Get '[ HTML] RawHtml :<|> Get '[ HTML] RawHtml :<|> "room" :> Capture "roomid" String :> Get '[ HTML] RawHtml :<|> "public" :> Raw
+   =    Get '[HTML] RawHtml 
+   :<|> PostRedirect 301 String 
+   :<|> "room" :> Capture "roomid" String :> Get '[HTML] RawHtml 
+   :<|> "public" :> Raw

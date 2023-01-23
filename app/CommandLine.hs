@@ -16,7 +16,10 @@ parseOptions = Options <$> parseStaticFilePath
 
 parseStaticFilePath :: Parser FilePath
 parseStaticFilePath =
-  option str $ mconcat [long "static", help "Directory of the static files"]
+  option str $ mconcat [
+      long "static"
+    , help "Directory of the static files"
+    ]
 
 getOptions :: IO Options
 getOptions = execParser $ info (parseOptions <**> helper) fullDesc

@@ -1,21 +1,26 @@
 module AugsLink.Service.Application ( server ) where
 
-import Data.ByteString.Lazy as Lazy
 import Servant 
 
-import AugsLink.Service.API (API)
+import AugsLink.Service.API (API, RawHtml)
 import CommandLine (Options (staticFilePath))
 
 handlers :: Options -> Server API
 handlers opts = home
-  :<|> create
-  :<|> room 
-  :<|> public
+           :<|> create
+           :<|> room 
+           :<|> public
 
   where 
+    home :: Handler RawHtml
+    home = undefined
+
+    create :: Handler RawHtml
     create = undefined
+
+    room :: String -> Handler RawHtml
     room id = undefined
-    home = Lazy.readFile "/public/pages/home/home.html"
+
     public = serveDirectoryWebApp (staticFilePath opts)
 
 server :: Options -> Application
