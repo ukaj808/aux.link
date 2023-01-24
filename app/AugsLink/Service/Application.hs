@@ -30,7 +30,9 @@ handlers opts = home
       roomId <- liftIO createRoom
       return $ addHeader (genLocation roomId) roomId
 
-    room id = undefined
+    room _ = do
+      roomHtmlFile <- liftIO $ Lazy.readFile roomHtml
+      return $ RawHtml roomHtmlFile
 
     public = serveDirectoryWebApp (staticFilePath opts)
 

@@ -29,5 +29,5 @@ instance MimeRender HTML RawHtml where
 type API
    =    Get '[HTML] RawHtml -- Home Page
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" String] String) -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
-   :<|> "room" :> Capture "roomid" String :> Get '[HTML] RawHtml -- Room (where ws connection?) 
+   :<|> Capture "roomid" String :> Get '[HTML] RawHtml -- Room (where ws connection?) 
    :<|> "public" :> Raw
