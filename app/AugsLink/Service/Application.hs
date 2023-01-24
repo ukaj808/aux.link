@@ -34,11 +34,17 @@ handlers opts = home
     -- copy job; need to understand more
     join id pc = liftIO $ do -- Join a Room kept in memory returning an accepted websocket connection
       conn <- liftIO $ acceptRequest pc
-      withPingThread conn 30 (pure ()) $ forever $ do
-        print "hey"
+      withPingThread conn 30 postPingAction (forever interactWithRoom)
+      where 
+        postPingAction :: IO ()
+        postPingAction = print "ping"
 
+        interactWithRoom :: IO ()
+        interactWithRoom = do
+          print "hey"
 
     public = serveDirectoryWebApp $ staticFilePath opts
+
 
 -- todo
 createRoom :: IO String -- creates an empty room in state
