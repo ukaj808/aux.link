@@ -2,8 +2,17 @@ module AugsLink.Service.Application ( server ) where
 
 import Servant 
 
-import AugsLink.Service.API (API, RawHtml)
+import Control.Monad.IO.Class
+import qualified Data.ByteString.Lazy as Lazy
+
+import AugsLink.Service.API (API, RawHtml(..) )
 import CommandLine (Options (staticFilePath))
+
+homeHtml :: FilePath
+homeHtml = "./pages/home.html"
+
+roomHtml :: FilePath
+roomHtml = "./pages/room.html"
 
 handlers :: Options -> Server API
 handlers opts = home
@@ -12,13 +21,12 @@ handlers opts = home
            :<|> public
 
   where 
-    home :: Handler RawHtml
-    home = undefined
+    home = do
+      homeHtmlFile <- liftIO  $ Lazy.readFile homeHtml 
+      return $ RawHtml homeHtmlFile
 
-    create :: Handler RawHtml
     create = undefined
 
-    room :: String -> Handler RawHtml
     room id = undefined
 
     public = serveDirectoryWebApp (staticFilePath opts)
