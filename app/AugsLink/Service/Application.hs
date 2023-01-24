@@ -21,15 +21,25 @@ handlers opts = home
            :<|> public
 
   where 
-    home = do
-      homeHtmlFile <- liftIO  $ Lazy.readFile homeHtml 
-      return $ RawHtml homeHtmlFile
 
-    create = undefined
+    home = do
+      homeHtmlFile <- liftIO $ Lazy.readFile homeHtml 
+      return $ RawHtml homeHtmlFile
+    
+    create = do
+      roomId <- liftIO createRoom
+      return $ addHeader (genLocation roomId) roomId
 
     room id = undefined
 
     public = serveDirectoryWebApp (staticFilePath opts)
+
+-- todo
+createRoom :: IO String
+createRoom = return "123";
+
+genLocation :: String -> String
+genLocation roomId = "http://localhost:8080/" ++ roomId
 
 server :: Options -> Application
 server opts = serve (Proxy @API) (handlers opts)
