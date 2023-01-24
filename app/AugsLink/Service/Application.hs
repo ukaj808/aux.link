@@ -29,7 +29,7 @@ handlers opts = home
       roomHtmlFile <- liftIO $ Lazy.readFile $ roomFilePath opts
       return $ RawHtml roomHtmlFile
 
-    join id = undefined
+    join id = undefined -- Join a Room kept in memory returning an accepted websocket connection
 
     public = serveDirectoryWebApp $ staticFilePath opts
 
