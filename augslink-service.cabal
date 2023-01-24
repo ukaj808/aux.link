@@ -26,6 +26,7 @@ executable augslink-service
     build-depends:      base ^>=4.16.4.0
                       , optparse-applicative
                       , servant-server
+                      , servant-websockets
                       , wai
                       , warp
                       , bytestring

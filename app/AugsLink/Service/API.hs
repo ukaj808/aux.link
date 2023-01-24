@@ -9,6 +9,7 @@ module AugsLink.Service.API
 import Data.ByteString.Lazy as Lazy
 import Network.HTTP.Media ((//), (/:))
 import Servant
+import Servant.API.WebSocket
 
 data HTML =
   HTML
@@ -30,4 +31,5 @@ type API
    =    Get '[HTML] RawHtml -- Home Page
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" String] String) -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
    :<|> Capture "roomid" String :> Get '[HTML] RawHtml -- Room (where ws connection?) 
+   :<|> Capture "roomid" String :> "ws" :> WebSocketPending
    :<|> "public" :> Raw

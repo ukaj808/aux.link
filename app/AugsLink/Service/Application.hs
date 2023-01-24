@@ -12,6 +12,7 @@ handlers :: Options -> Server API
 handlers opts = home
            :<|> create
            :<|> room 
+           :<|> join
            :<|> public
 
   where 
@@ -27,6 +28,8 @@ handlers opts = home
     room _ = do
       roomHtmlFile <- liftIO $ Lazy.readFile $ roomFilePath opts
       return $ RawHtml roomHtmlFile
+
+    join id = undefined
 
     public = serveDirectoryWebApp $ staticFilePath opts
 
