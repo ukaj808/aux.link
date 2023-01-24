@@ -27,6 +27,7 @@ executable augslink-service
                       , optparse-applicative
                       , servant-server
                       , servant-websockets
+                      , websockets
                       , wai
                       , warp
                       , bytestring

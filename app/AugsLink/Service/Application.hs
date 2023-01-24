@@ -3,10 +3,12 @@ module AugsLink.Service.Application ( server ) where
 import Servant 
 
 import Control.Monad.IO.Class
-import qualified Data.ByteString.Lazy as Lazy
+import Data.ByteString.Lazy as Lazy
+import Network.WebSockets.Connection
 
 import AugsLink.Service.API (API, RawHtml(..) )
 import CommandLine (Options (staticFilePath, homeFilePath), roomFilePath)
+import Control.Monad (forever)
 
 handlers :: Options -> Server API
 handlers opts = home
@@ -29,12 +31,17 @@ handlers opts = home
       roomHtmlFile <- liftIO $ Lazy.readFile $ roomFilePath opts
       return $ RawHtml roomHtmlFile
 
-    join id = undefined -- Join a Room kept in memory returning an accepted websocket connection
+    -- copy job; need to understand more
+    join id pc = liftIO $ do -- Join a Room kept in memory returning an accepted websocket connection
+      conn <- liftIO $ acceptRequest pc
+      withPingThread conn 30 (pure ()) $ forever $ do
+        print "hey"
+
 
     public = serveDirectoryWebApp $ staticFilePath opts
 
 -- todo
-createRoom :: IO String
+createRoom :: IO String -- creates an empty room in state
 createRoom = return "123";
 
 genLocation :: String -> String
