@@ -6,13 +6,7 @@ import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as Lazy
 
 import AugsLink.Service.API (API, RawHtml(..) )
-import CommandLine (Options (staticFilePath))
-
-homeHtml :: FilePath
-homeHtml = "./pages/home.html"
-
-roomHtml :: FilePath
-roomHtml = "./pages/room.html"
+import CommandLine (Options (staticFilePath, homeFilePath), roomFilePath)
 
 handlers :: Options -> Server API
 handlers opts = home
@@ -23,7 +17,7 @@ handlers opts = home
   where 
 
     home = do
-      homeHtmlFile <- liftIO $ Lazy.readFile homeHtml 
+      homeHtmlFile <- liftIO $ Lazy.readFile $ homeFilePath opts 
       return $ RawHtml homeHtmlFile
     
     create = do
@@ -31,10 +25,10 @@ handlers opts = home
       return $ addHeader (genLocation roomId) roomId
 
     room _ = do
-      roomHtmlFile <- liftIO $ Lazy.readFile roomHtml
+      roomHtmlFile <- liftIO $ Lazy.readFile $ roomFilePath opts
       return $ RawHtml roomHtmlFile
 
-    public = serveDirectoryWebApp (staticFilePath opts)
+    public = serveDirectoryWebApp $ staticFilePath opts
 
 -- todo
 createRoom :: IO String
