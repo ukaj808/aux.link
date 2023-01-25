@@ -1,7 +1,15 @@
-fetch("/public/web-components/order-section/order-section.html")
-    .then(stream => stream.text())
-    .then(text => define(text));
-
+const html = `
+    <link rel="stylesheet" href="/public/styles/order-section.css">
+    <ol id="user-order-list" class="user-order-list">
+       <!-- Insert template list item here -->
+    </ol>
+    <template id="user-template">
+       <li class="user-order-list__user">
+          <!-- This label acts as a sort of template itself, being replaced by the css counter -->
+          <label class="user-order-list__order-lbl"></label>
+          <label class="user-order-list__username-lbl"></label></li>
+    </template>
+`
 const define = (html) => {
     const roomElement = document.getElementById("room");
     let shadow;
@@ -66,3 +74,5 @@ const define = (html) => {
     }
     customElements.define('order-section', OrderSection);
 }
+
+define(html);

@@ -1,6 +1,7 @@
-fetch("/public/web-components/drop-section/drop-section.html")
-    .then(stream => stream.text())
-    .then(text => define(text));
+const html = `
+    <link rel="stylesheet" href="/public/styles/drop-section.css">
+    <h1>Drop Section</h1>
+`;
 
 export const define = (html) => {
     class DropSection extends HTMLElement {
@@ -12,3 +13,5 @@ export const define = (html) => {
     }
     customElements.define('drop-section', DropSection);
 }
+
+define(html);

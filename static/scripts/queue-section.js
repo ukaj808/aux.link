@@ -1,6 +1,7 @@
-fetch("/public/web-components/queue-section/queue-section.html")
-    .then(stream => stream.text())
-    .then(text => define(text));
+const html = `
+    <link rel="stylesheet" href="/public/styles/queue-section.css">
+    <h1>Queue Section</h1>
+`;
 
 export const define = (html) => {
     class QueueSection extends HTMLElement {
@@ -12,3 +13,5 @@ export const define = (html) => {
     }
     customElements.define('queue-section', QueueSection);
 }
+
+define(html);

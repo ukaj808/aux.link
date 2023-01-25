@@ -1,6 +1,7 @@
-fetch("/public/web-components/democracy-section/democracy-section.html")
-    .then(stream => stream.text())
-    .then(text => define(text));
+const html = `
+    <link rel="stylesheet" href="/public/styles/democracy-section.css">
+    <h1>Democracy Section</h1>
+`;
 
 export const define = (html) => {
     class DemocracySection extends HTMLElement {
@@ -12,3 +13,5 @@ export const define = (html) => {
     }
     customElements.define('democracy-section', DemocracySection);
 }
+
+define(html);
