@@ -7,35 +7,41 @@ import Options.Applicative
 
 data Options =
   Options
-    { staticFilePath :: FilePath
-    , homeFilePath :: FilePath
-    , roomFilePath :: FilePath
+    { staticFilesPath :: FilePath
+    , homeViewPath :: FilePath
+    , roomViewPath :: FilePath
     }
   deriving (Show)
 
 parseOptions :: Parser Options
-parseOptions = Options <$> parseStaticFilePath <*> parseHomeRoute <*> parseRoomRoute
+parseOptions = Options 
+    <$> parseStaticFilesPath 
+    <*> parseHomeViewPath
+    <*> parseRoomViewPath
 
-parseStaticFilePath :: Parser FilePath
-parseStaticFilePath =
-  option str $ mconcat [
-      long "static"
-    , help "Directory of the static files"
-    ]
+parseStaticFilesPath :: Parser FilePath
+parseStaticFilesPath =
+    option str $ mconcat 
+      [
+        long "static"
+      , help "Directory of the static files"
+      ]
 
-parseHomeRoute :: Parser FilePath
-parseHomeRoute =
-  option str $ mconcat [
-      long "home"
-    , help "path to home html file"
-    ]
+parseHomeViewPath :: Parser FilePath
+parseHomeViewPath =
+    option str $ mconcat 
+      [
+        long "home"
+      , help "Path to the home view (html)"
+      ]
     
-parseRoomRoute :: Parser FilePath
-parseRoomRoute =
-  option str $ mconcat [
-      long "room"
-    , help "path to room html file"
-    ]
+parseRoomViewPath :: Parser FilePath
+parseRoomViewPath =
+    option str $ mconcat 
+      [
+        long "room"
+      , help "Path to the room view (html)"
+      ]
 
 getOptions :: IO Options
 getOptions = execParser $ info (parseOptions <**> helper) fullDesc
