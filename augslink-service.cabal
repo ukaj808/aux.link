@@ -24,14 +24,14 @@ executable augslink-service
                       , CommandLine 
     -- other-extensions:
     build-depends:      base ^>=4.16.4.0
+                      , bytestring
+                      , http-media
                       , optparse-applicative
                       , servant-server
                       , servant-websockets
-                      , websockets
                       , wai
                       , warp
-                      , bytestring
-                      , http-media
+                      , websockets
     hs-source-dirs:   app
     default-language: GHC2021
     default-extensions: DataKinds
