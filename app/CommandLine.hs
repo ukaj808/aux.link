@@ -7,7 +7,7 @@ import Options.Applicative
 
 data Options =
   Options
-    { staticFilesPath :: FilePath
+    { staticDirPath :: FilePath
     , homeViewPath :: FilePath
     , roomViewPath :: FilePath
     }
@@ -15,12 +15,12 @@ data Options =
 
 parseOptions :: Parser Options
 parseOptions = Options 
-    <$> parseStaticFilesPath 
+    <$> parseStaticDirPath 
     <*> parseHomeViewPath
     <*> parseRoomViewPath
 
-parseStaticFilesPath :: Parser FilePath
-parseStaticFilesPath =
+parseStaticDirPath :: Parser FilePath
+parseStaticDirPath =
     option str $ mconcat 
       [
         long "static"

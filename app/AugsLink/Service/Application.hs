@@ -7,15 +7,16 @@ import Data.ByteString.Lazy as Lazy
 import Network.WebSockets.Connection
 
 import AugsLink.Service.API (API, RawHtml(..) )
-import CommandLine (Options (staticFilePath, homeFilePath), roomFilePath)
+import CommandLine (Options (staticDirPath, homeViewPath, roomViewPath))
 import Control.Monad (forever)
 
 handlers :: Options -> Server API
-handlers opts = home
-           :<|> create
-           :<|> room 
-           :<|> join
-           :<|> public
+handlers opts = 
+         home
+    :<|> create
+    :<|> room 
+    :<|> join
+    :<|> public
 
   where 
 
