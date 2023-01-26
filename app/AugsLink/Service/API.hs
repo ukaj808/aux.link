@@ -27,9 +27,10 @@ instance Accept HTML where
 instance MimeRender HTML RawHtml where
   mimeRender _ = unRaw
 
-type API
-   =    Get '[HTML] RawHtml -- Home Page
-   :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" String] String) -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
-   :<|> Capture "roomid" String :> Get '[HTML] RawHtml -- Room (where ws connection?) 
+type API =   
+        Get '[HTML] RawHtml -- Home Page
+        -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
+   :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" String] String) 
+   :<|> Capture "roomid" String :> Get '[HTML] RawHtml 
    :<|> Capture "roomid" String :> "ws" :> WebSocketPending
    :<|> "public" :> Raw

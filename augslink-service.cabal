@@ -21,6 +21,10 @@ executable augslink-service
     main-is:          Main.hs
     other-modules:      AugsLink.Service.API
                       , AugsLink.Service.Application 
+                      , AugsLink.Service.Handlers.GetHome 
+                      , AugsLink.Service.Handlers.GetRoom 
+                      , AugsLink.Service.Handlers.PostHome
+                      , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
     -- other-extensions:
     build-depends:      base ^>=4.16.4.0
