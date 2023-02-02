@@ -34,3 +34,4 @@ type API =
    :<|> Capture "roomid" String :> Get '[HTML] RawHtml 
    :<|> Capture "roomid" String :> "ws" :> WebSocketPending
    :<|> "public" :> Raw
+   -- Need more endpoints for music file download + delete
