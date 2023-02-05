@@ -19,7 +19,8 @@ common warnings
 executable augslink-service
     import:           warnings
     main-is:          Main.hs
-    other-modules:      AugsLink.Service.API
+    other-modules:      AugsLink.Internal.State 
+                      , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
@@ -35,6 +36,7 @@ executable augslink-service
                       , optparse-applicative
                       , servant-server
                       , servant-websockets
+                      , unordered-containers
                       , wai
                       , warp
                       , websockets

@@ -1,76 +1,93 @@
 module AugsLink.Service.Room where
 
--- import Control.Monad.State
+import Control.Concurrent.MVar (newMVar, readMVar)
+import Data.HashMap.Lazy ((!))
+import qualified Data.HashMap.Lazy as HM
 
-newtype State s a = State { runState :: s -> (a, s) }
+import AugsLink.Internal.State ( State(..), get, modify )
 
-data Room m = Room 
+
+data RoomServer m = RServer
   {
-    enter :: User -> m ()
-  , present :: m [User]
+     numRooms ::                         m Int
+  ,  present  :: RoomId              ->  m [User]
+  ,  enter    :: User      -> RoomId ->  m ()
+  ,  leave    :: User      -> RoomId ->  m ()
+  ,  publish  :: RoomEvent -> RoomId ->  m ()
   }
 
-type Username = String
+type RoomId = String
+type UserId = String
 
-data User = User Username deriving Show
+data User = User
+  {
+     uid   :: UserId
+  ,  name :: String
+  ,  queue :: [Song]
+  } deriving Show
 
-data RoomState = RoomState { connectedUsers :: [User] }
+instance Eq User where
+  u == u' = uid u == uid u'
 
-instance Functor (State s) where
-  fmap :: (a -> b) -> State s a -> State s b
-  fmap f sa = State $ \s -> let (  a, s') = runState sa s 
-                            in  (f a, s')
+data Song = Song
+  {
+    title :: String
+  , artist :: String
+  , length :: Int
+  } deriving Show
 
-instance Applicative (State s) where
-  pure :: a -> State s a
-  pure a = State $ \s -> (a, s)
+type Vote = Bool
 
-  (<*>) :: State s (a -> b) -> State s a -> State s b
-  mf <*> ma = State $ \s -> let (f  , s'   ) = runState mf s
-                                (  a, s''  ) = runState ma s'
-                            in  (f a, s''  )
+data Room = Room 
+  {
+    users :: [User]
+  , currentSong :: Song
+  , vote        :: Vote
+  } deriving Show
 
-instance Monad (State s) where
-  return :: a -> State s a
-  return = pure 
-  
- 
-  (>>=) :: State s a -> (a -> State s b) -> State s b
-  sa >>= k = State $ \s -> let (a, s') = runState sa s
-                               sb      = k a
-                           in runState sb s'
+newtype RoomServerState = RServerState
+ {
+   rooms :: HM.HashMap RoomId Room
+ }
 
-realRoom :: Room IO
-realRoom = Room { enter = print }
+data RoomEvent = 
+    UserEnterEvent User 
+  | UserLeftEvent User 
+  | UserVoteEvent User Vote
 
-modelRoom :: Room (State RoomState)
-modelRoom = 
-  Room { 
-     enter = \u -> 
-        State $ \state -> 
-           ((), RoomState $ u : connectedUsers state) 
+initialServerState :: RoomServerState
+initialServerState = RServerState HM.empty
 
-   , present = 
-        State $ \s -> (connectedUsers s, s)
-   }  
+modelServerState :: RoomServer (State RoomServerState)
+modelServerState = RServer 
+  { 
+    numRooms = HM.size . rooms <$> get
 
-modelRoom' :: Room (State RoomState)
-modelRoom' = 
-  Room { 
-     enter = \u -> 
-       modify $ \s -> RoomState (u : connectedUsers s)
+  , present = \rId -> (\s -> users (rooms s ! rId)) <$> get
 
-   , present = 
-       get >>= (\s -> return (connectedUsers s))  
-   }
+  , enter = \u rId -> modify $ \s -> 
+      let room = (rooms s ! rId)
+          room' = Room (u : users room) (currentSong room) (vote room)
+      in RServerState $ HM.insert rId room' (rooms s)
 
+  , leave = \u rId -> modify $ \s -> 
+      let room = (rooms s ! rId)
+          room' = Room (filter (u /=) (users room)) (currentSong room) (vote room)
+      in RServerState $ HM.insert rId room' (rooms s)
 
-modify ::  (s -> s) -> State s ()
-modify stateChange = State $ \s -> ((), stateChange s)
+  , publish = undefined
+  }
 
-get :: State s s
-get = State (\s -> (s, s))
+newServer :: IO (RoomServer IO)
+newServer = do
+  stateVar <- newMVar initialServerState
+  return $ RServer 
+    {
+      numRooms = HM.size . rooms <$> readMVar stateVar
+    , present = undefined
+    , enter = undefined
+    , leave = undefined
+    , publish = undefined
+    }
 
-(<=<) :: Monad m => (b -> m c) -> (a -> m b) -> (a -> m c)
-(<=<) fb fa = (\a -> fa a >>= fb)
 
