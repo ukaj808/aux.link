@@ -4,14 +4,12 @@ module AugsLink.Service.Handlers.PostHome
 
 import Control.Monad.IO.Class ( liftIO )
 import Servant
+import AugsLink.Service.Room (RoomServer (createRoom))
 
-create :: Handler (Headers '[Header "Location" [Char]] [Char])
-create = do
-  roomId <- liftIO createRoom
+create :: IO (RoomServer IO) -> Handler (Headers '[Header "Location" [Char]] [Char])
+create rServer = do
+  roomId <- createRoom rServer
   return $ addHeader (genLocation roomId) roomId
-
-createRoom :: IO String
-createRoom = return "123";
 
 genLocation :: String -> String
 genLocation roomId = "http://localhost:8080/" ++ roomId

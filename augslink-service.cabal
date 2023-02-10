@@ -34,6 +34,7 @@ executable augslink-service
                       , http-media
                       , mtl
                       , optparse-applicative
+                      , random 
                       , servant-server
                       , servant-websockets
                       , unordered-containers
