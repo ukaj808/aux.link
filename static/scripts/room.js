@@ -1,6 +1,6 @@
 const roomId = location.pathname.substr(1);
 const wsProtocol = (location.protocol != null && location.protocol === "https:") ? "wss" : "ws";
-const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8001";
+const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8080";
 const roomMainElement = document.getElementById("room");
 
 // Workaround for the fact that js/ts can't serialize/deserialize maps
@@ -47,7 +47,7 @@ const roomEventHandler = ({data}) => {
 const connect = () => {
     let ws;
     if (ws) ws.close();
-    ws = new WebSocket(`${wsProtocol}://${roomsUrl}/api/v1/${roomId}/${wsProtocol}`);
+    ws = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${wsProtocol}`);
     ws.addEventListener("message", roomEventHandler);
 };
 

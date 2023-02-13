@@ -1,20 +1,20 @@
 module CommandLine
-  ( Options(..)
-  , getOptions
+  ( CLArgs(..)
+  , getCLArgs
   ) where
 
 import Options.Applicative
 
-data Options =
-  Options
+data CLArgs =
+  CLArgs
     { staticDirPath :: FilePath
     , homeViewPath :: FilePath
     , roomViewPath :: FilePath
     }
   deriving (Show)
 
-parseOptions :: Parser Options
-parseOptions = Options 
+parseOptions :: Parser CLArgs
+parseOptions = CLArgs 
     <$> parseStaticDirPath 
     <*> parseHomeViewPath
     <*> parseRoomViewPath
@@ -43,5 +43,5 @@ parseRoomViewPath =
       , help "Path to the room view (html)"
       ]
 
-getOptions :: IO Options
-getOptions = execParser $ info (parseOptions <**> helper) fullDesc
+getCLArgs :: IO CLArgs
+getCLArgs = execParser $ info (parseOptions <**> helper) fullDesc

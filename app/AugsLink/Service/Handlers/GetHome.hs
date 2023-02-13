@@ -7,9 +7,9 @@ import qualified Data.ByteString.Lazy as Lazy
 import Servant
 
 import AugsLink.Service.API ( RawHtml (..) )
-import CommandLine ( homeViewPath , Options )
+import CommandLine ( homeViewPath , CLArgs )
 
-home :: Options -> Handler RawHtml
+home :: CLArgs -> Handler RawHtml
 home opts = do
   homeHtmlFile <- liftIO $ Lazy.readFile $ homeViewPath opts 
   return $ RawHtml homeHtmlFile

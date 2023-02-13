@@ -29,7 +29,7 @@ executable augslink-service
                       , AugsLink.Service.Room 
                       , CommandLine 
     -- other-extensions:
-    build-depends:      base ^>=4.16.4.0
+    build-depends:      base ^>=4.17.0.0
                       , bytestring
                       , http-media
                       , mtl
@@ -37,6 +37,8 @@ executable augslink-service
                       , random 
                       , servant-server
                       , servant-websockets
+                      , text 
+                      , uuid
                       , unordered-containers
                       , wai
                       , warp

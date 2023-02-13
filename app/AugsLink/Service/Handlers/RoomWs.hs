@@ -4,21 +4,40 @@ module AugsLink.Service.Handlers.RoomWs
 
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
-import Network.WebSockets (PendingConnection)
+import qualified Network.WebSockets as WS
 import Network.WebSockets.Connection (acceptRequest, withPingThread)
 import Servant
 
--- copy job; need to understand more
-join :: String -> PendingConnection -> Handler ()
- -- Join a Room kept in memory returning an accepted websocket connection
-join id pc = liftIO $ do
+import AugsLink.Service.Room (enterRoom, User (..), RoomControl (presentInRoom))
+import Data.UUID.V4 (nextRandom)
+import Data.UUID (toString)
+import qualified Data.Text as T
+
+publish :: String -> [User] -> IO ()
+publish event users = do
+  putStrLn event
+  mapM_ (\c -> WS.sendTextData c (T.pack event)) connections
+    where
+    connections = map conn users
+
+join :: RoomControl IO -> String -> WS.PendingConnection -> Handler ()
+join rc rId pc = liftIO $ do
+
   conn <- liftIO $ acceptRequest pc
-  withPingThread conn 30 postPingAction (forever interactWithRoom)
-  where 
-    postPingAction :: IO ()
-    postPingAction = print "ping"
 
-    interactWithRoom :: IO ()
-    interactWithRoom = do
-      print "hey"
+  uuid <- nextRandom 
 
+  let uid = toString uuid
+
+  let user = User conn uid uid []
+
+  enterRoom rc user rId
+
+  withPingThread conn 30 
+    (print "ping") 
+      (
+      forever $ do
+        WS.sendTextData conn  (T.pack "Welcome to the room")
+        users <- presentInRoom rc rId 
+        publish "New user has joined" users
+      )
