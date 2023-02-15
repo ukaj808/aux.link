@@ -6,7 +6,7 @@ import AugsLink.Service.API ( API )
 import CommandLine ( CLArgs ( staticDirPath ) )
 import AugsLink.Service.Handlers.GetHome ( home )
 import AugsLink.Service.Handlers.PostHome ( create )
-import AugsLink.Service.Handlers.RoomWs ( join )
+import AugsLink.Service.Handlers.RoomWs ( enter )
 import AugsLink.Service.Handlers.GetRoom ( room )
 import AugsLink.Service.Room (Registry)
 
@@ -15,7 +15,7 @@ handlers opts rr =
          home opts
     :<|> create rr
     :<|> room opts
-    :<|> join rr
+    :<|> enter rr
     :<|> public
   where 
     public = serveDirectoryWebApp $ staticDirPath opts

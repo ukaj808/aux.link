@@ -1,5 +1,5 @@
 module AugsLink.Service.Handlers.RoomWs 
-  ( join
+  ( enter
   ) where
 
 import Control.Monad (forever)
@@ -8,7 +8,7 @@ import qualified Network.WebSockets as WS
 import Network.WebSockets.Connection (acceptRequest, withPingThread)
 import Servant
 
-import AugsLink.Service.Room (enterRoom, User (..), Registry (getRoom), Room (..) )
+import AugsLink.Service.Room (enterRoom, User (..), Registry (getRoom), Room (..), RoomEvent (..) )
 import Data.UUID.V4 (nextRandom)
 import Data.UUID (toString, fromString)
 import qualified Data.Text as T
@@ -20,8 +20,8 @@ publish event users = do
     where
     connections = map conn users
 
-join :: Registry IO -> String -> WS.PendingConnection -> Handler ()
-join rr eId pc = liftIO $ do
+enter :: Registry IO -> String -> WS.PendingConnection -> Handler ()
+enter rr eId pc = liftIO $ do
 
   conn <- liftIO $ acceptRequest pc
 
@@ -42,6 +42,8 @@ join rr eId pc = liftIO $ do
                Nothing -> error "Room does not exist"
 
   enterRoom room user
+
+  -- publishToRoom room (UserEnterEvent user)
 
   withPingThread conn 30 
     (print "ping") 
