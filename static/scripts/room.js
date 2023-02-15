@@ -3,6 +3,7 @@ const wsProtocol = (location.protocol != null && location.protocol === "https:")
 const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8080";
 const roomMainElement = document.getElementById("room");
 
+console.log(roomId);
 // Workaround for the fact that js/ts can't serialize/deserialize maps
 const reviver = (key, value) => {
     if(typeof value === 'object' && value !== null) {
@@ -25,6 +26,7 @@ const createAndPublishUserLeftEvent = (eventData) => publishRoomEvent(createUser
 const createAndPublishUserWelcomeEvent = (eventData) => publishRoomEvent(createUserWelcomeEvent(eventData));
 
 const roomEventHandler = ({data}) => {
+    console.log(data);
     let parsedData = JSON.parse(data, reviver);
 
     switch (parsedData?.type) {
@@ -48,7 +50,10 @@ const connect = () => {
     let ws;
     if (ws) ws.close();
     ws = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${wsProtocol}`);
-    ws.addEventListener("message", roomEventHandler);
+    ws.addEventListener("open", (openE) => console.log(openE));
+    ws.addEventListener("message", (messageE) => console.log(messageE));
+    ws.addEventListener("error", (errorE) => console.log(errorE));
+    ws.addEventListener("close", (closeE) => console.log(closeE));
 };
 
 // Connect to web socket AFTER all the room modules have loaded (e.g. Order Section)

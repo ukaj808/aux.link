@@ -1,30 +1,25 @@
 module AugsLink.Service.Model where
 
-import Data.List (delete)
 import qualified Data.UUID as UUID
 
 import AugsLink.Service.Room
   (
-     RegistryState (..)
-  ,  Registry (..)
-  ,  RoomState (..)
+     Registry (..)
   ,  Room (..)
-  ,  RoomId, initialRoomState
+  ,  RoomId
   )
 import AugsLink.Internal.State
   (
      State (State)
-  ,  modify
   ,  get
   )
 
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
-import Control.Monad.State (MonadState(state))
-import Data.ByteString
-import Data.UUID
 
 type InternalId = Int
+
+data RoomState = RoomState
 
 data Model = Model {
    modelRooms   ::   M.Map Int RoomState
@@ -32,13 +27,16 @@ data Model = Model {
  , modelNextId  ::   InternalId
  }
 
+initialRoomState :: RoomState --todo: models roomstate; not io roomstate
+initialRoomState = undefined
+
 modelRegistry :: Registry (State Model)
 modelRegistry = Registry
   {
     numRooms = M.size . modelRooms <$> get
   , createRoom = State $ \st ->
       let iId = modelNextId st
-          rId = UUID.fromWords 0 0 0 (fromIntegral iId)
+          rId = UUID.fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
       in ( rId
          , st { modelRooms  = M.insert iId initialRoomState (modelRooms st)
               , modelNextId = succ iId
