@@ -8,17 +8,17 @@ import AugsLink.Service.Handlers.GetHome ( home )
 import AugsLink.Service.Handlers.PostHome ( create )
 import AugsLink.Service.Handlers.RoomWs ( join )
 import AugsLink.Service.Handlers.GetRoom ( room )
-import AugsLink.Service.Room ( RoomControl )
+import AugsLink.Service.Room (Registry)
 
-handlers :: CLArgs -> RoomControl IO -> Server API
-handlers opts rc = 
+handlers :: CLArgs -> Registry IO -> Server API
+handlers opts rr = 
          home opts
-    :<|> create rc
+    :<|> create rr
     :<|> room opts
-    :<|> join rc
+    :<|> join rr
     :<|> public
   where 
     public = serveDirectoryWebApp $ staticDirPath opts
 
-server :: CLArgs -> RoomControl IO -> Application
-server opts rc = serve (Proxy @API) (handlers opts rc) 
+server :: CLArgs -> Registry IO -> Application
+server opts rr = serve (Proxy @API) (handlers opts rr) 

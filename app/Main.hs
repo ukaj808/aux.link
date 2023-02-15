@@ -4,10 +4,10 @@ import Network.Wai.Handler.Warp ( run )
 
 import AugsLink.Service.Application ( server )
 import CommandLine ( getCLArgs )
-import AugsLink.Service.Room (newRoomServer)
+import AugsLink.Service.Room (newRegistry)
 
 main :: IO ()
 main = do
   clArgs <- getCLArgs
-  roomServer <- newRoomServer
-  run 8080 $ server clArgs roomServer
+  roomRegistry <- newRegistry
+  run 8080 $ server clArgs roomRegistry

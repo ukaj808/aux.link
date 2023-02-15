@@ -1,6 +1,12 @@
 module AugsLink.Service.Room
   (
-    newRegistry
+    initialRegistryState 
+  , initialRoomState
+  , newRegistry
+  , Registry (..)
+  , RegistryState (..)
+  , RoomState (..)
+  , RoomEvent (..)
   , Room (..)
   , RoomId
   , User (..)
@@ -25,7 +31,7 @@ type Vote        =                   Bool
 data Registry m       = Registry
   {
      numRooms       ::                m Int
-  ,  createRoom     ::                m (Room m)
+  ,  createRoom     ::                m RoomId
   ,  getRoom        ::   RoomId    -> m (Maybe (Room m))
   }
 
@@ -79,27 +85,6 @@ initialRegistryState = RegistryState {rooms=HM.empty}
 initialRoomState :: RoomState
 initialRoomState = RoomState {users=[], currentSong=Nothing, vote=[]}
 
-modelRegistry :: Registry (State RegistryState)
-modelRegistry = Registry
-  {
-    numRooms = HM.size . rooms <$> get
-  , createRoom = undefined
-  , getRoom = undefined
-  }
-
-modelRoom :: Room (State RoomState)
-modelRoom = Room 
-  {
-    presentInRoom = 
-      users <$> get
-  , enterRoom = 
-      \u -> modify $ \st -> st{users = u:users st}
-  , leaveRoom = 
-      \u -> modify $ \st -> st{users = delete u (users st)}
-  , publishToRoom =
-      undefined
-  }
-
 newRegistry :: IO (Registry IO)
 newRegistry = do
   stateVar <- newMVar initialRegistryState
@@ -115,7 +100,7 @@ newRegistry = do
         modifyMVar_ stateVar $ \st -> return st{
             rooms =  HM.insert rId room (rooms st)
           }
-        return room
+        return rId
     }
 
 newRoom :: IO (Room IO)

@@ -26,11 +26,13 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.PostHome
                       , AugsLink.Service.Handlers.RoomWs 
+                      , AugsLink.Service.Model 
                       , AugsLink.Service.Room 
                       , CommandLine 
     -- other-extensions:
     build-depends:      base ^>=4.17.0.0
                       , bytestring
+                      , containers
                       , http-media
                       , mtl
                       , optparse-applicative
