@@ -5,9 +5,11 @@ module AugsLink.Service.Handlers.RoomWs
 import Control.Monad.IO.Class (liftIO)
 import qualified Network.WebSockets as WS
 import Servant
-
-import AugsLink.Service.Room (enterRoom, Registry (getRoom), Room (..) )
 import Data.UUID (fromString)
+
+import AugsLink.Core.API
+
+type instance Connection IO = WS.PendingConnection
 
 -- Should not terminate until the room is no longer required; because if it
 -- does then the ws connection will close on the browser

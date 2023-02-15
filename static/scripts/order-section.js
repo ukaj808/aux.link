@@ -59,13 +59,13 @@ const define = (html) => {
 
         connectedCallback() {
             super.connectedCallback && super.connectedCallback();
-            roomElement.addEventListener("user-join", onUserJoin);
+            roomElement.addEventListener("user-enter", onUserJoin);
             roomElement.addEventListener("user-left", onUserLeft);
             roomElement.addEventListener("user-welcome", onUserWelcome);
         }
 
         disconnectedCallback() {
-            roomElement.removeEventListener("user-join", onUserJoin);
+            roomElement.removeEventListener("user-enter", onUserJoin);
             roomElement.removeEventListener("user-left", onUserLeft)
             roomElement.removeEventListener("user-welcome", onUserWelcome)
             super.disconnectedCallback && super.disconnectedCallback();

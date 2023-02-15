@@ -3,7 +3,6 @@ const wsProtocol = (location.protocol != null && location.protocol === "https:")
 const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8080";
 const roomMainElement = document.getElementById("room");
 
-console.log(roomId);
 // Workaround for the fact that js/ts can't serialize/deserialize maps
 const reviver = (key, value) => {
     if(typeof value === 'object' && value !== null) {
@@ -15,13 +14,13 @@ const reviver = (key, value) => {
 }
 
 const publishRoomEvent = (e) => roomMainElement.dispatchEvent(e);
-const createUserJoinEvent = (eventData) => new CustomEvent('user-join',
+const createUserEnterEvent = (eventData) => new CustomEvent('user-enter',
     {detail: {userId: eventData.userId, username: eventData.username}});
 const createUserLeftEvent = (eventData) => new CustomEvent('user-left',
     {detail: {userId: eventData.userId}});
 const createUserWelcomeEvent = (eventData) => new CustomEvent('user-welcome',
     {detail: {userId: eventData.userId, username: eventData.username, roomState: eventData.roomState}});
-const createAndPublishUserJoinEvent = (eventData) => publishRoomEvent(createUserJoinEvent(eventData));
+const createAndPublishUserEnterEvent = (eventData) => publishRoomEvent(createUserEnterEvent(eventData));
 const createAndPublishUserLeftEvent = (eventData) => publishRoomEvent(createUserLeftEvent(eventData));
 const createAndPublishUserWelcomeEvent = (eventData) => publishRoomEvent(createUserWelcomeEvent(eventData));
 
@@ -33,8 +32,8 @@ const roomEventHandler = ({data}) => {
         case "UserWelcomeEvent":
             createAndPublishUserWelcomeEvent(parsedData);
             break;
-        case "UserJoinEvent":
-            createAndPublishUserJoinEvent(parsedData);
+        case "UserEnterEvent":
+            createAndPublishUserEnterEvent(parsedData);
             break;
         case "UserLeftEvent":
             createAndPublishUserLeftEvent(parsedData);
@@ -50,10 +49,7 @@ const connect = () => {
     let ws;
     if (ws) ws.close();
     ws = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${wsProtocol}`);
-    ws.addEventListener("open", (openE) => console.log(openE));
-    ws.addEventListener("message", (messageE) => console.log(messageE));
-    ws.addEventListener("error", (errorE) => console.log(errorE));
-    ws.addEventListener("close", (closeE) => console.log(closeE));
+    ws.addEventListener("message", roomEventHandler);
 };
 
 // Connect to web socket AFTER all the room modules have loaded (e.g. Order Section)

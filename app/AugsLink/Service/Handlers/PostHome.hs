@@ -4,8 +4,9 @@ module AugsLink.Service.Handlers.PostHome
 
 import Servant
 import Control.Monad.Cont (MonadIO(liftIO))
-import AugsLink.Service.Room
 import Data.UUID (toString)
+
+import AugsLink.Core.API
 
 create :: Registry IO -> Handler (Headers '[Header "Location" [Char]] [Char])
 create rr = do

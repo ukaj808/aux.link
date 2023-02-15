@@ -1,28 +1,18 @@
-module AugsLink.Service.Model where
+module AugsLink.Core.Model where
 
 import qualified Data.UUID as UUID
-
-import AugsLink.Service.Room
-  (
-     Registry (..)
-  ,  Room (..)
-  ,  RoomId
-  )
-import AugsLink.Internal.State
-  (
-     State (State)
-  ,  get
-  )
-
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
+
+import AugsLink.Core.API
+import AugsLink.Internal.State
 
 type InternalId = Int
 
 data RoomState = RoomState
 
 data Model = Model {
-   modelRooms   ::   M.Map Int RoomState
+   modelRooms   ::   M.Map      Int    RoomState
  , modelRoomIds ::   HM.HashMap RoomId InternalId
  , modelNextId  ::   InternalId
  }
