@@ -1,144 +1,133 @@
 module AugsLink.Service.Room
   (
-    RoomServer
-  , RoomControl (..)
-  , newRoomServer
-  , createRoom
-  , enterRoom
-  , User (..)
+    newRegistry
+  , Room (..)
   , RoomId
+  , User (..)
   )
   where
 
-import Control.Concurrent.MVar (newMVar, readMVar, takeMVar)
-import Data.HashMap.Lazy ((!))
+import           Control.Concurrent.MVar (newMVar, readMVar)
 import qualified Data.HashMap.Lazy as HM
-import System.Random
-
-import AugsLink.Internal.State ( State(..), get, modify )
-import Control.Concurrent (putMVar, modifyMVar)
-import Data.Char (isAlphaNum)
+import           Data.HashMap.Lazy       (HashMap)
+import           Control.Concurrent      (modifyMVar_)
+import           Data.List               (delete)
+import           Data.UUID.V4            (nextRandom)
+import           Data.UUID               (UUID)
 import qualified Network.WebSockets as WS
 
-type RoomServer = IO (RoomControl IO)
-type ModelServer = RoomControl (State RoomControlState)
+import AugsLink.Internal.State ( State(..), get, modify )
 
-data RoomControl m = RControl
+type RoomId      =                   UUID
+type UserId      =                   String
+type Vote        =                   Bool
+
+data Registry m       = Registry
   {
-     numRooms ::                         m Int
-  ,  presentInRoom  :: RoomId              ->  m [User]
-  ,  createRoom   ::                         m RoomId
-  ,  enterRoom    :: User      -> RoomId ->  m ()
-  ,  leaveRoom    :: User      -> RoomId ->  m ()
+     numRooms       ::                m Int
+  ,  createRoom     ::                m (Room m)
+  ,  getRoom        ::   RoomId    -> m (Maybe (Room m))
   }
 
-type RoomId = String
-type UserId = String
-
-data User = User
+data Room m           = Room
   {
-     conn :: WS.Connection
-  ,  uid   :: UserId
-  ,  name :: String
-  ,  queue :: [Song]
+     presentInRoom  ::                m [User]
+  ,  enterRoom      ::   User      -> m ()
+  ,  leaveRoom      ::   User      -> m ()
+  ,  publishToRoom  ::   RoomEvent -> m ()
   }
+
+newtype RegistryState = RegistryState
+  {
+     rooms          ::                HM.HashMap RoomId (Room IO)
+  }
+
+
+data RoomState        = RoomState
+  {
+    users           ::                [User]
+  , currentSong     ::                Maybe Song
+  , vote            ::                [Vote]
+  }
+
+data RoomEvent        =               UserEnterEvent User
+  |                                   UserLeftEvent User
+  |                                   UserVoteEvent User Vote
+
+data User             = User
+  {
+     conn           ::                WS.Connection
+  ,  uid            ::                UserId
+  ,  name           ::                String
+  ,  queue          ::                [Song]
+  }
+
+data Song             = Song
+  {
+    title           ::                String
+  , artist          ::                String
+  , duration        ::                Int
+  } deriving Show
+
 
 instance Eq User where
   u == u' = uid u == uid u'
 
-data Song = Song
-  {
-    title :: String
-  , artist :: String
-  , length :: Int
-  } deriving Show
+initialRegistryState :: RegistryState
+initialRegistryState = RegistryState {rooms=HM.empty}
 
-type Vote = Bool
+initialRoomState :: RoomState
+initialRoomState = RoomState {users=[], currentSong=Nothing, vote=[]}
 
-data Room = Room
-  {
-    users :: [User]
-  , currentSong :: Maybe Song
-  , vote        :: [Vote]
-  }
-
-newtype RoomControlState = RControlState
- {
-   rooms :: HM.HashMap RoomId Room
- }
-
-data RoomEvent =
-    UserEnterEvent User
-  | UserLeftEvent User
-  | UserVoteEvent User Vote
-
-initialControlState :: RoomControlState
-initialControlState = RControlState HM.empty
-
-emptyRoom :: Room
-emptyRoom = Room [] Nothing []
-
-genRoomId :: IO RoomId
-genRoomId = do
-  gen <- newStdGen
-  let chars = randomRs ('0', 'z') gen
-  return $ take 8 (filter isAlphaNum chars)
-
-modelServer :: ModelServer
-modelServer = RControl
+modelRegistry :: Registry (State RegistryState)
+modelRegistry = Registry
   {
     numRooms = HM.size . rooms <$> get
-
-  , presentInRoom = \rId -> (\s -> users (rooms s ! rId)) <$> get
-
   , createRoom = undefined
-
-  , enterRoom = \u rId -> modify $ \s ->
-      let room = (rooms s ! rId)
-          room' = Room (u : users room) (currentSong room) (vote room)
-      in RControlState $ HM.insert rId room' (rooms s)
-
-  , leaveRoom = \u rId -> modify $ \s ->
-      let room = (rooms s ! rId)
-          room' = Room (filter (u /=) (users room)) (currentSong room) (vote room)
-      in RControlState $ HM.insert rId room' (rooms s)
-
+  , getRoom = undefined
   }
 
-newRoomServer :: RoomServer
-newRoomServer = do
-  stateVar <- newMVar initialControlState
-  return $ RControl
+modelRoom :: Room (State RoomState)
+modelRoom = Room 
+  {
+    presentInRoom = 
+      users <$> get
+  , enterRoom = 
+      \u -> modify $ \st -> st{users = u:users st}
+  , leaveRoom = 
+      \u -> modify $ \st -> st{users = delete u (users st)}
+  , publishToRoom =
+      undefined
+  }
+
+newRegistry :: IO (Registry IO)
+newRegistry = do
+  stateVar <- newMVar initialRegistryState
+  return $ Registry
     {
-      numRooms = HM.size . rooms <$> readMVar stateVar
-    , presentInRoom = \rId -> do
-        roomServer <- readMVar stateVar
-        return $ users $ rooms roomServer ! rId
+      numRooms = 
+        HM.size . rooms <$> readMVar stateVar
+    , getRoom = \rId ->
+        HM.lookup rId . rooms <$> readMVar stateVar
+    , createRoom = do
+        room <- newRoom
+        rId <- nextRandom
+        modifyMVar_ stateVar $ \st -> return st{
+            rooms =  HM.insert rId room (rooms st)
+          }
+        return room
+    }
 
-    , createRoom = do -- todo: retry mechanism
-        modifyMVar stateVar
-          (\rs -> do
-            rId <- genRoomId
-            let rms = rooms rs
-            putStrLn "wahtt"
-            let roomServer' = if HM.member rId rms
-                              then RControlState $ HM.insert rId emptyRoom rms
-                              else error "Room id already exists"
-            return (roomServer', rId))
-
-    , enterRoom = \u rId -> do
-        roomServer <- takeMVar stateVar
-        let rs = rooms roomServer
-        let room = rs ! rId
-        let room' = Room (u : users room) (currentSong room) (vote room)
-        let roomServer' = RControlState $ HM.insert rId room' rs
-        putMVar stateVar roomServer'
-
-    , leaveRoom = \u rId -> do
-        roomServer <- takeMVar stateVar
-        let rs = rooms roomServer
-        let room = rs ! rId
-        let room' = Room (filter (u /=) (users room)) (currentSong room) (vote room)
-        let roomServer' = RControlState $ HM.insert rId room' rs
-        putMVar stateVar roomServer'
+newRoom :: IO (Room IO)
+newRoom = do
+  stateVar <- newMVar initialRoomState
+  return $ Room {
+      presentInRoom =
+        users <$> readMVar stateVar
+    , enterRoom = \u ->
+        modifyMVar_ stateVar $ \st -> return st{users = u:users st}
+    , leaveRoom = \u ->
+        modifyMVar_ stateVar $ \st -> return st{users = delete u (users st)}
+    , publishToRoom = 
+        undefined
     }
