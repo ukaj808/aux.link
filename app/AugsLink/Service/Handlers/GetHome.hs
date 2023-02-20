@@ -1,20 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.GetHome 
-
   ( home
   ) where
 
-import qualified Data.ByteString.Lazy as Lazy
+import Control.Monad.IO.Class ( liftIO )
 import Servant
 
-import CommandLine ( CLArgs )
-import Lucid
+import AugsLink.Service.API ( StaticHtml (..) )
+import CommandLine ( homeViewPath , CLArgs )
+import Data.Text.IO as T
 
-htmlResponse :: Html ()
-htmlResponse = div_ (do p_ "hello"; p_ "sup")
-
-home :: CLArgs -> Handler Lazy.ByteString
-home lc = do
-  let html = toHtmlRaw htmlResponse
-  return $ renderBS html
-
+home :: CLArgs -> Handler StaticHtml
+home opts = do
+  homeHtmlFile <- liftIO $ T.readFile $ homeViewPath opts 
+  return $ StaticHtml homeHtmlFile

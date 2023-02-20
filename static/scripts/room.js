@@ -15,23 +15,17 @@ const reviver = (key, value) => {
 
 const publishRoomEvent = (e) => roomMainElement.dispatchEvent(e);
 const createUserEnterEvent = (eventData) => new CustomEvent('user-enter',
-    {detail: {userId: eventData.userId, username: eventData.username}});
+    {detail: {userId: eventData.userId, username: eventData.username, spotInLine: eventData.spotInLine}});
 const createUserLeftEvent = (eventData) => new CustomEvent('user-left',
     {detail: {userId: eventData.userId}});
-const createUserWelcomeEvent = (eventData) => new CustomEvent('user-welcome',
-    {detail: {userId: eventData.userId, username: eventData.username, roomState: eventData.roomState}});
 const createAndPublishUserEnterEvent = (eventData) => publishRoomEvent(createUserEnterEvent(eventData));
 const createAndPublishUserLeftEvent = (eventData) => publishRoomEvent(createUserLeftEvent(eventData));
-const createAndPublishUserWelcomeEvent = (eventData) => publishRoomEvent(createUserWelcomeEvent(eventData));
 
 const roomEventHandler = ({data}) => {
     console.log(data);
     let parsedData = JSON.parse(data, reviver);
 
     switch (parsedData?.type) {
-        case "UserWelcomeEvent":
-            createAndPublishUserWelcomeEvent(parsedData);
-            break;
         case "UserEnterEvent":
             createAndPublishUserEnterEvent(parsedData);
             break;
@@ -44,6 +38,36 @@ const roomEventHandler = ({data}) => {
     }
 
 }
+
+const createNewUserListElement = (userDetails) => {
+    const li = document.createElement('li');
+    li.id = userDetails.userId;
+    li.classList.add('user-order-list__user');
+
+    const ord = document.createElement('span');
+    ord.textContent = userDetails.spotInLine;
+    ord.classList.add('user-order-list__order-lbl');
+
+    const uname = document.createElement('span');
+    uname.textContent = userDetails.username;
+    ord.classList.add('user-order-list__username-lbl');
+
+    return li;
+}
+
+const onUserJoin = ({detail}) => {
+    document.querySelector("#user-order-list").appendChild(createNewUserListElement(detail));
+}
+
+const onUserLeft = ({detail}) => {
+    document.getElementById(detail.userId).remove();
+}
+
+
+const roomElement = document.getElementById("room");
+
+roomElement.addEventListener("user-enter", onUserJoin);
+roomElement.addEventListener("user-left", onUserLeft);
 
 const connect = () => {
     let ws;
