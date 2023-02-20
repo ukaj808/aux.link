@@ -1,6 +1,6 @@
 module AugsLink.Service.Application ( server ) where
 
-import Servant 
+import Servant
 
 import AugsLink.Service.API ( API )
 import CommandLine ( CLArgs ( staticDirPath ) )

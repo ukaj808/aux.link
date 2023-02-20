@@ -37,10 +37,11 @@ executable augslink-service
                       ,  base ^>=4.17.0.0
                       , bytestring
                       , containers
-                      , http-media
+                      , lucid2
                       , mtl
                       , optparse-applicative
                       , random 
+                      , servant-lucid
                       , servant-server
                       , servant-websockets
                       , text 

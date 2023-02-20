@@ -23,6 +23,8 @@ import qualified Data.Text as T
 
 import  AugsLink.Core.API
 
+type RoomUserMap = HM.HashMap UserId UserState
+
 newtype RegistryState = RegistryState
   {
      rooms :: HM.HashMap RoomId (Room IO)
@@ -30,17 +32,17 @@ newtype RegistryState = RegistryState
 
 data RoomState = RoomState
   {
-    roomUsers       :: HM.HashMap UserId UserState               
+    roomUsers       :: RoomUserMap 
   , roomCurrentSong :: Maybe Song
   , roomVote        :: [Vote]
   }
 
 data UserState = UserState
   {
-     userConn  :: WS.Connection
-  ,  userQueue :: [Song]
-  ,  userOrder :: Int
-  ,  userName  :: Username
+     uStateConn  :: WS.Connection
+  ,  uStateQueue :: [Song]
+  ,  uStateSpot :: Int
+  ,  uStateName  :: UserName
   }
 
           
@@ -82,24 +84,33 @@ newRoom :: IO (Room IO)
 newRoom = do
   stateVar <- newMVar initialRoomState
   return $ Room {
-      presentInRoom =
-        HM.keys . roomUsers <$> readMVar stateVar
-
+      presentInRoom = presentInRoomImpl stateVar
     , enterRoom = enterRoomImpl stateVar
     , leaveRoom = \u ->
         modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.delete u (roomUsers st)}
     , publishToRoom = publishToRoomImpl stateVar
     }
 
+presentInRoomImpl :: MVar RoomState -> IO [User]
+presentInRoomImpl stateVar = do
+  roomState <- readMVar stateVar
+  let mp = roomUsers roomState
+  let ks = HM.keys mp
+  return $ map (toUser mp) ks
+    where
+      toUser :: RoomUserMap -> UserId -> User
+      toUser mp uid = 
+        let uSt = mp HM.! uid 
+        in User {userId=uid, userName=uStateName uSt, spotInLine=uStateSpot uSt}
+
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
-       
     conn <- WS.acceptRequest pend
     putStrLn "accepted connection"
     uuid <- nextRandom 
     let uid = uuid
-    let user = UserState {userConn=conn, userQueue=[], userOrder=1, userName="fisnik"} 
-    publishToRoomImpl stateVar $ UserEnterEvent uid $ userName user
+    let user = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=1, uStateName="fisnik"} 
+    publishToRoomImpl stateVar $ UserEnterEvent uid $ uStateName user
     modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.insert uid user $ roomUsers st}
     WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
     -- todo: deal with async threads
@@ -109,7 +120,7 @@ publishToRoomImpl :: MVar RoomState -> RoomEvent -> IO ()
 publishToRoomImpl stateVar e = do
   rmSt <- readMVar stateVar
   forM_ (roomUsers rmSt) $ \u ->
-    WS.sendTextData (userConn u) (Aeson.encode e)
+    WS.sendTextData (uStateConn u) (Aeson.encode e)
   
 handleIncomingEvents :: MVar RoomState -> WS.Connection -> IO ()
 handleIncomingEvents stateVar conn = do

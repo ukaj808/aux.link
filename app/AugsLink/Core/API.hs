@@ -14,19 +14,25 @@ data Registry m = Registry
 
 data Room m = Room
   {
-     presentInRoom  ::                   m [UserId]
+     presentInRoom  ::                   m [User]
   ,  enterRoom      ::   Connection m -> m ()
   ,  leaveRoom      ::   UserId       -> m ()
   ,  publishToRoom  ::   RoomEvent    -> m ()
   }
 
-data RoomEvent = UserEnterEvent UserId Username
+data User = User
+ {
+    userId :: UserId
+ ,  userName :: UserName
+ ,  spotInLine     :: Int
+ }
+data RoomEvent = UserEnterEvent UserId UserName
   |              UserLeftEvent  UserId
   |              UserVoteEvent  UserId Vote
 
 type RoomId   = UUID
 type UserId   = UUID
-type Username = String
+type UserName = String
 type Vote     = Bool
 
 
