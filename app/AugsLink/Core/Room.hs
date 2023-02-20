@@ -1,6 +1,6 @@
 module AugsLink.Core.Room
   (
-    initialRegistryState 
+    initialRegistryState
   , initialRoomState
   , newRegistry
   , Registry (..)
@@ -32,7 +32,7 @@ newtype RegistryState = RegistryState
 
 data RoomState = RoomState
   {
-    roomUsers       :: RoomUserMap 
+    roomUsers       :: RoomUserMap
   , roomCurrentSong :: Maybe Song
   , roomVote        :: [Vote]
   }
@@ -45,7 +45,7 @@ data UserState = UserState
   ,  uStateName  :: UserName
   }
 
-          
+
 
 data Song = Song
   {
@@ -67,7 +67,7 @@ newRegistry = do
   stateVar <- newMVar initialRegistryState
   return $ Registry
     {
-      numRooms = 
+      numRooms =
         HM.size . rooms <$> readMVar stateVar
     , getRoom = \rId ->
         HM.lookup rId . rooms <$> readMVar stateVar
@@ -89,6 +89,7 @@ newRoom = do
     , leaveRoom = \u ->
         modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.delete u (roomUsers st)}
     , publishToRoom = publishToRoomImpl stateVar
+    , nextIndex = nextIndexImpl stateVar
     }
 
 presentInRoomImpl :: MVar RoomState -> IO [User]
@@ -99,19 +100,18 @@ presentInRoomImpl stateVar = do
   return $ map (toUser mp) ks
     where
       toUser :: RoomUserMap -> UserId -> User
-      toUser mp uid = 
-        let uSt = mp HM.! uid 
+      toUser mp uid =
+        let uSt = mp HM.! uid
         in User {userId=uid, userName=uStateName uSt, spotInLine=uStateSpot uSt}
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
     conn <- WS.acceptRequest pend
-    putStrLn "accepted connection"
-    uuid <- nextRandom 
+    uuid <- nextRandom
     let uid = uuid
-    let user = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=1, uStateName="fisnik"} 
-    publishToRoomImpl stateVar $ UserEnterEvent uid $ uStateName user
+    let user = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=1, uStateName="fisnik"}
     modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.insert uid user $ roomUsers st}
+    publishToRoomImpl stateVar $ UserEnterEvent uid $ uStateName user
     WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
     -- todo: deal with async threads
     -- we should keep a reference to the thread so when room is empty we can terminate it 
@@ -121,20 +121,24 @@ publishToRoomImpl stateVar e = do
   rmSt <- readMVar stateVar
   forM_ (roomUsers rmSt) $ \u ->
     WS.sendTextData (uStateConn u) (Aeson.encode e)
-  
+
+nextIndexImpl :: MVar RoomState -> IO Int
+nextIndexImpl stateVar = flip subtract 1 .  HM.size . roomUsers <$> readMVar stateVar
+
+
 handleIncomingEvents :: MVar RoomState -> WS.Connection -> IO ()
 handleIncomingEvents stateVar conn = do
   putStrLn "Start handle events"
   go
   where
-    go :: IO () 
-    go  = do 
+    go :: IO ()
+    go  = do
       msg <- WS.receiveData conn
       print msg
       case Aeson.eitherDecode msg of
-        Left e -> do 
+        Left e -> do
           print e
           WS.sendClose conn $ T.pack e
-        Right event -> do 
+        Right event -> do
           publishToRoomImpl stateVar event
           go

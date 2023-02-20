@@ -18,6 +18,7 @@ data Room m = Room
   ,  enterRoom      ::   Connection m -> m ()
   ,  leaveRoom      ::   UserId       -> m ()
   ,  publishToRoom  ::   RoomEvent    -> m ()
+  ,  nextIndex      ::                   m Int
   }
 
 data User = User

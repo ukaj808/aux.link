@@ -100,11 +100,6 @@ body {
     padding-left: 10px;
 }
 
-.user-order-list__order-lbl::before {
-    counter-increment: user-order;
-    content: counter(user-order);
-}
-
 .user-order-list__username-lbl {
     align-self: center;
 }

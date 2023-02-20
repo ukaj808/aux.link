@@ -50,7 +50,10 @@ const createNewUserListElement = (userDetails) => {
 
     const uname = document.createElement('span');
     uname.textContent = userDetails.username;
-    ord.classList.add('user-order-list__username-lbl');
+    uname.classList.add('user-order-list__username-lbl');
+
+    li.appendChild(ord);
+    li.appendChild(uname);
 
     return li;
 }
