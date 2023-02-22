@@ -63,7 +63,10 @@ const onUserJoin = ({detail}) => {
 }
 
 const onUserLeft = ({detail}) => {
-    document.getElementById(detail.userId).remove();
+    const userId = detail.userId;
+    document.getElementById(userId).remove();
+
+
 }
 
 

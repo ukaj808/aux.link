@@ -56,6 +56,9 @@ data Song = Song
 
 type instance Connection IO = WS.PendingConnection
 
+
+data WebSocket
+
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState {rooms=HM.empty}
 
@@ -86,8 +89,7 @@ newRoom = do
   return $ Room {
       presentInRoom = presentInRoomImpl stateVar
     , enterRoom = enterRoomImpl stateVar
-    , leaveRoom = \u ->
-        modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.delete u (roomUsers st)}
+    , leaveRoom = leaveRoomImpl stateVar 
     , publishToRoom = publishToRoomImpl stateVar
     , nextIndex = nextIndexImpl stateVar
     }
@@ -106,18 +108,24 @@ presentInRoomImpl stateVar = do
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
-    conn <- WS.acceptRequest pend
-    uuid <- nextRandom
-    let uid = uuid
-    userState <- modifyMVar stateVar $ \st ->
-      let spot   = HM.size $ roomUsers st
-          uState = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=spot, uStateName="fisnik"}
-          st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
-      in return (st', uState)
-    publishToRoomImpl stateVar $ UserEnterEvent $ User uid (uStateName userState) (uStateSpot userState)
-    WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
-    -- todo: deal with async threads
-    -- we should keep a reference to the thread so when room is empty we can terminate it 
+  conn <- WS.acceptRequest pend
+  uuid <- nextRandom
+  let uid = uuid
+  userState <- modifyMVar stateVar $ \st ->
+    let spot   = HM.size $ roomUsers st
+        uState = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=spot, uStateName="fisnik"}
+        st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
+    in return (st', uState)
+  publishToRoomImpl stateVar $ UserEnterEvent $ User uid (uStateName userState) (uStateSpot userState)
+  WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
+  -- todo: deal with async threads
+  -- we should keep a reference to the thread so when room is empty we can terminate it 
+  --
+leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
+leaveRoomImpl stateVar uid = do
+   modifyMVar_ stateVar $ \st -> 
+     return st{roomUsers = HM.delete uid (roomUsers st)}
+   publishToRoomImpl stateVar $ UserLeftEvent uid
 
 publishToRoomImpl :: MVar RoomState -> RoomEvent -> IO ()
 publishToRoomImpl stateVar e = do
