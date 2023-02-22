@@ -27,7 +27,7 @@ data User = User
  ,  userName :: UserName
  ,  spotInLine     :: Int
  }
-data RoomEvent = UserEnterEvent UserId UserName
+data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
   |              UserVoteEvent  UserId Vote
 
@@ -39,13 +39,19 @@ type Vote     = Bool
 
 type family Connection (m :: * -> *) :: *
 
+instance Eq User where
+  u1 == u2 = userId u1 == userId u2
+instance Ord User where
+  u1 <= u2 = spotInLine u1 <= spotInLine u2 
+
 instance ToJSON RoomEvent where
   toJSON :: RoomEvent -> Value
-  toJSON (UserEnterEvent uid uname) = Aeson.object 
+  toJSON (UserEnterEvent u) = Aeson.object 
     [
-       "type"      .= ("UserEnterEvent" :: String)
-    ,  "userId"    .= uid
-    ,  "username"  .= uname
+       "type"        .= ("UserEnterEvent" :: String)
+    ,  "userId"      .= userId u
+    ,  "userName"    .= userName u
+    ,  "spotInLine"  .= spotInLine u
     ]
   
 instance FromJSON RoomEvent where
@@ -54,6 +60,7 @@ instance FromJSON RoomEvent where
       typ <- obj .: "type"
       case typ :: String of
         "UserEnterEvent" -> do
-          userId   <- obj .: "userId"
-          userName <- obj .: "username"
-          return $ UserEnterEvent userId userName
+          userId     <- obj .: "userId"
+          userName   <- obj .: "userName"
+          spotInLine <- obj .: "spotInLine"
+          return $ UserEnterEvent $ User userId userName spotInLine

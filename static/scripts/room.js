@@ -15,7 +15,7 @@ const reviver = (key, value) => {
 
 const publishRoomEvent = (e) => roomMainElement.dispatchEvent(e);
 const createUserEnterEvent = (eventData) => new CustomEvent('user-enter',
-    {detail: {userId: eventData.userId, username: eventData.username, spotInLine: eventData.spotInLine}});
+    {detail: {userId: eventData.userId, userName: eventData.userName, spotInLine: eventData.spotInLine}});
 const createUserLeftEvent = (eventData) => new CustomEvent('user-left',
     {detail: {userId: eventData.userId}});
 const createAndPublishUserEnterEvent = (eventData) => publishRoomEvent(createUserEnterEvent(eventData));
@@ -49,7 +49,7 @@ const createNewUserListElement = (userDetails) => {
     ord.classList.add('user-order-list__order-lbl');
 
     const uname = document.createElement('span');
-    uname.textContent = userDetails.username;
+    uname.textContent = userDetails.userName;
     uname.classList.add('user-order-list__username-lbl');
 
     li.appendChild(ord);

@@ -13,6 +13,7 @@ import AugsLink.Service.API
 import Text.Blaze.Html5 ((!), toValue, toMarkup)
 import AugsLink.Core.API
 import Data.UUID (toText, fromString)
+import Data.List (sort)
 
 renderUser :: User -> H.Html
 renderUser u = 
@@ -29,7 +30,7 @@ renderOrderSection :: [User] -> H.Html
 renderOrderSection users = 
   H.section ! A.id "order" ! A.class_ "order" $ do
   H.ol ! A.id "user-order-list" ! A.class_ "user-order-list" $ do
-    forM_ users renderUser 
+    forM_ (sort users) renderUser 
 
 renderRoomPage :: [User] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do

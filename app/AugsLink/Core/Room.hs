@@ -15,7 +15,7 @@ module AugsLink.Core.Room
 import qualified Data.Aeson as Aeson
 import           Control.Concurrent.MVar (newMVar, readMVar, MVar)
 import qualified Data.HashMap.Lazy as HM
-import           Control.Concurrent      (modifyMVar_)
+import           Control.Concurrent      (modifyMVar_, modifyMVar)
 import           Data.UUID.V4            (nextRandom)
 import qualified Network.WebSockets as WS
 import Control.Monad (forM_)
@@ -109,9 +109,12 @@ enterRoomImpl stateVar pend = do
     conn <- WS.acceptRequest pend
     uuid <- nextRandom
     let uid = uuid
-    let user = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=1, uStateName="fisnik"}
-    modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.insert uid user $ roomUsers st}
-    publishToRoomImpl stateVar $ UserEnterEvent uid $ uStateName user
+    userState <- modifyMVar stateVar $ \st ->
+      let spot   = HM.size $ roomUsers st
+          uState = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=spot, uStateName="fisnik"}
+          st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
+      in return (st', uState)
+    publishToRoomImpl stateVar $ UserEnterEvent $ User uid (uStateName userState) (uStateSpot userState)
     WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
     -- todo: deal with async threads
     -- we should keep a reference to the thread so when room is empty we can terminate it 
