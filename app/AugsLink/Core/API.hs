@@ -5,7 +5,6 @@ import           Data.UUID  (UUID)
 import           Data.Aeson.Types
 import qualified Data.Aeson as Aeson
 import Data.Kind (Type)
-import Network.WebSockets (ConnectionException)
 
 data Registry m = Registry
   {
@@ -16,11 +15,12 @@ data Registry m = Registry
 
 data Room m = Room
   {
-     presentInRoom  ::                   m [User]
-  ,  enterRoom      ::   Connection m -> m ()
-  ,  leaveRoom      ::   UserId       -> m ()
-  ,  publishToRoom  ::   RoomEvent    -> m ()
-  ,  nextIndex      ::                   m Int
+     enterRoom        ::   Connection m                  -> m ()
+  ,  leaveRoom        ::   UserId                        -> m ()
+  ,  presentInRoom    ::                                    m [User]
+  ,  publishToAllBut  ::   (User -> Bool) -> RoomEvent   -> m ()
+  ,  publishToRoom    ::   RoomEvent                     -> m ()
+  ,  messageToUser      ::   UserId         -> ServerMessage -> m ()
   }
 
 data User = User
@@ -32,11 +32,14 @@ data User = User
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
 
+newtype UserMessage = UserLeftMessage UserId
+
+newtype ServerMessage = ServerWelcomeMessage User
+
 type RoomId   = UUID
 type UserId   = UUID
 type UserName = String
 type Vote     = Bool
-
 
 type family Connection (m :: Type -> Type) :: Type
 
@@ -65,17 +68,50 @@ instance FromJSON RoomEvent where
   parseJSON = Aeson.withObject "RoomEvent" $ \obj -> do
       typ <- obj .: "type"
       case typ :: String of
-
         "UserEnterEvent" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
           spotInLine <- obj .: "spotInLine"
           return $ UserEnterEvent $ User userId userName spotInLine
-
         "UserLeftEvent" -> do
           uid        <- obj .: "userId"
           return $ UserLeftEvent uid
 
-instance FromJSON ConnectionException where
-  parseJSON :: Value -> Parser ConnectionException
-  parseJSON = undefined
+instance ToJSON UserMessage where
+  toJSON :: UserMessage -> Value
+  toJSON (UserLeftMessage uid) = Aeson.object 
+    [
+       "type"        .= ("UserLeftMessage" :: String)
+    ,  "userId"      .= uid
+    ]
+
+instance FromJSON UserMessage where
+  parseJSON :: Value -> Parser UserMessage
+  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
+      typ <- obj .: "type"
+      case typ :: String of
+        "UserLeftMessage" -> do
+          userId     <- obj .: "userId"
+          return $ UserLeftMessage userId
+
+instance ToJSON ServerMessage where
+  toJSON :: ServerMessage -> Value
+  toJSON (ServerWelcomeMessage u) = Aeson.object 
+    [
+       "type"        .= ("ServerWelcomeMessage" :: String)
+    ,  "userId"      .= userId u
+    ,  "userName"    .= userName u
+    ,  "spotInLine"  .= spotInLine u
+    ]
+
+instance FromJSON ServerMessage where
+  parseJSON :: Value -> Parser ServerMessage
+  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
+      typ <- obj .: "type"
+      case typ :: String of
+        "ServerWelcomeMessage" -> do
+          userId     <- obj .: "userId"
+          userName   <- obj .: "userName"
+          spotInLine <- obj .: "spotInLine"
+          return $ ServerWelcomeMessage $ User userId userName spotInLine
+

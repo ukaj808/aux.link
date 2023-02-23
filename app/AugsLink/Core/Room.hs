@@ -19,11 +19,11 @@ import           Control.Concurrent      (modifyMVar_, modifyMVar)
 import           Data.UUID.V4            (nextRandom)
 import qualified Network.WebSockets as WS
 import Control.Monad (forM_)
-import qualified Data.Text as T
 
 import  AugsLink.Core.API
 
 type RoomUserMap = HM.HashMap UserId UserState
+type ConnMap = HM.HashMap WS.Connection UserId -- Need a way to identify the user who closed there connection
 
 newtype RegistryState = RegistryState
   {
@@ -33,37 +33,21 @@ newtype RegistryState = RegistryState
 data RoomState = RoomState
   {
     roomUsers       :: RoomUserMap
-  , roomCurrentSong :: Maybe Song
-  , roomVote        :: [Vote]
   }
 
 data UserState = UserState
   {
      uStateConn  :: WS.Connection
-  ,  uStateQueue :: [Song]
-  ,  uStateSpot :: Int
-  ,  uStateName  :: UserName
-  }
-
-
-
-data Song = Song
-  {
-    title    :: String
-  , artist   :: String
-  , duration :: Int
+  ,  uState      :: User
   }
 
 type instance Connection IO = WS.PendingConnection
-
-
-data WebSocket
 
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState {rooms=HM.empty}
 
 initialRoomState :: RoomState
-initialRoomState = RoomState {roomUsers=HM.empty, roomCurrentSong=Nothing, roomVote=[]}
+initialRoomState = RoomState {roomUsers=HM.empty}
 
 newRegistry :: IO (Registry IO)
 newRegistry = do
@@ -87,24 +71,19 @@ newRoom :: IO (Room IO)
 newRoom = do
   stateVar <- newMVar initialRoomState
   return $ Room {
-      presentInRoom = presentInRoomImpl stateVar
-    , enterRoom = enterRoomImpl stateVar
-    , leaveRoom = leaveRoomImpl stateVar 
+      enterRoom = enterRoomImpl stateVar
+    , leaveRoom = leaveRoomImpl stateVar
+    , presentInRoom = presentInRoomImpl stateVar
+    , publishToAllBut = publishToAllButImpl stateVar
     , publishToRoom = publishToRoomImpl stateVar
-    , nextIndex = nextIndexImpl stateVar
+    , messageToUser = messageToUserImpl stateVar
     }
 
 presentInRoomImpl :: MVar RoomState -> IO [User]
 presentInRoomImpl stateVar = do
   roomState <- readMVar stateVar
   let mp = roomUsers roomState
-  let ks = HM.keys mp
-  return $ map (toUser mp) ks
-    where
-      toUser :: RoomUserMap -> UserId -> User
-      toUser mp uid =
-        let uSt = mp HM.! uid
-        in User {userId=uid, userName=uStateName uSt, spotInLine=uStateSpot uSt}
+  return $ map uState $ HM.elems mp
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
@@ -113,19 +92,27 @@ enterRoomImpl stateVar pend = do
   let uid = uuid
   userState <- modifyMVar stateVar $ \st ->
     let spot   = HM.size $ roomUsers st
-        uState = UserState {uStateConn=conn, uStateQueue=[], uStateSpot=spot, uStateName="fisnik"}
+        u      = User {userId = uid, userName="fisnik", spotInLine=spot}
+        uState = UserState {uStateConn=conn, uState=u}
         st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
     in return (st', uState)
-  publishToRoomImpl stateVar $ UserEnterEvent $ User uid (uStateName userState) (uStateSpot userState)
-  WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
+  messageToUserImpl stateVar uid (ServerWelcomeMessage $ uState userState)
+  publishToAllButImpl stateVar (\u -> u /= uState userState) (UserEnterEvent $ uState userState)
+  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
 leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
 leaveRoomImpl stateVar uid = do
-   modifyMVar_ stateVar $ \st -> 
+   modifyMVar_ stateVar $ \st ->
      return st{roomUsers = HM.delete uid (roomUsers st)}
    publishToRoomImpl stateVar $ UserLeftEvent uid
+
+publishToAllButImpl :: MVar RoomState -> (User -> Bool) -> RoomEvent -> IO ()
+publishToAllButImpl stateVar p e = do
+  rmSt <- readMVar stateVar
+  forM_ (HM.filter (p . uState) (roomUsers rmSt)) $ \u ->
+    WS.sendTextData (uStateConn u) (Aeson.encode e)
 
 publishToRoomImpl :: MVar RoomState -> RoomEvent -> IO ()
 publishToRoomImpl stateVar e = do
@@ -133,23 +120,31 @@ publishToRoomImpl stateVar e = do
   forM_ (roomUsers rmSt) $ \u ->
     WS.sendTextData (uStateConn u) (Aeson.encode e)
 
-nextIndexImpl :: MVar RoomState -> IO Int
-nextIndexImpl stateVar = flip subtract 1 .  HM.size . roomUsers <$> readMVar stateVar
+messageToUserImpl :: MVar RoomState -> UserId  -> ServerMessage -> IO ()
+messageToUserImpl stateVar uid msg = do
+  rmSt <- readMVar stateVar
+  let u = roomUsers rmSt HM.! uid
+  WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
-
-handleIncomingEvents :: MVar RoomState -> WS.Connection -> IO ()
-handleIncomingEvents stateVar conn = do
-  putStrLn "Start handle events"
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> IO ()
+handleIncomingMessages stateVar conn = do
   go
   where
     go :: IO ()
     go  = do
-      msg <- WS.receiveData conn
-      print msg
-      case Aeson.eitherDecode msg of
+      msg <- WS.receive conn
+      case msg of
+        WS.ControlMessage (WS.Close code reason) -> do
+          --todo: how do I get userId from connection? Should userid be the ipaddress?
+          roomState <- readMVar stateVar
+          leaveRoomImpl sta
+        WS.DataMessage _ _ _ m -> do
+          print "Should not be possible"
+        {-
         Left e -> do
           print e
-          WS.sendClose conn $ T.pack e
-        Right event -> do
-          publishToRoomImpl stateVar event
-          go
+        Right m -> do
+          case m of
+            (UserLeftMessage uid) -> do
+              publishToRoomImpl stateVar $ UserLeftEvent uid
+        -}

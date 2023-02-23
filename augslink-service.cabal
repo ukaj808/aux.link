@@ -32,12 +32,13 @@ executable augslink-service
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
     -- other-extensions:
-    build-depends:       aeson
-                      ,  async
-                      ,  base ^>=4.17.0.0
+    build-depends:      aeson
+                      , async
+                      , base ^>=4.17.0.0
+                      , blaze-html
                       , bytestring
                       , containers
-                      , blaze-html
+                      , hashable
                       , mtl
                       , optparse-applicative
                       , random 
