@@ -98,7 +98,7 @@ enterRoomImpl stateVar pend = do
     in return (st', uState)
   messageToUserImpl stateVar uid (ServerWelcomeMessage $ uState userState)
   publishToAllButImpl stateVar (\u -> u /= uState userState) (UserEnterEvent $ uState userState)
-  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn)
+  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn uid)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
@@ -126,8 +126,8 @@ messageToUserImpl stateVar uid msg = do
   let u = roomUsers rmSt HM.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
-handleIncomingMessages :: MVar RoomState -> WS.Connection -> IO ()
-handleIncomingMessages stateVar conn = do
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
+handleIncomingMessages stateVar conn uid = do
   go
   where
     go :: IO ()
@@ -135,9 +135,7 @@ handleIncomingMessages stateVar conn = do
       msg <- WS.receive conn
       case msg of
         WS.ControlMessage (WS.Close code reason) -> do
-          --todo: how do I get userId from connection? Should userid be the ipaddress?
-          roomState <- readMVar stateVar
-          leaveRoomImpl sta
+          leaveRoomImpl stateVar uid
         WS.DataMessage _ _ _ m -> do
           print "Should not be possible"
         {-
