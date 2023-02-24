@@ -23,7 +23,6 @@ import Control.Monad (forM_)
 import  AugsLink.Core.API
 
 type RoomUserMap = HM.HashMap UserId UserState
-type ConnMap = HM.HashMap WS.Connection UserId -- Need a way to identify the user who closed there connection
 
 newtype RegistryState = RegistryState
   {
@@ -134,10 +133,12 @@ handleIncomingMessages stateVar conn uid = do
     go  = do
       msg <- WS.receive conn
       case msg of
-        WS.ControlMessage (WS.Close code reason) -> do
-          leaveRoomImpl stateVar uid
-        WS.DataMessage _ _ _ m -> do
+        WS.DataMessage {} -> do
           print "Should not be possible"
+          go
+        WS.ControlMessage WS.Close {} -> do
+          leaveRoomImpl stateVar uid
+        WS.ControlMessage _ -> go
         {-
         Left e -> do
           print e
