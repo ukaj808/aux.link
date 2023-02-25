@@ -73,9 +73,6 @@ newRoom = do
       enterRoom = enterRoomImpl stateVar
     , leaveRoom = leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
-    , publishToAllBut = publishToAllButImpl stateVar
-    , publishToRoom = publishToRoomImpl stateVar
-    , messageToUser = messageToUserImpl stateVar
     }
 
 presentInRoomImpl :: MVar RoomState -> IO [User]
@@ -89,14 +86,15 @@ enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend
   uuid <- nextRandom
   let uid = uuid
-  userState <- modifyMVar stateVar $ \st ->
+  modifyMVar_ stateVar $ \st ->
     let spot   = HM.size $ roomUsers st
         u      = User {userId = uid, userName="fisnik", spotInLine=spot}
         uState = UserState {uStateConn=conn, user=u}
         st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
-    in return (st', uState)
-  messageToUserImpl stateVar uid (ServerWelcomeMessage $ user userState)
-  publishToAllButImpl stateVar (\u -> u /= user userState) (UserEnterEvent $ user userState)
+    in do
+      messageToUser st' uid (ServerWelcomeMessage $ user uState)
+      publishToAllBut st' (\us -> us /= user uState) (UserEnterEvent $ user uState)
+      return st'
   WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn uid)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
@@ -108,8 +106,8 @@ leaveRoomImpl stateVar uid = do
      let users = roomUsers st
      let emptySpot = spotInLine $ user $ users HM.! uid
      let st' = st{roomUsers = HM.map (recalcSpot emptySpot) users}
+     publishToRoom st' $ UserLeftEvent uid
      return st'{roomUsers = HM.delete uid (roomUsers st')}
-   publishToRoomImpl stateVar $ UserLeftEvent uid
    where
      recalcSpot :: Int -> UserState -> UserState
      recalcSpot i uSt = 
@@ -119,23 +117,18 @@ leaveRoomImpl stateVar uid = do
            then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot}
            else uSt
            
-       
-
-publishToAllButImpl :: MVar RoomState -> (User -> Bool) -> RoomEvent -> IO ()
-publishToAllButImpl stateVar p e = do
-  rmSt <- readMVar stateVar
+publishToAllBut :: RoomState -> (User -> Bool) -> RoomEvent -> IO ()
+publishToAllBut rmSt p e = do
   forM_ (HM.filter (p . user) (roomUsers rmSt)) $ \u ->
     WS.sendTextData (uStateConn u) (Aeson.encode e)
 
-publishToRoomImpl :: MVar RoomState -> RoomEvent -> IO ()
-publishToRoomImpl stateVar e = do
-  rmSt <- readMVar stateVar
+publishToRoom ::  RoomState -> RoomEvent -> IO ()
+publishToRoom rmSt e = do
   forM_ (roomUsers rmSt) $ \u ->
     WS.sendTextData (uStateConn u) (Aeson.encode e)
 
-messageToUserImpl :: MVar RoomState -> UserId  -> ServerMessage -> IO ()
-messageToUserImpl stateVar uid msg = do
-  rmSt <- readMVar stateVar
+messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
+messageToUser rmSt uid msg = do
   let u = roomUsers rmSt HM.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
@@ -153,11 +146,3 @@ handleIncomingMessages stateVar conn uid = do
         WS.ControlMessage WS.Close {} -> do
           leaveRoomImpl stateVar uid
         WS.ControlMessage _ -> go
-        {-
-        Left e -> do
-          print e
-        Right m -> do
-          case m of
-            (UserLeftMessage uid) -> do
-              publishToRoomImpl stateVar $ UserLeftEvent uid
-        -}

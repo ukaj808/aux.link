@@ -42,6 +42,5 @@ modelRoom = Room
     presentInRoom = undefined
   , enterRoom = undefined
   , leaveRoom = undefined 
-  , publishToRoom = undefined
   }
 

@@ -8,9 +8,10 @@ import Data.Kind (Type)
 
 data Registry m = Registry
   {
-     numRooms       ::             m Int
-  ,  createRoom     ::             m RoomId
-  ,  getRoom        ::   RoomId -> m (Maybe (Room m))
+     numRooms        ::             m Int
+  ,  createRoom      ::             m RoomId
+  ,  getRoom         ::   RoomId -> m (Maybe (Room m))
+  --,  closeEmptyRooms ::             m ()
   }
 
 data Room m = Room
@@ -18,9 +19,6 @@ data Room m = Room
      enterRoom        ::   Connection m                  -> m ()
   ,  leaveRoom        ::   UserId                        -> m ()
   ,  presentInRoom    ::                                    m [User]
-  ,  publishToAllBut  ::   (User -> Bool) -> RoomEvent   -> m ()
-  ,  publishToRoom    ::   RoomEvent                     -> m ()
-  ,  messageToUser      ::   UserId         -> ServerMessage -> m ()
   }
 
 data User = User
