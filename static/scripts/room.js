@@ -3,6 +3,8 @@ const wsProtocol = (location.protocol != null && location.protocol === "https:")
 const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8080";
 const roomMainElement = document.getElementById("room");
 let userId;
+let spotInLine;
+let userName;
 
 // Workaround for the fact that js/ts can't serialize/deserialize maps
 const reviver = (key, value) => {
@@ -51,7 +53,7 @@ const createNewUserListElement = (userDetails) => {
     li.classList.add('user-order-list__user');
 
     const ord = document.createElement('span');
-    ord.textContent = userDetails.spotInLine;
+    ord.textContent = userDetails.spotInLine + 1;
     ord.classList.add('user-order-list__order-lbl');
 
     const uname = document.createElement('span');
@@ -65,23 +67,38 @@ const createNewUserListElement = (userDetails) => {
 }
 
 const onUserWelcome = ({detail}) => {
-    document.querySelector("#user-order-list").appendChild(createNewUserListElement(detail));
+    document.getElementById("user-order-list").appendChild(createNewUserListElement(detail));
     userId = detail.userId;
+    userName = detail.userName;
+    spotInLine = detail.spotInLine + 1;
 }
 
 const onUserJoin = ({detail}) => {
-    document.querySelector("#user-order-list").appendChild(createNewUserListElement(detail));
+    document.getElementById("user-order-list").appendChild(createNewUserListElement(detail));
 }
 
 const onUserLeft = ({detail}) => {
     const userId = detail.userId;
-    document.getElementById(userId).remove();
+    const ol = document.getElementById('user-order-list');
+    const fragment = document.createDocumentFragment();
+    const liElements = Array.from(ol.children);
+    let userReached = false;
+    for (let i = 0; i < liElements.length; i++) {
+      const li = liElements[i];
+      const clonedLi = li.cloneNode(true);
+      if (li.id === userId) { 
+          userReached = true;
+          continue; 
+      }
+      if (userReached) {
+        const ordEl = clonedLi.querySelector('span');
+        ordEl.textContent = ordEl.textContent - 1;  
+      }
+      fragment.appendChild(clonedLi);
+    }
+    console.log(fragment);
+    ol.replaceChildren(fragment);
 }
-
-const onLeaveRoom = (userId) => {
-    document.getElementById(userId).remove();
-}
-
 
 const roomElement = document.getElementById("room");
 
@@ -94,7 +111,6 @@ const connect = () => {
     if (ws) ws.close();
     ws = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${wsProtocol}`);
     ws.addEventListener("message", roomMessageHandler);
-    window.addEventListener("beforeunload", () => onLeaveRoom(userId));
 };
 
 // Connect to web socket AFTER all the room modules have loaded (e.g. Order Section)

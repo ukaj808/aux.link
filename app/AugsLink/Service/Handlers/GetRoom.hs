@@ -19,7 +19,7 @@ renderUser :: User -> H.Html
 renderUser u = 
   let uid = toValue $ toText $ userId u
       uname = toMarkup $ userName u
-      ord = toMarkup $ spotInLine u
+      ord = toMarkup $ spotInLine u + 1
   in
   H.li ! A.id uid ! A.class_ "user-order-list__user" $ do
     H.span ! A.class_ "user-order-list__order-lbl" $ ord
