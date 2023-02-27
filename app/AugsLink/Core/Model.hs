@@ -5,7 +5,7 @@ import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 
 import AugsLink.Core.API
-import AugsLink.Internal.State
+import AugsLink.Core.Internal
 
 type InternalId = Int
 
@@ -39,8 +39,7 @@ modelRegistry = Registry
 modelRoom :: Room (State Model)
 modelRoom = Room
   {
-    presentInRoom = undefined
-  , enterRoom = undefined
+    enterRoom = undefined
   , leaveRoom = undefined 
   }
 

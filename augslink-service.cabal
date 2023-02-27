@@ -21,9 +21,9 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
+                      , AugsLink.Core.Internal 
                       , AugsLink.Core.Model 
                       , AugsLink.Core.Room 
-                      , AugsLink.Internal.State 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.GetHome 

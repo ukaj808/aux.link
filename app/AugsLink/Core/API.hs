@@ -8,10 +8,10 @@ import Data.Kind (Type)
 
 data Registry m = Registry
   {
-     numRooms        ::             m Int
-  ,  createRoom      ::             m RoomId
+     createRoom      ::             m RoomId
+  ,  deleteRoom      ::   RoomId -> m ()
   ,  getRoom         ::   RoomId -> m (Maybe (Room m))
-  --,  closeEmptyRooms ::             m ()
+  ,  numRooms        ::             m Int
   }
 
 data Room m = Room
@@ -27,6 +27,7 @@ data User = User
  ,  userName :: UserName
  ,  spotInLine     :: Int
  }
+
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
 

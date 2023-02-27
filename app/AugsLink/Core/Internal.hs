@@ -1,10 +1,21 @@
-module AugsLink.Internal.State
-  ( 
-    State (..)
-  , modify
+module AugsLink.Core.Internal
+  (
+    modify
   , get
-  , (<=<)
+  , InternalEvent (..)
+  , InternalEventBus (..)
+  , subscribe
+  , publish
+  , State (..)
+  , newEventBus
   ) where
+
+import Control.Concurrent.Chan
+import Control.Concurrent (forkIO, ThreadId)
+import Control.Monad (forever)
+
+
+import AugsLink.Core.API
 
 newtype State s a = State { runState :: s -> (a, s) }
 
@@ -15,11 +26,11 @@ get :: State s s
 get = State (\s -> (s, s))
 
 (<=<) :: Monad m => (b -> m c) -> (a -> m b) -> (a -> m c)
-(<=<) fb fa = (\a -> fa a >>= fb)
+(<=<) fb fa a = fa a >>= fb
 
 instance Functor (State s) where
   fmap :: (a -> b) -> State s a -> State s b
-  fmap f sa = State $ \s -> let (  a, s') = runState sa s 
+  fmap f sa = State $ \s -> let (  a, s') = runState sa s
                             in  (f a, s')
 
 instance Applicative (State s) where
@@ -33,10 +44,25 @@ instance Applicative (State s) where
 
 instance Monad (State s) where
   return :: a -> State s a
-  return = pure 
-  
- 
+  return = pure
+
+
   (>>=) :: State s a -> (a -> State s b) -> State s b
   sa >>= k = State $ \s -> let (a, s') = runState sa s
                                sb      = k a
                            in runState sb s'
+
+data InternalEvent = RoomEmptyEvent RoomId
+data InternalEventBus = IEventBus { chan :: Chan InternalEvent }
+
+newEventBus :: IO InternalEventBus
+newEventBus = IEventBus <$> newChan
+
+subscribe :: InternalEventBus -> (InternalEvent -> IO()) -> IO ThreadId
+subscribe eventBus handler = do
+  forkIO $ forever $ do
+    event <- readChan (chan eventBus)
+    handler event
+
+publish :: InternalEventBus -> InternalEvent -> IO ()
+publish eventBus event = writeChan (chan eventBus) event

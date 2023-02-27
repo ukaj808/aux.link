@@ -13,14 +13,15 @@ module AugsLink.Core.Room
   where
 
 import qualified Data.Aeson as Aeson
-import           Control.Concurrent.MVar (newMVar, readMVar, MVar)
+import           Control.Concurrent.MVar (newMVar, readMVar, MVar, modifyMVar_)
 import qualified Data.HashMap.Lazy as HM
-import           Control.Concurrent      (modifyMVar_, modifyMVar)
 import           Data.UUID.V4            (nextRandom)
 import qualified Network.WebSockets as WS
 import Control.Monad (forM_)
 
 import  AugsLink.Core.API
+import AugsLink.Core.Internal
+import Data.UUID (toString)
 
 type RoomUserMap = HM.HashMap UserId UserState
 
@@ -32,6 +33,7 @@ newtype RegistryState = RegistryState
 data RoomState = RoomState
   {
     roomUsers       :: RoomUserMap
+  , roomId          :: RoomId
   }
 
 data UserState = UserState
@@ -45,12 +47,18 @@ type instance Connection IO = WS.PendingConnection
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState {rooms=HM.empty}
 
-initialRoomState :: RoomState
-initialRoomState = RoomState {roomUsers=HM.empty}
+initialRoomState :: RoomId -> RoomState
+initialRoomState rId = RoomState {roomUsers=HM.empty, roomId=rId}
 
 newRegistry :: IO (Registry IO)
 newRegistry = do
   stateVar <- newMVar initialRegistryState
+  eventBus <- newEventBus
+  threadId <- subscribe eventBus (\(RoomEmptyEvent rId) -> do 
+    print "Room Empty!"
+    print $ "Deleting Room: " ++ toString rId
+    deleteRoomImpl stateVar rId
+    )
   return $ Registry
     {
       numRooms =
@@ -58,20 +66,27 @@ newRegistry = do
     , getRoom = \rId ->
         HM.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
-        room <- newRoom
         rId <- nextRandom
+        room <- newRoom eventBus rId
         modifyMVar_ stateVar $ \st -> return st{
             rooms =  HM.insert rId room (rooms st)
           }
         return rId
+    , deleteRoom = deleteRoomImpl stateVar
     }
 
-newRoom :: IO (Room IO)
-newRoom = do
-  stateVar <- newMVar initialRoomState
+deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
+deleteRoomImpl stateVar rId = do
+  modifyMVar_ stateVar $ \st -> return st{
+    rooms = HM.delete rId (rooms st)
+  }
+
+newRoom :: InternalEventBus -> RoomId -> IO (Room IO)
+newRoom eventBus rId = do
+  stateVar <- newMVar $ initialRoomState rId
   return $ Room {
-      enterRoom = enterRoomImpl stateVar
-    , leaveRoom = leaveRoomImpl stateVar
+      enterRoom = enterRoomImpl stateVar eventBus
+    , leaveRoom = leaveRoomImpl stateVar eventBus
     , presentInRoom = presentInRoomImpl stateVar
     }
 
@@ -81,8 +96,8 @@ presentInRoomImpl stateVar = do
   let mp = roomUsers roomState
   return $ map user $ HM.elems mp
 
-enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
-enterRoomImpl stateVar pend = do
+enterRoomImpl :: MVar RoomState -> InternalEventBus -> Connection IO -> IO ()
+enterRoomImpl stateVar eventBus pend = do
   conn <- WS.acceptRequest pend
   uuid <- nextRandom
   let uid = uuid
@@ -95,28 +110,33 @@ enterRoomImpl stateVar pend = do
       messageToUser st' uid (ServerWelcomeMessage $ user uState)
       publishToAllBut st' (\us -> us /= user uState) (UserEnterEvent $ user uState)
       return st'
-  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn uid)
+  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn eventBus uid)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
-leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
-leaveRoomImpl stateVar uid = do
+leaveRoomImpl :: MVar RoomState -> InternalEventBus -> UserId -> IO ()
+leaveRoomImpl stateVar eventBus uid = do
    modifyMVar_ stateVar $ \st -> do
      -- modify spots in line
      let users = roomUsers st
-     let emptySpot = spotInLine $ user $ users HM.! uid
-     let st' = st{roomUsers = HM.map (recalcSpot emptySpot) users}
-     publishToRoom st' $ UserLeftEvent uid
-     return st'{roomUsers = HM.delete uid (roomUsers st')}
+     if HM.size users <= 1 
+     then do 
+       publish eventBus (RoomEmptyEvent (roomId st))
+       return st
+     else do
+       let emptySpot = spotInLine $ user $ users HM.! uid
+       let st' = st{roomUsers = HM.map (recalcSpot emptySpot) users}
+       publishToRoom st' $ UserLeftEvent uid
+       return st'{roomUsers = HM.delete uid (roomUsers st')}
    where
      recalcSpot :: Int -> UserState -> UserState
-     recalcSpot i uSt = 
+     recalcSpot i uSt =
        let u    = user uSt
            spot = spotInLine u
-       in  if spot > i 
+       in  if spot > i
            then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot}
            else uSt
-           
+
 publishToAllBut :: RoomState -> (User -> Bool) -> RoomEvent -> IO ()
 publishToAllBut rmSt p e = do
   forM_ (HM.filter (p . user) (roomUsers rmSt)) $ \u ->
@@ -132,8 +152,8 @@ messageToUser rmSt uid msg = do
   let u = roomUsers rmSt HM.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
-handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
-handleIncomingMessages stateVar conn uid = do
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> InternalEventBus -> UserId -> IO ()
+handleIncomingMessages stateVar conn eventBus uid = do
   go
   where
     go :: IO ()
@@ -144,5 +164,5 @@ handleIncomingMessages stateVar conn uid = do
           print "Should not be possible"
           go
         WS.ControlMessage WS.Close {} -> do
-          leaveRoomImpl stateVar uid
+          leaveRoomImpl stateVar eventBus uid
         WS.ControlMessage _ -> go
