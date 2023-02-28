@@ -2,20 +2,8 @@ module AugsLink.Core.Internal
   (
     modify
   , get
-  , InternalEvent (..)
-  , InternalEventBus (..)
-  , subscribe
-  , publish
   , State (..)
-  , newEventBus
   ) where
-
-import Control.Concurrent.Chan
-import Control.Concurrent (forkIO, ThreadId)
-import Control.Monad (forever)
-
-
-import AugsLink.Core.API
 
 newtype State s a = State { runState :: s -> (a, s) }
 
@@ -52,17 +40,3 @@ instance Monad (State s) where
                                sb      = k a
                            in runState sb s'
 
-data InternalEvent = RoomEmptyEvent RoomId
-data InternalEventBus = IEventBus { chan :: Chan InternalEvent }
-
-newEventBus :: IO InternalEventBus
-newEventBus = IEventBus <$> newChan
-
-subscribe :: InternalEventBus -> (InternalEvent -> IO()) -> IO ThreadId
-subscribe eventBus handler = do
-  forkIO $ forever $ do
-    event <- readChan (chan eventBus)
-    handler event
-
-publish :: InternalEventBus -> InternalEvent -> IO ()
-publish eventBus event = writeChan (chan eventBus) event

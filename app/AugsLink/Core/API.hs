@@ -8,10 +8,10 @@ import Data.Kind (Type)
 
 data Registry m = Registry
   {
-     createRoom      ::             m RoomId
-  ,  deleteRoom      ::   RoomId -> m ()
-  ,  getRoom         ::   RoomId -> m (Maybe (Room m))
-  ,  numRooms        ::             m Int
+     createRoom      ::                 m RoomId
+  ,  deleteRoom      ::   RoomId     -> m ()
+  ,  getRoom         ::   RoomId     -> m (Maybe (Room m))
+  ,  numRooms        ::                 m Int
   }
 
 data Room m = Room
@@ -41,6 +41,8 @@ type UserName = String
 type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
+type family EventBus   (m :: Type -> Type) :: Type
+
 
 instance Eq User where
   u1 == u2 = userId     u1 == userId     u2

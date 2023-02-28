@@ -20,8 +20,7 @@ import qualified Network.WebSockets as WS
 import Control.Monad (forM_)
 
 import  AugsLink.Core.API
-import AugsLink.Core.Internal
-import Data.UUID (toString)
+import Control.Concurrent.Chan
 
 type RoomUserMap = HM.HashMap UserId UserState
 
@@ -43,22 +42,19 @@ data UserState = UserState
   }
 
 type instance Connection IO = WS.PendingConnection
+type instance EventBus IO = Chan InternalEvent
+
+newtype InternalEvent = RoomEmptyEvent RoomId
 
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState {rooms=HM.empty}
 
-initialRoomState :: RoomId -> RoomState
-initialRoomState rId = RoomState {roomUsers=HM.empty, roomId=rId}
+initialRoomState :: RoomState
+initialRoomState = RoomState {roomUsers=HM.empty}
 
 newRegistry :: IO (Registry IO)
 newRegistry = do
   stateVar <- newMVar initialRegistryState
-  eventBus <- newEventBus
-  threadId <- subscribe eventBus (\(RoomEmptyEvent rId) -> do 
-    print "Room Empty!"
-    print $ "Deleting Room: " ++ toString rId
-    deleteRoomImpl stateVar rId
-    )
   return $ Registry
     {
       numRooms =
@@ -67,10 +63,10 @@ newRegistry = do
         HM.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
         rId <- nextRandom
-        room <- newRoom eventBus rId
+        room <- newRoom
         modifyMVar_ stateVar $ \st -> return st{
             rooms =  HM.insert rId room (rooms st)
-          }
+        }
         return rId
     , deleteRoom = deleteRoomImpl stateVar
     }
@@ -81,12 +77,12 @@ deleteRoomImpl stateVar rId = do
     rooms = HM.delete rId (rooms st)
   }
 
-newRoom :: InternalEventBus -> RoomId -> IO (Room IO)
-newRoom eventBus rId = do
-  stateVar <- newMVar $ initialRoomState rId
+newRoom :: IO (Room IO)
+newRoom = do
+  stateVar <- newMVar $ initialRoomState
   return $ Room {
-      enterRoom = enterRoomImpl stateVar eventBus
-    , leaveRoom = leaveRoomImpl stateVar eventBus
+      enterRoom = enterRoomImpl stateVar
+    , leaveRoom = leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
     }
 
@@ -96,8 +92,8 @@ presentInRoomImpl stateVar = do
   let mp = roomUsers roomState
   return $ map user $ HM.elems mp
 
-enterRoomImpl :: MVar RoomState -> InternalEventBus -> Connection IO -> IO ()
-enterRoomImpl stateVar eventBus pend = do
+enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
+enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend
   uuid <- nextRandom
   let uid = uuid
@@ -110,18 +106,17 @@ enterRoomImpl stateVar eventBus pend = do
       messageToUser st' uid (ServerWelcomeMessage $ user uState)
       publishToAllBut st' (\us -> us /= user uState) (UserEnterEvent $ user uState)
       return st'
-  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn eventBus uid)
+  WS.withPingThread conn 30 (return ()) (handleIncomingMessages stateVar conn uid)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
-leaveRoomImpl :: MVar RoomState -> InternalEventBus -> UserId -> IO ()
-leaveRoomImpl stateVar eventBus uid = do
+leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
+leaveRoomImpl stateVar uid = do
    modifyMVar_ stateVar $ \st -> do
      -- modify spots in line
      let users = roomUsers st
-     if HM.size users <= 1 
-     then do 
-       publish eventBus (RoomEmptyEvent (roomId st))
+     if HM.size users <= 1
+     then do
        return st
      else do
        let emptySpot = spotInLine $ user $ users HM.! uid
@@ -152,8 +147,8 @@ messageToUser rmSt uid msg = do
   let u = roomUsers rmSt HM.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
-handleIncomingMessages :: MVar RoomState -> WS.Connection -> InternalEventBus -> UserId -> IO ()
-handleIncomingMessages stateVar conn eventBus uid = do
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
+handleIncomingMessages stateVar conn uid = do
   go
   where
     go :: IO ()
@@ -164,5 +159,5 @@ handleIncomingMessages stateVar conn eventBus uid = do
           print "Should not be possible"
           go
         WS.ControlMessage WS.Close {} -> do
-          leaveRoomImpl stateVar eventBus uid
+          leaveRoomImpl stateVar uid
         WS.ControlMessage _ -> go
