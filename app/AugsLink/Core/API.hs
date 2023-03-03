@@ -8,10 +8,10 @@ import Data.Kind (Type)
 
 data Registry m = Registry
   {
-     createRoom      ::                 m RoomId
-  ,  deleteRoom      ::   RoomId     -> m ()
-  ,  getRoom         ::   RoomId     -> m (Maybe (Room m))
-  ,  numRooms        ::                 m Int
+     createRoom        ::   m RoomId
+  ,  deleteRoom        ::   RoomId     -> m ()
+  ,  getRoom           ::   RoomId     -> m (Maybe (Room m))
+  ,  numRooms          ::                 m Int
   }
 
 data Room m = Room
@@ -20,6 +20,7 @@ data Room m = Room
   ,  leaveRoom        ::   UserId                        -> m ()
   ,  presentInRoom    ::                                    m [User]
   }
+     
 
 data User = User
  {
@@ -27,6 +28,14 @@ data User = User
  ,  userName :: UserName
  ,  spotInLine     :: Int
  }
+
+data RoomRegistryChannel m = RRChannel
+  {
+     send     :: InternalMessage -> m ()
+  ,  receive  :: m InternalMessage
+  }
+
+newtype InternalMessage = RoomEmptyMessage RoomId
 
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
