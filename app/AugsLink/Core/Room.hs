@@ -22,6 +22,7 @@ import qualified Data.Aeson         as Aeson
 import qualified Data.HashMap.Lazy  as HM
 
 import  AugsLink.Core.API
+import Data.UUID (toString)
 
 type instance Connection IO = WS.PendingConnection
 
@@ -74,9 +75,10 @@ newRegistry = do
     , createRoom = do
         rId  <- nextRandom
         room <- newRoom rId registryChannel
-        modifyMVar_ stateVar $ \st -> return st{
-          rooms =  HM.insert rId room $ rooms st
-        }
+        roomCount <- modifyMVar stateVar $ \st -> do
+          let rooms' = HM.insert rId room $ rooms st
+          return (st{rooms =  rooms'}, HM.size rooms')
+        print $ show roomCount ++ " rooms now after creating room " ++ toString rId
         return rId
     , deleteRoom = deleteRoomImpl stateVar
     }
@@ -93,9 +95,10 @@ handleRoomMessage stateVar (RoomEmptyMessage rId) =
 
 deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
 deleteRoomImpl stateVar rId = do
-  modifyMVar_ stateVar $ \st -> return st{
-    rooms = HM.delete rId $ rooms st
-  }
+  roomCount <- modifyMVar stateVar $ \st -> do
+    let rooms' = HM.delete rId $ rooms st
+    return (st{rooms = rooms'}, HM.size rooms')
+  print $ show roomCount ++ " rooms left after deleting room " ++ toString rId
 
 newRoom :: RoomId -> Chan InternalMessage -> IO (Room IO)
 newRoom rId rrChan = do
