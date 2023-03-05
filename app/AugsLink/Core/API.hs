@@ -29,13 +29,6 @@ data User = User
  ,  spotInLine     :: Int
  }
 
-data RoomRegistryChannel m = RRChannel
-  {
-     send     :: InternalMessage -> m ()
-  ,  receive  :: m InternalMessage
-  }
-
-newtype InternalMessage = RoomEmptyMessage RoomId
 
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
