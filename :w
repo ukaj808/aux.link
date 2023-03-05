@@ -9,7 +9,7 @@ import Data.UUID (toText)
 import AugsLink.Core.API
 import qualified Data.Text as T
 
-create :: Registry IO -> Handler (Headers '[Header "Location" T.Text] T.Text)
+create :: Registry IO -> Handler (Headers '[Header "Location" T.Text] [T.Text])
 create rr = do
   rId <- liftIO $ createRoom rr
   return $ addHeader (genLocation rId) (toText rId)

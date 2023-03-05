@@ -29,12 +29,14 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.PostHome
+                      , AugsLink.Service.Handlers.PostScrapeSong
+                      , AugsLink.Service.Handlers.PostUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
     -- other-extensions:
     build-depends:      aeson
                       , async
-                      , base ^>=4.17.0.0
+                      , base ^>=4.16.0.0
                       , blaze-html
                       , bytestring
                       , containers
@@ -43,6 +45,7 @@ executable augslink-service
                       , optparse-applicative
                       , random 
                       , servant-blaze
+                      , servant-multipart
                       , servant-server
                       , servant-websockets
                       , text 
