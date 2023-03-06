@@ -36,6 +36,7 @@ data RoomState = RoomState
     roomUsers                :: HM.HashMap UserId UserState
   , roomId                   :: RoomId
   , registryChannel          :: Chan InternalMessage
+  , songQueue                :: Queue Song
   }
 
 data UserState = UserState

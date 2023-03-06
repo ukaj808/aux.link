@@ -5,6 +5,9 @@ import           Data.UUID  (UUID)
 import           Data.Aeson.Types
 import qualified Data.Aeson as Aeson
 import Data.Kind (Type)
+import qualified Data.Text as T
+
+import AugsLink.Core.Internal (Queue (..))
 
 data Registry m = Registry
   {
@@ -19,6 +22,8 @@ data Room m = Room
      enterRoom        ::   Connection m                  -> m ()
   ,  leaveRoom        ::   UserId                        -> m ()
   ,  presentInRoom    ::                                    m [User]
+  ,  addSongToQueue        ::   UserId     -> SongId            -> m ()
+  ,  removeSongFromQueue   ::   UserId     -> SongId            -> m ()
   }
      
 
@@ -29,6 +34,26 @@ data User = User
  ,  spotInLine     :: Int
  }
 
+data Song = Song
+ {
+    id     :: SongId 
+ ,  title  :: T.Text
+ ,  artist :: T.Text
+ ,  length :: Int
+}
+
+type SongQueue = [Song]
+
+instance Queue [] where
+  empty :: SongQueue
+  empty = []
+  
+  isEmpty :: SongQueue -> Bool
+  isEmpty = null
+
+  add :: Song -> SongQueue -> SongQueue  
+  add s q = undefined
+  
 
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
@@ -39,6 +64,7 @@ newtype ServerMessage = ServerWelcomeMessage User
 
 type RoomId   = UUID
 type UserId   = UUID
+type SongId   = UUID
 type UserName = String
 type Vote     = Bool
 
