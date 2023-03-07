@@ -111,7 +111,19 @@ newRoom rId rrChan = do
       enterRoom =     enterRoomImpl stateVar
     , leaveRoom =     leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
+    , addSongToQueue = addSongToQueueImpl stateVar
+    , removeSongFromQueue = removeSongFromQueueImpl stateVar
+    , currentlyPlaying = currentlyPlayingImpl stateVar
     }
+
+currentlyPlayingImpl :: MVar RoomState -> IO SongId
+currentlyPlayingImpl stateVar = undefined
+
+removeSongFromQueueImpl :: MVar RoomState -> UserId -> SongId -> IO ()
+removeSongFromQueueImpl stateVar uId sId = undefined
+
+addSongToQueueImpl :: MVar RoomState ->  UserId -> SongId -> IO ()
+addSongToQueueImpl stateVar uId sId = undefined
 
 presentInRoomImpl :: MVar RoomState -> IO [User]
 presentInRoomImpl stateVar = do
