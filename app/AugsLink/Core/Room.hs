@@ -23,8 +23,10 @@ import qualified Data.HashMap.Lazy  as HM
 
 import  AugsLink.Core.API
 import Data.UUID (toString)
+import Commons.Queue
 
 type instance Connection IO = WS.PendingConnection
+type SongQueue = BatchedQueue Song
 
 newtype RegistryState = RegistryState
   {
@@ -36,7 +38,7 @@ data RoomState = RoomState
     roomUsers                :: HM.HashMap UserId UserState
   , roomId                   :: RoomId
   , registryChannel          :: Chan InternalMessage
-  , songQueue                :: Queue Song
+  , songQueue                :: SongQueue
   }
 
 data UserState = UserState
@@ -59,6 +61,7 @@ initialRoomState rId rChan = RoomState
     roomUsers = HM.empty
   , roomId = rId
   , registryChannel = rChan
+  , songQueue = qempty
   }
 
 newRegistry :: IO (Registry IO)

@@ -7,8 +7,6 @@ import qualified Data.Aeson as Aeson
 import Data.Kind (Type)
 import qualified Data.Text as T
 
-import AugsLink.Core.Internal (Queue (..))
-
 data Registry m = Registry
   {
      createRoom        ::   m RoomId
@@ -19,13 +17,13 @@ data Registry m = Registry
 
 data Room m = Room
   {
-     enterRoom        ::   Connection m                  -> m ()
-  ,  leaveRoom        ::   UserId                        -> m ()
-  ,  presentInRoom    ::                                    m [User]
-  ,  addSongToQueue        ::   UserId     -> SongId            -> m ()
-  ,  removeSongFromQueue   ::   UserId     -> SongId            -> m ()
+     enterRoom             ::   Connection m                         -> m ()
+  ,  leaveRoom             ::   UserId                               -> m ()
+  ,  presentInRoom         ::                                           m [User]
+  ,  addSongToQueue        ::   UserId     -> SongId                 -> m ()
+  ,  removeSongFromQueue   ::   UserId     -> SongId                 -> m ()
+  ,  currentlyPlaying      ::                                           m Song
   }
-     
 
 data User = User
  {
@@ -41,19 +39,6 @@ data Song = Song
  ,  artist :: T.Text
  ,  length :: Int
 }
-
-type SongQueue = [Song]
-
-instance Queue [] where
-  empty :: SongQueue
-  empty = []
-  
-  isEmpty :: SongQueue -> Bool
-  isEmpty = null
-
-  add :: Song -> SongQueue -> SongQueue  
-  add s q = undefined
-  
 
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId

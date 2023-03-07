@@ -5,7 +5,7 @@ import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 
 import AugsLink.Core.API
-import AugsLink.Core.Internal
+import Commons.State
 
 type InternalId = Int
 

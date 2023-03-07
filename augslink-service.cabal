@@ -21,7 +21,6 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
-                      , AugsLink.Core.Internal 
                       , AugsLink.Core.Model 
                       , AugsLink.Core.Room 
                       , AugsLink.Service.API 
@@ -33,6 +32,8 @@ executable augslink-service
                       , AugsLink.Service.Handlers.PostUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
+                      , Commons.State
+                      , Commons.Queue
     -- other-extensions:
     build-depends:      aeson
                       , async

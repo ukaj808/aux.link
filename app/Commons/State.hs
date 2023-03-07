@@ -1,11 +1,9 @@
-module AugsLink.Core.Internal
+module Commons.State
   (
     modify
   , get
   , State (..)
-  , Queue (..)
   ) where
-import qualified Data.Text as T
 
 newtype State s a = State { runState :: s -> (a, s) }
 
@@ -41,36 +39,3 @@ instance Monad (State s) where
   sa >>= k = State $ \s -> let (a, s') = runState sa s
                                sb      = k a
                            in runState sb s'
-
-class Queue q where
-  empty :: q a
-  isEmpty :: q a -> Bool
-  snoc :: q a -> a -> q a
-  head :: q a -> Either T.Text a
-  tail :: q a -> Either T.Text (q a) 
-
-data BatchedQueue a = BatchedQueue 
-  {
-    f :: [a]
-  , r :: [a]
-  }
-
-instance Queue BatchedQueue where
-
-  head :: BatchedQueue a -> Either T.Text a
-  head (BatchedQueue [] _) = Left $ T.pack "Queue is empty" 
-  head (BatchedQueue (x : _) _) = Right x 
-
-  tail :: BatchedQueue a -> Either T.Text (BatchedQueue a)
-  tail (BatchedQueue [] _) = Left $ T.pack "Queue is empty"
-  tail (BatchedQueue (_ : f) r) = Right $ BatchedQueue f r
-
-  snoc :: BatchedQueue a -> a -> BatchedQueue a
-  snoc q x = BatchedQueue (f q) (x : r q)
-
-  empty :: BatchedQueue a
-  empty = BatchedQueue{f=[], r=[]}
-
-  isEmpty :: BatchedQueue a -> Bool
-  isEmpty = undefined
-
