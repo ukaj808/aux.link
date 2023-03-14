@@ -1,14 +1,9 @@
 module AugsLink.Core.Room
   (
-    initialRegistryState
-  , initialRoomState
-  , newRegistry
-  , Registry      (..)
-  , RegistryState (..)
+    initialRoomState
   , Room          (..)
-  , RoomEvent     (..)
-  , RoomId
   , RoomState     (..)
+  , newRoom
   )
   where
 
@@ -19,21 +14,13 @@ import qualified Network.WebSockets as WS
 import qualified Data.Aeson         as Aeson
 import qualified Data.HashMap.Lazy  as HM
 
-import  AugsLink.Core.API
-import Data.UUID (toString)
 import Commons.Queue
+import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..))
+import AugsLink.Core.Shared
 
 type instance Connection IO = WS.PendingConnection
 type SongQueue = BatchedQueue Song
 
-newtype RegistryState = RegistryState
-  {
-    rooms :: HM.HashMap RoomId (Room IO)
-  }
-
-data SelfManage = SelfManage {
-  selfDestruct :: IO ()
-}
 
 data RoomState = RoomState
   {
@@ -49,12 +36,6 @@ data UserState = UserState
   , userQueue   :: SongQueue
   }
 
-initialRegistryState :: RegistryState
-initialRegistryState = RegistryState 
-  {
-    rooms=HM.empty
-  }
-
 initialRoomState :: RoomId -> SelfManage -> RoomState
 initialRoomState rId rsm = RoomState 
   {
@@ -63,33 +44,6 @@ initialRoomState rId rsm = RoomState
   , selfManage = rsm 
   }
 
-newRegistry :: IO (Registry IO)
-newRegistry = do
-  stateVar        <- newMVar initialRegistryState
-  return $ Registry
-    {
-      numRooms =
-        HM.size       . rooms <$> readMVar stateVar
-    , getRoom = \rId ->
-        HM.lookup rId . rooms <$> readMVar stateVar
-    , createRoom = do
-        rId  <- nextRandom
-        room <- newRoom rId (SelfManage {selfDestruct=deleteRoomImpl stateVar rId})
-        roomCount <- modifyMVar stateVar $ \st -> do
-          let rooms' = HM.insert rId room $ rooms st
-          return (st{rooms =  rooms'}, HM.size rooms')
-        print $ show roomCount ++ " rooms now after creating room " ++ toString rId
-        return rId
-    , deleteRoom = deleteRoomImpl stateVar
-    }
-
-deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
-deleteRoomImpl stateVar rId = do
-  roomCount <- modifyMVar stateVar $ \st -> do
-    let rooms' = HM.delete rId $ rooms st
-    return (st{rooms = rooms'}, HM.size rooms')
-  print $ show roomCount ++ " rooms left after deleting room " ++ toString rId
-
 newRoom :: RoomId -> SelfManage -> IO (Room IO)
 newRoom rId selfManage = do
   stateVar <- newMVar $ initialRoomState rId selfManage
@@ -97,19 +51,11 @@ newRoom rId selfManage = do
       enterRoom =     enterRoomImpl stateVar
     , leaveRoom =     leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
-    , addSongToQueue = addSongToQueueImpl stateVar
-    , removeSongFromQueue = removeSongFromQueueImpl stateVar
     , currentlyPlaying = currentlyPlayingImpl stateVar
     }
 
 currentlyPlayingImpl :: MVar RoomState -> IO SongId
 currentlyPlayingImpl stateVar = undefined
-
-removeSongFromQueueImpl :: MVar RoomState -> UserId -> SongId -> IO ()
-removeSongFromQueueImpl stateVar uId sId = undefined
-
-addSongToQueueImpl :: MVar RoomState ->  UserId -> SongId -> IO ()
-addSongToQueueImpl stateVar uId sId = undefined
 
 presentInRoomImpl :: MVar RoomState -> IO [User]
 presentInRoomImpl stateVar = do

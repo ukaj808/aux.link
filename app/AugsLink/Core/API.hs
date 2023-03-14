@@ -20,12 +20,16 @@ data Room m = Room
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  presentInRoom         ::                                           m [User]
-  ,  addSongToQueue        ::   UserId     -> SongId                 -> m ()
-  ,  removeSongFromQueue   ::   UserId     -> SongId                 -> m ()
   ,  currentlyPlaying      ::                                           m SongId
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
+
+data UserM m = UserM
+ {
+    getNextSong     ::   m SongId
+ ,  getUserData     ::   m User   
+ }
 
 data User = User
  {

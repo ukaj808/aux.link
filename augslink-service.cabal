@@ -22,7 +22,9 @@ executable augslink-service
 
     other-modules:      AugsLink.Core.API
                       , AugsLink.Core.Model 
+                      , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
+                      , AugsLink.Core.Shared 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.GetHome 
