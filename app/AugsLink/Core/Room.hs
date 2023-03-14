@@ -12,10 +12,8 @@ module AugsLink.Core.Room
   )
   where
 
-import           Control.Concurrent      (forkIO)
-import           Control.Concurrent.Chan (newChan, Chan, readChan, writeChan)
 import           Control.Concurrent.MVar (newMVar, readMVar, MVar, modifyMVar_, modifyMVar)
-import           Control.Monad           (forM_, when, forever)
+import           Control.Monad           (forM_, when)
 import           Data.UUID.V4            (nextRandom)
 import qualified Network.WebSockets as WS
 import qualified Data.Aeson         as Aeson
@@ -33,21 +31,23 @@ newtype RegistryState = RegistryState
     rooms :: HM.HashMap RoomId (Room IO)
   }
 
+data SelfManage = SelfManage {
+  selfDestruct :: IO ()
+}
+
 data RoomState = RoomState
   {
     roomUsers                :: HM.HashMap UserId UserState
   , roomId                   :: RoomId
-  , registryChannel          :: Chan InternalMessage
-  , songQueue                :: SongQueue
+  , selfManage               :: SelfManage
   }
 
 data UserState = UserState
   {
     uStateConn  :: WS.Connection
   , user        :: User
+  , userQueue   :: SongQueue
   }
-
-newtype InternalMessage = RoomEmptyMessage RoomId
 
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState 
@@ -55,21 +55,17 @@ initialRegistryState = RegistryState
     rooms=HM.empty
   }
 
-initialRoomState :: RoomId -> Chan InternalMessage -> RoomState
-initialRoomState rId rChan = RoomState 
+initialRoomState :: RoomId -> SelfManage -> RoomState
+initialRoomState rId rsm = RoomState 
   {
     roomUsers = HM.empty
   , roomId = rId
-  , registryChannel = rChan
-  , songQueue = qempty
+  , selfManage = rsm 
   }
 
 newRegistry :: IO (Registry IO)
 newRegistry = do
   stateVar        <- newMVar initialRegistryState
-  registryChannel <- newChan
-  _               <- forkIO $ forever $ 
-    listen stateVar registryChannel
   return $ Registry
     {
       numRooms =
@@ -78,7 +74,7 @@ newRegistry = do
         HM.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
         rId  <- nextRandom
-        room <- newRoom rId registryChannel
+        room <- newRoom rId (SelfManage {selfDestruct=deleteRoomImpl stateVar rId})
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = HM.insert rId room $ rooms st
           return (st{rooms =  rooms'}, HM.size rooms')
@@ -87,16 +83,6 @@ newRegistry = do
     , deleteRoom = deleteRoomImpl stateVar
     }
 
-listen :: MVar RegistryState -> Chan InternalMessage -> IO ()
-listen stateVar registryChannel = do 
- msg <- readChan   registryChannel
- handleRoomMessage stateVar msg
- listen            stateVar registryChannel
-
-handleRoomMessage :: MVar RegistryState -> InternalMessage -> IO ()
-handleRoomMessage stateVar (RoomEmptyMessage rId) = 
-  deleteRoomImpl stateVar rId
-
 deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
 deleteRoomImpl stateVar rId = do
   roomCount <- modifyMVar stateVar $ \st -> do
@@ -104,9 +90,9 @@ deleteRoomImpl stateVar rId = do
     return (st{rooms = rooms'}, HM.size rooms')
   print $ show roomCount ++ " rooms left after deleting room " ++ toString rId
 
-newRoom :: RoomId -> Chan InternalMessage -> IO (Room IO)
-newRoom rId rrChan = do
-  stateVar <- newMVar $ initialRoomState rId rrChan
+newRoom :: RoomId -> SelfManage -> IO (Room IO)
+newRoom rId selfManage = do
+  stateVar <- newMVar $ initialRoomState rId selfManage
   return $ Room {
       enterRoom =     enterRoomImpl stateVar
     , leaveRoom =     leaveRoomImpl stateVar
@@ -138,7 +124,7 @@ enterRoomImpl stateVar pend = do
   modifyMVar_ stateVar $ \st ->
     let spot   = HM.size $ roomUsers st
         u      = User {userId = uid, userName="fisnik", spotInLine=spot}
-        uState = UserState {uStateConn=conn, user=u}
+        uState = UserState {uStateConn=conn, user=u, userQueue=qempty}
         st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
     in do
       messageToUser   st' uid $ ServerWelcomeMessage $ user uState
@@ -160,20 +146,15 @@ leaveRoomImpl stateVar uid = do
      publishToRoom st' $ UserLeftEvent uid
      return (st'', st'')
    when (HM.size (roomUsers roomSt') == 0) $
-     sendMessageToRegistry 
-       (RoomEmptyMessage $ roomId roomSt') $ 
-         registryChannel roomSt'
+     selfDestruct $ selfManage roomSt' 
    where
      recalcSpot :: Int -> UserState -> UserState
      recalcSpot i uSt =
        let u    = user uSt
            spot = spotInLine u
        in if spot > i
-          then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot}
+          then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot} (userQueue uSt)
           else uSt
-
-sendMessageToRegistry :: InternalMessage -> Chan InternalMessage -> IO ()
-sendMessageToRegistry msg rrChan = do writeChan rrChan msg
 
 publishToAllBut :: RoomState -> (User -> Bool) -> RoomEvent -> IO ()
 publishToAllBut rmSt p e = do
