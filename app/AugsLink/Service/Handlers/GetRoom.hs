@@ -12,8 +12,9 @@ import qualified Text.Blaze.Html5.Attributes as A
 import AugsLink.Service.API
 import Text.Blaze.Html5 ((!), toValue, toMarkup)
 import AugsLink.Core.API
-import Data.UUID (toText, fromString)
+import Data.UUID (toText, fromString, fromText)
 import Data.List (sort)
+import qualified Data.Text as T
 
 renderUser :: User -> H.Html
 renderUser u = 
@@ -49,10 +50,10 @@ renderRoomPage users = H.docTypeHtml $ do
       H.section ! A.id "current" ! A.class_ "current" $ ""
       H.section ! A.id "queue" ! A.class_ "queue" $ ""
 
-room :: Registry IO -> String -> Handler ServerHtml
+room :: Registry IO -> T.Text -> Handler ServerHtml
 room registry eId = do
 
-  let rId = case fromString eId of
+  let rId = case fromText eId of
               Just roomId -> roomId
               Nothing -> error "Invalid room id"
 

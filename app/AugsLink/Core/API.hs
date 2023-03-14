@@ -25,12 +25,6 @@ data Room m = Room
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
 
-data UserM m = UserM
- {
-    getNextSong     ::   m SongId
- ,  getUserData     ::   m User   
- }
-
 data User = User
  {
     userId :: UserId
@@ -56,7 +50,7 @@ newtype ServerMessage = ServerWelcomeMessage User
 type RoomId   = UUID
 type UserId   = UUID
 type SongId   = UUID
-type UserName = String
+type UserName = T.Text
 type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
@@ -72,14 +66,14 @@ instance ToJSON RoomEvent where
   toJSON :: RoomEvent -> Value
   toJSON (UserEnterEvent u) = Aeson.object 
     [
-       "type"        .= ("UserEnterEvent" :: String)
+       "type"        .= ("UserEnterEvent" :: T.Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "spotInLine"  .= spotInLine u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object 
     [
-       "type"        .= ("UserLeftEvent"  :: String)
+       "type"        .= ("UserLeftEvent"  :: T.Text)
     ,  "userId"      .= uid
     ]
   
@@ -87,7 +81,7 @@ instance FromJSON RoomEvent where
   parseJSON :: Value -> Parser RoomEvent
   parseJSON = Aeson.withObject "RoomEvent" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: String of
+      case typ :: T.Text of
         "UserEnterEvent" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
@@ -101,7 +95,7 @@ instance ToJSON UserMessage where
   toJSON :: UserMessage -> Value
   toJSON (UserLeftMessage uid) = Aeson.object 
     [
-       "type"        .= ("UserLeftMessage" :: String)
+       "type"        .= ("UserLeftMessage" :: T.Text)
     ,  "userId"      .= uid
     ]
 
@@ -109,7 +103,7 @@ instance FromJSON UserMessage where
   parseJSON :: Value -> Parser UserMessage
   parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: String of
+      case typ :: T.Text of
         "UserLeftMessage" -> do
           userId     <- obj .: "userId"
           return $ UserLeftMessage userId
@@ -118,7 +112,7 @@ instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value
   toJSON (ServerWelcomeMessage u) = Aeson.object 
     [
-       "type"        .= ("ServerWelcomeMessage" :: String)
+       "type"        .= ("ServerWelcomeMessage" :: T.Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "spotInLine"  .= spotInLine u
@@ -128,7 +122,7 @@ instance FromJSON ServerMessage where
   parseJSON :: Value -> Parser ServerMessage
   parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: String of
+      case typ :: T.Text of
         "ServerWelcomeMessage" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.Room
   (
     initialRoomState
@@ -17,7 +18,6 @@ import qualified Data.HashMap.Lazy  as HM
 import Commons.Queue
 import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..))
 import AugsLink.Core.Shared
-
 type instance Connection IO = WS.PendingConnection
 type SongQueue = BatchedQueue Song
 

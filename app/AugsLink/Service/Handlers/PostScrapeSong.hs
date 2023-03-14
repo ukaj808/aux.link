@@ -4,5 +4,5 @@ import Servant
 import qualified Data.Text as T
 import AugsLink.Service.API (ScrapeSongRequest)
 
-scrape :: ScrapeSongRequest -> Handler T.Text
+scrape :: T.Text -> ScrapeSongRequest -> Handler T.Text
 scrape req = do undefined
