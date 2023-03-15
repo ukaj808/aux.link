@@ -18,7 +18,7 @@ handlers opts rr =
     :<|> create rr
     :<|> room rr
     :<|> enter rr
-    :<|> upload
+    :<|> upload rr
     :<|> scrape
     :<|> public
   where 

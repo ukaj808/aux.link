@@ -21,6 +21,8 @@ data Room m = Room
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  presentInRoom         ::                                           m [User]
   ,  currentlyPlaying      ::                                           m SongId
+  ,  queueSong             ::   UserId  -> SongInfo                  -> m SongId
+  ,  uploadSong            ::   SongId  -> SongFile m ->                    m ()
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -35,11 +37,15 @@ data User = User
 data Song = Song
  {
     id     :: SongId 
- ,  title  :: T.Text
- ,  artist :: T.Text
- ,  length :: Int
+,   songInfo :: SongInfo
 }
 
+data SongInfo = SongInfo
+ {
+    title :: T.Text
+ ,  artist :: T.Text
+ ,  length :: Int
+ }
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
 
@@ -54,7 +60,7 @@ type UserName = T.Text
 type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
-type family EventBus   (m :: Type -> Type) :: Type
+type family SongFile (m :: Type -> Type) :: Type
 
 
 instance Eq User where

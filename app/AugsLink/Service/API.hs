@@ -42,7 +42,8 @@ type API =
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" T.Text] T.Text) 
    :<|> Capture "roomid" T.Text :> Get '[HTML] ServerHtml
    :<|> Capture "roomid" T.Text :> "ws" :> WebSocketPending
-   :<|> Capture "roomId" T.Text :> "songs" :> "upload" :> MultipartForm Mem (MultipartData Mem) :> Post '[PlainText] T.Text
-   :<|> Capture "roomId" T.Text :> "songs" :> "scrape" :> ReqBody '[JSON] ScrapeSongRequest     :> Post '[PlainText] T.Text
+   :<|> Capture "roomId" T.Text :> "songs" :> Capture "songId" T.Text :> "upload" :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] T.Text
+   :<|> Capture "roomId" T.Text :> "songs" :> "scrape" :> ReqBody '[JSON] ScrapeSongRequest     :> Put '[PlainText] T.Text
+   -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw
    -- Need more endpoints for music file download + delete

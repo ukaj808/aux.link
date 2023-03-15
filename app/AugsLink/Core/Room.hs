@@ -16,9 +16,11 @@ import qualified Data.Aeson         as Aeson
 import qualified Data.HashMap.Lazy  as HM
 
 import Commons.Queue
-import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..))
+import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile)
 import AugsLink.Core.Shared
+import Servant.Multipart (MultipartData, Mem)
 type instance Connection IO = WS.PendingConnection
+type instance SongFile IO       = MultipartData Mem
 type SongQueue = BatchedQueue Song
 
 
@@ -52,6 +54,8 @@ newRoom rId selfManage = do
     , leaveRoom =     leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
     , currentlyPlaying = currentlyPlayingImpl stateVar
+    , queueSong        = undefined
+    , uploadSong       = undefined
     }
 
 currentlyPlayingImpl :: MVar RoomState -> IO SongId
