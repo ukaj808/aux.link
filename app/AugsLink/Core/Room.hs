@@ -18,7 +18,8 @@ import qualified Data.HashMap.Lazy  as HM
 import Commons.Queue
 import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile)
 import AugsLink.Core.Shared
-import Servant.Multipart (MultipartData, Mem)
+import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, iName, iValue)
+import qualified Data.ByteString as LBS
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO       = MultipartData Mem
 type SongQueue = BatchedQueue Song
@@ -55,8 +56,16 @@ newRoom rId selfManage = do
     , presentInRoom = presentInRoomImpl stateVar
     , currentlyPlaying = currentlyPlayingImpl stateVar
     , queueSong        = undefined
-    , uploadSong       = undefined
+    , uploadSong       = uploadSongImpl
     }
+
+uploadSongImpl :: SongId -> SongFile IO -> IO () 
+uploadSongImpl sId sFile = do
+  forM_ (inputs sFile) $ \input -> 
+    putStrLn $ " " ++ show  (iName input)
+          ++ " -> " ++ show (iValue input)
+  forM_ (files sFile) $ \file -> do
+    putStrLn $ "Content of " ++ show (fdFileName file)
 
 currentlyPlayingImpl :: MVar RoomState -> IO SongId
 currentlyPlayingImpl stateVar = undefined
