@@ -9,7 +9,7 @@ module AugsLink.Core.Room
   where
 
 import           Control.Concurrent.MVar (newMVar, readMVar, MVar, modifyMVar_, modifyMVar)
-import           Control.Monad           (forM_, when)
+import           Control.Monad           (forM_, when, unless)
 import           Data.UUID.V4            (nextRandom)
 import qualified Network.WebSockets as WS
 import qualified Data.Aeson         as Aeson
@@ -18,8 +18,11 @@ import qualified Data.HashMap.Lazy  as HM
 import Commons.Queue
 import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile)
 import AugsLink.Core.Shared
-import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, iName, iValue)
-import qualified Data.ByteString as LBS
+import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, iName, iValue, lookupFile)
+import qualified Data.ByteString.Lazy as LBS
+import Data.UUID (toText, toString)
+import qualified Data.Text as T
+import System.Directory (doesDirectoryExist, createDirectory, createDirectoryIfMissing, doesFileExist)
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO       = MultipartData Mem
 type SongQueue = BatchedQueue Song
@@ -56,16 +59,25 @@ newRoom rId selfManage = do
     , presentInRoom = presentInRoomImpl stateVar
     , currentlyPlaying = currentlyPlayingImpl stateVar
     , queueSong        = undefined
-    , uploadSong       = uploadSongImpl
+    , uploadSong       = uploadSongImpl rId
     }
 
-uploadSongImpl :: SongId -> SongFile IO -> IO () 
-uploadSongImpl sId sFile = do
-  forM_ (inputs sFile) $ \input -> 
-    putStrLn $ " " ++ show  (iName input)
-          ++ " -> " ++ show (iValue input)
-  forM_ (files sFile) $ \file -> do
-    putStrLn $ "Content of " ++ show (fdFileName file)
+uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO () 
+uploadSongImpl rId sId sFile = do
+  let file = lookupFile "song" sFile
+  either 
+    (error "No file present in request") 
+    (uploadSongToRoom rId sId) file
+
+uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
+uploadSongToRoom rId sId file = do
+  let filePath = "./rooms/" ++ toString rId ++ "/" ++ toString sId
+  fileExist <- doesFileExist filePath
+  if fileExist 
+  then 
+   error "Song already uploaded to this room"
+  else do
+    LBS.writeFile filePath (fdPayload file)
 
 currentlyPlayingImpl :: MVar RoomState -> IO SongId
 currentlyPlayingImpl stateVar = undefined

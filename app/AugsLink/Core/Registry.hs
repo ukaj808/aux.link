@@ -7,6 +7,7 @@ import Data.UUID.V4
 import Data.UUID
 import AugsLink.Core.Room (newRoom)
 import AugsLink.Core.Shared
+import System.Directory (createDirectoryIfMissing, removePathForcibly)
 
 newtype RegistryState = RegistryState
   {
@@ -35,6 +36,7 @@ newRegistry = do
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = HM.insert rId room $ rooms st
           return (st{rooms =  rooms'}, HM.size rooms')
+        createDirectoryIfMissing True ("./rooms/" ++ toString rId)
         print $ show roomCount ++ " rooms now after creating room " ++ toString rId
         return rId
     , deleteRoom = deleteRoomImpl stateVar
@@ -45,4 +47,5 @@ deleteRoomImpl stateVar rId = do
   roomCount <- modifyMVar stateVar $ \st -> do
     let rooms' = HM.delete rId $ rooms st
     return (st{rooms = rooms'}, HM.size rooms')
+  removePathForcibly ("./rooms/" ++ toString rId)
   print $ show roomCount ++ " rooms left after deleting room " ++ toString rId

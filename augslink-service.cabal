@@ -43,6 +43,7 @@ executable augslink-service
                       , blaze-html
                       , bytestring
                       , containers
+                      , directory
                       , hashable
                       , mtl
                       , optparse-applicative
