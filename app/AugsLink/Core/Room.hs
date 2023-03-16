@@ -16,9 +16,9 @@ import qualified Data.Aeson         as Aeson
 import qualified Data.HashMap.Lazy  as HM
 
 import Commons.Queue
-import AugsLink.Core.API (Connection, Song, RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile)
+import AugsLink.Core.API (Connection, Song (..), RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile, SongInfo)
 import AugsLink.Core.Shared
-import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, iName, iValue, lookupFile)
+import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, lookupFile)
 import qualified Data.ByteString.Lazy as LBS
 import Data.UUID (toText, toString)
 import qualified Data.Text as T
@@ -58,9 +58,41 @@ newRoom rId selfManage = do
     , leaveRoom =     leaveRoomImpl stateVar
     , presentInRoom = presentInRoomImpl stateVar
     , currentlyPlaying = currentlyPlayingImpl stateVar
-    , queueSong        = undefined
+    , enqueueSong       = enqueueSongImpl stateVar
     , uploadSong       = uploadSongImpl rId
+    , modifyQueueOrder = modifyQueueOrderImpl stateVar
+    , removeSong       = removeSongImpl stateVar
     }
+
+removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
+removeSongImpl stateVar uId sId = do
+  modifyMVar_ stateVar $ \st -> do
+    let uState = roomUsers st HM.! uId
+    let q'  = qremove (userQueue uState) sId
+    let uState' = uState{userQueue = q'}
+    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    return st'
+
+enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> IO SongId
+enqueueSongImpl stateVar uId sInfo = do
+  sId <- nextRandom
+  modifyMVar_ stateVar $ \st -> do
+    let uState = roomUsers st HM.! uId
+    let q'  = enqueue (userQueue uState) (Song sId sInfo)
+    let uState' = uState{userQueue = q'}
+    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    return st'
+  return sId
+
+modifyQueueOrderImpl :: MVar RoomState -> UserId -> [SongId] -> IO ()
+modifyQueueOrderImpl stateVar uId newOrder = do
+  modifyMVar_ stateVar $ \st -> do
+    let uState = roomUsers st HM.! uId
+    let q'  = reorder (userQueue uState) newOrder
+    let uState' = uState{userQueue = q'}
+    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    return st'
+
 
 uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO () 
 uploadSongImpl rId sId sFile = do
