@@ -41,8 +41,8 @@ parseRoomViewPath =
   option str $ mconcat 
     [
       long "room"
-    , help "path to the room view (html)"
+    , help "Path to the room view (html)"
     ]
 
-getclargs :: io clargs
-getclargs = execparser $ info (parseoptions <**> helper) fulldesc
+getCLArgs :: IO CLArgs
+getCLArgs = execParser $ info (parseOptions <**> helper) fullDesc
