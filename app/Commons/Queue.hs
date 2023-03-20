@@ -1,10 +1,11 @@
 module Commons.Queue
   ( 
-    Queue (..)
+    ListQueue (..)
   , BatchedQueue (..)
   ) where
 
-class Queue q where
+-- A queue that has added support for list-like functions
+class ListQueue q where
   dequeue  :: q a -> Maybe (a, q a)
   enqueue  :: q a -> a    -> q a
   peek     :: q a -> Maybe a
@@ -17,7 +18,7 @@ class Queue q where
 newtype BatchedQueue a = BatchedQueue ([a],[a])
   deriving Show
 
-instance Queue BatchedQueue where
+instance ListQueue BatchedQueue where
 
   peek :: BatchedQueue a -> Maybe a
   peek (BatchedQueue ([] , _)) = Nothing 
