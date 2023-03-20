@@ -8,29 +8,30 @@ module AugsLink.Core.Room
   )
   where
 
-import           Control.Concurrent.MVar (newMVar, readMVar, MVar, modifyMVar_, modifyMVar)
-import           Control.Monad           (forM_, when, unless)
-import           Data.UUID.V4            (nextRandom)
-import qualified Network.WebSockets as WS
-import qualified Data.Aeson         as Aeson
-import qualified Data.HashMap.Lazy  as HM
+import Control.Concurrent.MVar
+import Control.Monad
+import Data.UUID
+import Data.UUID.V4 
+import Servant.Multipart
+import System.Directory
+
+import qualified Data.Aeson           as Aeson
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.HashMap.Lazy    as Map
+import qualified Network.WebSockets   as WS
 
 import Commons.Queue
-import AugsLink.Core.API (Connection, Song (..), RoomId, Room (..), UserId, User (..), SongId, RoomEvent (..), ServerMessage (..), SongFile, SongInfo)
+import AugsLink.Core.API
 import AugsLink.Core.Shared
-import Servant.Multipart (MultipartData, Mem, inputs, FileData (fdPayload), fdFileName, files, lookupFile)
-import qualified Data.ByteString.Lazy as LBS
-import Data.UUID (toText, toString)
-import qualified Data.Text as T
-import System.Directory (doesDirectoryExist, createDirectory, createDirectoryIfMissing, doesFileExist)
+
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO       = MultipartData Mem
-type SongQueue = BatchedQueue Song
 
+type SongQueue = BatchedQueue Song
 
 data RoomState = RoomState
   {
-    roomUsers                :: HM.HashMap UserId UserState
+    roomUsers                :: Map.HashMap UserId UserState
   , roomId                   :: RoomId
   , selfManage               :: SelfManage
   }
@@ -45,7 +46,7 @@ data UserState = UserState
 initialRoomState :: RoomId -> SelfManage -> RoomState
 initialRoomState rId rsm = RoomState 
   {
-    roomUsers = HM.empty
+    roomUsers = Map.empty
   , roomId = rId
   , selfManage = rsm 
   }
@@ -67,30 +68,30 @@ newRoom rId selfManage = do
 removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
 removeSongImpl stateVar uId sId = do
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st HM.! uId
+    let uState = roomUsers st Map.! uId
     let q'  = qremove (userQueue uState) sId
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
 
 enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> IO SongId
 enqueueSongImpl stateVar uId sInfo = do
   sId <- nextRandom
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st HM.! uId
+    let uState = roomUsers st Map.! uId
     let q'  = enqueue (userQueue uState) (Song sId sInfo)
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
   return sId
 
 modifyQueueOrderImpl :: MVar RoomState -> UserId -> [SongId] -> IO ()
 modifyQueueOrderImpl stateVar uId newOrder = do
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st HM.! uId
+    let uState = roomUsers st Map.! uId
     let q'  = reorder (userQueue uState) newOrder
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = HM.insert uId uState' $ roomUsers st}
+    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
 
 
@@ -117,7 +118,7 @@ currentlyPlayingImpl stateVar = undefined
 presentInRoomImpl :: MVar RoomState -> IO [User]
 presentInRoomImpl stateVar = do
   roomState <- readMVar stateVar
-  return $ map user $ HM.elems $ roomUsers roomState
+  return $ map user $ Map.elems $ roomUsers roomState
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
@@ -125,10 +126,10 @@ enterRoomImpl stateVar pend = do
   uuid <-     nextRandom
   let uid =   uuid
   modifyMVar_ stateVar $ \st ->
-    let spot   = HM.size $ roomUsers st
+    let spot   = Map.size $ roomUsers st
         u      = User {userId = uid, userName="fisnik", spotInLine=spot}
         uState = UserState {uStateConn=conn, user=u, userQueue=qempty}
-        st'    = st{roomUsers = HM.insert uid uState $ roomUsers st}
+        st'    = st{roomUsers = Map.insert uid uState $ roomUsers st}
     in do
       messageToUser   st' uid $ ServerWelcomeMessage $ user uState
       publishToAllBut st' (\us -> us /= user uState) $ UserEnterEvent $ user uState
@@ -142,13 +143,13 @@ leaveRoomImpl stateVar uid = do
    roomSt' <- modifyMVar stateVar $ \st -> do
      -- modify spots in line
      let users      = roomUsers st
-     let emptySpot  = spotInLine $ user $ users HM.! uid
-     let st'        = st{roomUsers = HM.map (recalcSpot emptySpot) users}
-     let roomUsers' = HM.delete uid $ roomUsers st'
+     let emptySpot  = spotInLine $ user $ users Map.! uid
+     let st'        = st{roomUsers = Map.map (recalcSpot emptySpot) users}
+     let roomUsers' = Map.delete uid $ roomUsers st'
      let st''       = st'{roomUsers = roomUsers'}
      publishToRoom st' $ UserLeftEvent uid
      return (st'', st'')
-   when (HM.size (roomUsers roomSt') == 0) $
+   when (Map.size (roomUsers roomSt') == 0) $
      selfDestruct $ selfManage roomSt' 
    where
      recalcSpot :: Int -> UserState -> UserState
@@ -161,7 +162,7 @@ leaveRoomImpl stateVar uid = do
 
 publishToAllBut :: RoomState -> (User -> Bool) -> RoomEvent -> IO ()
 publishToAllBut rmSt p e = do
-  forM_ (HM.filter (p . user) (roomUsers rmSt)) $ \u ->
+  forM_ (Map.filter (p . user) (roomUsers rmSt)) $ \u ->
     WS.sendTextData (uStateConn u) (Aeson.encode e)
 
 publishToRoom ::  RoomState -> RoomEvent -> IO ()
@@ -171,7 +172,7 @@ publishToRoom rmSt e = do
 
 messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
 messageToUser rmSt uid msg = do
-  let u = roomUsers rmSt HM.! uid
+  let u = roomUsers rmSt Map.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
 handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()

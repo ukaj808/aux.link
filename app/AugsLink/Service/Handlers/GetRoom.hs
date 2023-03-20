@@ -1,26 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.GetRoom
-  ( room
+  ( 
+    room
   ) where
 
 import Servant
-import Control.Monad (forM_)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad
+import Control.Monad.IO.Class
+import Text.Blaze.Html5
+import Data.UUID
+import Data.List
 
-import qualified Text.Blaze.Html5 as H
+import qualified Data.Text                   as T
+import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
+
 import AugsLink.Service.API
-import Text.Blaze.Html5 ((!), toValue, toMarkup)
 import AugsLink.Core.API
-import Data.UUID (toText, fromString, fromText)
-import Data.List (sort)
-import qualified Data.Text as T
 
 renderUser :: User -> H.Html
-renderUser u = 
-  let uid = toValue $ toText $ userId u
-      uname = toMarkup $ userName u
-      ord = toMarkup $ spotInLine u + 1
+renderUser user = 
+  let uid = toValue $ toText $ userId user
+      uname = toMarkup $ userName user
+      ord = toMarkup $ spotInLine user + 1
   in
   H.li ! A.id uid ! A.class_ "user-order-list__user" $ do
     H.span ! A.class_ "user-order-list__order-lbl" $ ord

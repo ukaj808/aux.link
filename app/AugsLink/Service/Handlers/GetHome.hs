@@ -1,12 +1,13 @@
 module AugsLink.Service.Handlers.GetHome 
-  ( home
+  ( 
+    home
   ) where
 
-import Control.Monad.IO.Class ( liftIO )
+import Control.Monad.IO.Class
 import Servant
 
-import AugsLink.Service.API ( StaticHtml (..) )
-import CommandLine ( homeViewPath , CLArgs )
+import AugsLink.Service.API
+import CommandLine
 import Data.Text.IO as T
 
 home :: CLArgs -> Handler StaticHtml

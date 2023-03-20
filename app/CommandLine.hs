@@ -1,5 +1,6 @@
 module CommandLine
-  ( CLArgs(..)
+  ( 
+    CLArgs(..)
   , getCLArgs
   ) where
 

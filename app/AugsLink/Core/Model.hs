@@ -1,6 +1,7 @@
 module AugsLink.Core.Model where
 
-import qualified Data.UUID as UUID
+import Data.UUID
+
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 
@@ -26,7 +27,7 @@ modelRegistry = Registry
     numRooms = M.size . modelRooms <$> get
   , createRoom = State $ \st ->
       let iId = modelNextId st
-          rId = UUID.fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
+          rId = fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
       in ( rId
          , st { modelRooms  = M.insert iId initialRoomState (modelRooms st)
               , modelNextId = succ iId

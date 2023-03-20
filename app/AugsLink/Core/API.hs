@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.API where
 
-import           Data.UUID  (UUID)
-import           Data.Aeson.Types
+import Data.UUID
+import Data.Aeson.Types
+import Data.Kind
+import Data.Text
+
 import qualified Data.Aeson as Aeson
-import Data.Kind (Type)
-import qualified Data.Text as T
 
 data Registry m = Registry
   {
@@ -44,8 +45,8 @@ data Song = Song
 
 data SongInfo = SongInfo
  {
-    title :: T.Text
- ,  artist :: T.Text
+    title :: Text
+ ,  artist :: Text
  ,  length :: Int
  }
 data RoomEvent = UserEnterEvent User
@@ -58,12 +59,11 @@ newtype ServerMessage = ServerWelcomeMessage User
 type RoomId   = UUID
 type UserId   = UUID
 type SongId   = UUID
-type UserName = T.Text
+type UserName = Text
 type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile (m :: Type -> Type) :: Type
-
 
 instance Eq User where
   u1 == u2 = userId     u1 == userId     u2
@@ -74,14 +74,14 @@ instance ToJSON RoomEvent where
   toJSON :: RoomEvent -> Value
   toJSON (UserEnterEvent u) = Aeson.object 
     [
-       "type"        .= ("UserEnterEvent" :: T.Text)
+       "type"        .= ("UserEnterEvent" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "spotInLine"  .= spotInLine u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object 
     [
-       "type"        .= ("UserLeftEvent"  :: T.Text)
+       "type"        .= ("UserLeftEvent"  :: Text)
     ,  "userId"      .= uid
     ]
   
@@ -89,7 +89,7 @@ instance FromJSON RoomEvent where
   parseJSON :: Value -> Parser RoomEvent
   parseJSON = Aeson.withObject "RoomEvent" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: T.Text of
+      case typ :: Text of
         "UserEnterEvent" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
@@ -103,7 +103,7 @@ instance ToJSON UserMessage where
   toJSON :: UserMessage -> Value
   toJSON (UserLeftMessage uid) = Aeson.object 
     [
-       "type"        .= ("UserLeftMessage" :: T.Text)
+       "type"        .= ("UserLeftMessage" :: Text)
     ,  "userId"      .= uid
     ]
 
@@ -111,7 +111,7 @@ instance FromJSON UserMessage where
   parseJSON :: Value -> Parser UserMessage
   parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: T.Text of
+      case typ :: Text of
         "UserLeftMessage" -> do
           userId     <- obj .: "userId"
           return $ UserLeftMessage userId
@@ -120,7 +120,7 @@ instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value
   toJSON (ServerWelcomeMessage u) = Aeson.object 
     [
-       "type"        .= ("ServerWelcomeMessage" :: T.Text)
+       "type"        .= ("ServerWelcomeMessage" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "spotInLine"  .= spotInLine u
@@ -130,10 +130,9 @@ instance FromJSON ServerMessage where
   parseJSON :: Value -> Parser ServerMessage
   parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
       typ <- obj .: "type"
-      case typ :: T.Text of
+      case typ :: Text of
         "ServerWelcomeMessage" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
           spotInLine <- obj .: "spotInLine"
           return $ ServerWelcomeMessage $ User userId userName spotInLine
-

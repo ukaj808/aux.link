@@ -4,13 +4,13 @@ import Servant
 
 import AugsLink.Core.API
 import AugsLink.Service.API
-import CommandLine
 import AugsLink.Service.Handlers.GetHome
-import AugsLink.Service.Handlers.PostHome
-import AugsLink.Service.Handlers.RoomWs
 import AugsLink.Service.Handlers.GetRoom
+import AugsLink.Service.Handlers.PostHome
 import AugsLink.Service.Handlers.PostScrapeSong
 import AugsLink.Service.Handlers.PostUploadSong
+import AugsLink.Service.Handlers.RoomWs
+import CommandLine
 
 handlers :: CLArgs -> Registry IO -> Server API
 handlers opts rr = 

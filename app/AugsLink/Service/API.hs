@@ -23,16 +23,16 @@ newtype StaticHtml =
        unRaw :: T.Text 
     }
 
+newtype ScrapeSongRequest = ScrapeSongRequest
+  {
+    url :: T.Text
+  } deriving (Generic, Show)
+
 instance ToMarkup StaticHtml where
   toMarkup = preEscapedToMarkup
   preEscapedToMarkup st = preEscapedText $ unRaw st
 
 type PostSeeOther = Verb 'POST 303 
-
-newtype ScrapeSongRequest = ScrapeSongRequest
-  {
-    url :: T.Text
-  } deriving (Generic, Show)
 
 instance FromJSON ScrapeSongRequest
 

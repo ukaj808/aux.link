@@ -1,8 +1,12 @@
-module AugsLink.Service.Handlers.PostScrapeSong where 
+module AugsLink.Service.Handlers.PostScrapeSong 
+  (
+    scrape
+  ) where 
 
+import Data.Text
 import Servant
-import qualified Data.Text as T
+
 import AugsLink.Service.API (ScrapeSongRequest)
 
-scrape :: T.Text -> ScrapeSongRequest -> Handler T.Text
+scrape :: Text -> ScrapeSongRequest -> Handler Text
 scrape req = do undefined
