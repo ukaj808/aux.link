@@ -46,8 +46,8 @@ data UserState = UserState
 initialRoomState :: RoomId -> SelfManage -> RoomState
 initialRoomState rId rsm = RoomState 
   {
-    roomUsers = Map.empty
-  , roomId = rId
+    roomUsers  = Map.empty
+  , roomId     = rId
   , selfManage = rsm 
   }
 
@@ -55,43 +55,43 @@ newRoom :: RoomId -> SelfManage -> IO (Room IO)
 newRoom rId selfManage = do
   stateVar <- newMVar $ initialRoomState rId selfManage
   return $ Room {
-      enterRoom =     enterRoomImpl stateVar
-    , leaveRoom =     leaveRoomImpl stateVar
-    , presentInRoom = presentInRoomImpl stateVar
-    , currentlyPlaying = currentlyPlayingImpl stateVar
-    , enqueueSong       = enqueueSongImpl stateVar
-    , uploadSong       = uploadSongImpl rId
-    , modifyQueueOrder = modifyQueueOrderImpl stateVar
-    , removeSong       = removeSongImpl stateVar
+      enterRoom         = enterRoomImpl        stateVar
+    , leaveRoom         = leaveRoomImpl        stateVar
+    , presentInRoom     = presentInRoomImpl    stateVar
+    , currentlyPlaying  = currentlyPlayingImpl stateVar
+    , enqueueSong       = enqueueSongImpl      stateVar
+    , uploadSong        = uploadSongImpl       rId
+    , modifyQueueOrder  = modifyQueueOrderImpl stateVar
+    , removeSong        = removeSongImpl       stateVar
     }
 
 removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
 removeSongImpl stateVar uId sId = do
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st Map.! uId
-    let q'  = qremove (userQueue uState) sId
+    let uState  = roomUsers st Map.! uId
+    let q'      = qremove (userQueue uState) sId
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
+    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
 
 enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> IO SongId
 enqueueSongImpl stateVar uId sInfo = do
   sId <- nextRandom
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st Map.! uId
-    let q'  = enqueue (userQueue uState) (Song sId sInfo)
+    let uState  = roomUsers st Map.! uId
+    let q'      = enqueue (userQueue uState) (Song sId sInfo)
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
+    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
   return sId
 
 modifyQueueOrderImpl :: MVar RoomState -> UserId -> [SongId] -> IO ()
 modifyQueueOrderImpl stateVar uId newOrder = do
   modifyMVar_ stateVar $ \st -> do
-    let uState = roomUsers st Map.! uId
-    let q'  = reorder (userQueue uState) newOrder
+    let uState  = roomUsers st Map.! uId
+    let q'      = reorder (userQueue uState) newOrder
     let uState' = uState{userQueue = q'}
-    let st'    = st{roomUsers = Map.insert uId uState' $ roomUsers st}
+    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
     return st'
 
 
@@ -184,7 +184,7 @@ handleIncomingMessages stateVar conn uid = do
       msg <- WS.receive conn
       case msg of
         WS.DataMessage {} -> do
-          print "Should not be possible"
+          putStrLn "Should not be possible"
           go
         WS.ControlMessage WS.Close {} -> do
           leaveRoomImpl stateVar uid

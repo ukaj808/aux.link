@@ -5,20 +5,17 @@ module Commons.Queue
   ) where
 
 class Queue q where
-  qempty :: q a
+  dequeue  :: q a -> Maybe (a, q a)
+  enqueue  :: q a -> a    -> q a
+  peek     :: q a -> Maybe a
+  qempty   :: q a
   qisEmpty :: q a -> Bool
-  enqueue :: q a -> a -> q a
-  peek :: q a -> Maybe a
-  dequeue :: q a -> Maybe (a, q a)
-  qsize :: q a -> Int
-  reorder :: q a -> [b] -> q a
-  qremove  :: q a -> b -> q a
+  qremove  :: q a -> b    -> q a
+  qsize    :: q a -> Int
+  reorder  :: q a -> [b]  -> q a
 
 newtype BatchedQueue a = BatchedQueue ([a],[a])
   deriving Show
-
-
-
 
 instance Queue BatchedQueue where
 

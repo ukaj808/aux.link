@@ -14,13 +14,13 @@ import CommandLine
 
 handlers :: CLArgs -> Registry IO -> Server API
 handlers opts rr = 
-         home opts
-    :<|> create rr
-    :<|> room rr
-    :<|> enter rr
-    :<|> upload rr
-    :<|> scrape
-    :<|> public
+       home   opts
+  :<|> create rr
+  :<|> room   rr
+  :<|> enter  rr
+  :<|> upload rr
+  :<|> scrape
+  :<|> public
   where 
     public = serveDirectoryWebApp $ staticDirPath opts
 

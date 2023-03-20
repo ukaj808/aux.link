@@ -25,21 +25,21 @@ newtype RegistryState = RegistryState
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState 
   {
-    rooms=Map.empty
+    rooms = Map.empty
   }
 
 newRegistry :: IO (Registry IO)
 newRegistry = do
-  stateVar        <- newMVar initialRegistryState
+  stateVar <- newMVar initialRegistryState
   return $ Registry
     {
-      numRooms =
+      numRooms   =
         Map.size       . rooms <$> readMVar stateVar
-    , getRoom = \rId ->
+    , getRoom    = \rId ->
         Map.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
-        rId  <- nextRandom
-        room <- newRoom rId (SelfManage {selfDestruct=deleteRoomImpl stateVar rId})
+        rId       <- nextRandom
+        room      <- newRoom rId (SelfManage {selfDestruct=deleteRoomImpl stateVar rId})
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = Map.insert rId room $ rooms st
           return (st{rooms =  rooms'}, Map.size rooms')

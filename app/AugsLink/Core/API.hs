@@ -31,24 +31,25 @@ data Room m = Room
   }
 
 data User = User
- {
-    userId :: UserId
- ,  userName :: UserName
- ,  spotInLine     :: Int
- }
+   {
+     userId         :: UserId
+   , userName       :: UserName
+   , spotInLine     :: Int
+   }
 
 data Song = Song
- {
-    id     :: SongId 
-,   songInfo :: SongInfo
-}
+   {
+     id       :: SongId 
+   , songInfo :: SongInfo
+   }
 
 data SongInfo = SongInfo
- {
-    title :: Text
- ,  artist :: Text
- ,  length :: Int
- }
+  {
+     title  :: Text
+  ,  artist :: Text
+  ,  length :: Int
+  }
+
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
 
@@ -63,7 +64,7 @@ type UserName = Text
 type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
-type family SongFile (m :: Type -> Type) :: Type
+type family SongFile   (m :: Type -> Type) :: Type
 
 instance Eq User where
   u1 == u2 = userId     u1 == userId     u2
