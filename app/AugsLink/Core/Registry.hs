@@ -21,7 +21,6 @@ newtype RegistryState = RegistryState
     rooms :: Map.HashMap RoomId (Room IO)
   }
 
-
 initialRegistryState :: RegistryState
 initialRegistryState = RegistryState 
   {
@@ -39,7 +38,7 @@ newRegistry = do
         Map.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
         rId       <- nextRandom
-        room      <- newRoom rId (SelfManage {selfDestruct=deleteRoomImpl stateVar rId})
+        room      <- newRoom rId $ SelfManage {selfDestruct=deleteRoomImpl stateVar rId}
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = Map.insert rId room $ rooms st
           return (st{rooms =  rooms'}, Map.size rooms')

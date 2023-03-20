@@ -55,45 +55,69 @@ newRoom :: RoomId -> SelfManage -> IO (Room IO)
 newRoom rId selfManage = do
   stateVar <- newMVar $ initialRoomState rId selfManage
   return $ Room {
-      enterRoom         = enterRoomImpl        stateVar
-    , leaveRoom         = leaveRoomImpl        stateVar
-    , presentInRoom     = presentInRoomImpl    stateVar
-    , currentlyPlaying  = currentlyPlayingImpl stateVar
+      currentlyPlaying  = currentlyPlayingImpl stateVar
     , enqueueSong       = enqueueSongImpl      stateVar
-    , uploadSong        = uploadSongImpl       rId
+    , enterRoom         = enterRoomImpl        stateVar
+    , leaveRoom         = leaveRoomImpl        stateVar
     , modifyQueueOrder  = modifyQueueOrderImpl stateVar
+    , presentInRoom     = presentInRoomImpl    stateVar
     , removeSong        = removeSongImpl       stateVar
+    , uploadSong        = uploadSongImpl       rId
     }
 
-removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
-removeSongImpl stateVar uId sId = do
-  modifyMVar_ stateVar $ \st -> do
-    let uState  = roomUsers st Map.! uId
-    let q'      = qremove (userQueue uState) sId
-    let uState' = uState{userQueue = q'}
-    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
-    return st'
+-- Room API Impls
+
+currentlyPlayingImpl :: MVar RoomState -> IO SongId
+currentlyPlayingImpl stateVar = undefined
 
 enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> IO SongId
 enqueueSongImpl stateVar uId sInfo = do
   sId <- nextRandom
   modifyMVar_ stateVar $ \st -> do
-    let uState  = roomUsers st Map.! uId
-    let q'      = enqueue (userQueue uState) (Song sId sInfo)
-    let uState' = uState{userQueue = q'}
-    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
-    return st'
+    return $ modQueue st uId (\q -> enqueue q $ Song sId sInfo)
   return sId
+
+enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
+enterRoomImpl stateVar pend = do
+  conn <-     WS.acceptRequest pend
+  uId <- modifyMVar stateVar $ \st ->
+    let spot = Map.size $ roomUsers st 
+    in do
+      uSt     <-   genNewUser conn spot
+      let st' =    addUserToRoom st uSt
+          u   =    user uSt
+      messageToUser   st' (userId u) (ServerWelcomeMessage u)
+      publishToAllBut st' (/= u)     (UserEnterEvent u)
+      return  (st', userId u)
+  WS.withPingThread conn 30 (return ()) $ handleIncomingMessages stateVar conn uId
+  -- todo: deal with async threads
+  -- we should keep a reference to the thread so when room is empty we can terminate it 
+    
+leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
+leaveRoomImpl stateVar uId = do
+   modifyMVar_ stateVar $ \st -> do
+     let st'' = removeUser st uId
+     publishToRoom st'' $ UserLeftEvent uId
+     return st''
+   
+   st <- readMVar stateVar
+   when (Map.size (roomUsers st) == 0) $
+     selfDestruct $ selfManage st 
 
 modifyQueueOrderImpl :: MVar RoomState -> UserId -> [SongId] -> IO ()
 modifyQueueOrderImpl stateVar uId newOrder = do
   modifyMVar_ stateVar $ \st -> do
-    let uState  = roomUsers st Map.! uId
-    let q'      = reorder (userQueue uState) newOrder
-    let uState' = uState{userQueue = q'}
-    let st'     = st{roomUsers = Map.insert uId uState' $ roomUsers st}
-    return st'
+    return $ modQueue st uId (`reorder` newOrder)
 
+presentInRoomImpl :: MVar RoomState -> IO [User]
+presentInRoomImpl stateVar = do
+  roomState <- readMVar stateVar
+  return $ map user $ Map.elems $ roomUsers roomState
+
+removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
+removeSongImpl stateVar uId sId = do
+  modifyMVar_ stateVar $ \st -> do
+    return $ modQueue st uId (`qremove` sId)
 
 uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO () 
 uploadSongImpl rId sId sFile = do
@@ -102,63 +126,22 @@ uploadSongImpl rId sId sFile = do
     (error "No file present in request") 
     (uploadSongToRoom rId sId) file
 
-uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
-uploadSongToRoom rId sId file = do
-  let filePath = "./rooms/" ++ toString rId ++ "/" ++ toString sId
-  fileExist <- doesFileExist filePath
-  if fileExist 
-  then 
-   error "Song already uploaded to this room"
-  else do
-    LBS.writeFile filePath (fdPayload file)
+-- Messaging Via Websockets
 
-currentlyPlayingImpl :: MVar RoomState -> IO SongId
-currentlyPlayingImpl stateVar = undefined
-
-presentInRoomImpl :: MVar RoomState -> IO [User]
-presentInRoomImpl stateVar = do
-  roomState <- readMVar stateVar
-  return $ map user $ Map.elems $ roomUsers roomState
-
-enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
-enterRoomImpl stateVar pend = do
-  conn <-     WS.acceptRequest pend
-  uuid <-     nextRandom
-  let uid =   uuid
-  modifyMVar_ stateVar $ \st ->
-    let spot   = Map.size $ roomUsers st
-        u      = User {userId = uid, userName="fisnik", spotInLine=spot}
-        uState = UserState {uStateConn=conn, user=u, userQueue=qempty}
-        st'    = st{roomUsers = Map.insert uid uState $ roomUsers st}
-    in do
-      messageToUser   st' uid $ ServerWelcomeMessage $ user uState
-      publishToAllBut st' (\us -> us /= user uState) $ UserEnterEvent $ user uState
-      return          st'
-  WS.withPingThread conn 30 (return ()) $ handleIncomingMessages stateVar conn uid
-  -- todo: deal with async threads
-  -- we should keep a reference to the thread so when room is empty we can terminate it 
-
-leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
-leaveRoomImpl stateVar uid = do
-   roomSt' <- modifyMVar stateVar $ \st -> do
-     -- modify spots in line
-     let users      = roomUsers st
-     let emptySpot  = spotInLine $ user $ users Map.! uid
-     let st'        = st{roomUsers = Map.map (recalcSpot emptySpot) users}
-     let roomUsers' = Map.delete uid $ roomUsers st'
-     let st''       = st'{roomUsers = roomUsers'}
-     publishToRoom st' $ UserLeftEvent uid
-     return (st'', st'')
-   when (Map.size (roomUsers roomSt') == 0) $
-     selfDestruct $ selfManage roomSt' 
-   where
-     recalcSpot :: Int -> UserState -> UserState
-     recalcSpot i uSt =
-       let u    = user uSt
-           spot = spotInLine u
-       in if spot > i
-          then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot} (userQueue uSt)
-          else uSt
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
+handleIncomingMessages stateVar conn uid = do
+  go
+  where
+    go :: IO ()
+    go  = do
+      msg <- WS.receive conn
+      case msg of
+        WS.DataMessage {} -> do
+          putStrLn "Should not be possible"
+          go
+        WS.ControlMessage WS.Close {} -> do
+          leaveRoomImpl stateVar uid
+        WS.ControlMessage _ -> go
 
 publishToAllBut :: RoomState -> (User -> Bool) -> RoomEvent -> IO ()
 publishToAllBut rmSt p e = do
@@ -175,17 +158,50 @@ messageToUser rmSt uid msg = do
   let u = roomUsers rmSt Map.! uid
   WS.sendTextData (uStateConn u) (Aeson.encode msg)
 
-handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
-handleIncomingMessages stateVar conn uid = do
-  go
+-- Song uploading
+
+uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
+uploadSongToRoom rId sId file = do
+  let filePath = "./rooms/" ++ toString rId ++ "/" ++ toString sId
+  fileExist <- doesFileExist filePath
+  if fileExist 
+  then 
+   error "Song already uploaded to this room"
+  else do
+    LBS.writeFile filePath (fdPayload file)
+
+-- User gen
+
+genNewUser :: WS.Connection -> Int -> IO UserState
+genNewUser conn spot = do
+  uId <- nextRandom
+  uName <- return "fisnik"
+  return $ UserState conn (User uId uName spot) qempty
+
+-- Pure functions
+
+addUserToRoom :: RoomState -> UserState -> RoomState
+addUserToRoom st@(RoomState users _ _) 
+              uSt@(UserState _ 
+                    (User uId _ _)
+                _) = st{roomUsers = Map.insert uId uSt users}
+
+modQueue :: RoomState -> UserId -> (SongQueue -> SongQueue) -> RoomState
+modQueue st@(RoomState users _ _) uId f =
+   case users Map.! uId of 
+     u@(UserState _ _ q) -> 
+       st{roomUsers = Map.insert uId (u{userQueue = f q}) users}
+
+removeUser :: RoomState -> UserId -> RoomState
+removeUser st@(RoomState users _ _) uId = 
+  st'{roomUsers= Map.delete uId (roomUsers st')} 
   where
-    go :: IO ()
-    go  = do
-      msg <- WS.receive conn
-      case msg of
-        WS.DataMessage {} -> do
-          putStrLn "Should not be possible"
-          go
-        WS.ControlMessage WS.Close {} -> do
-          leaveRoomImpl stateVar uid
-        WS.ControlMessage _ -> go
+    st'       = st{roomUsers = Map.map recalcSpot users}
+    rmvdUser  = user $ users Map.! uId 
+    emptySpot = spotInLine rmvdUser
+    recalcSpot uSt = 
+       if spot > emptySpot
+       then UserState (uStateConn uSt) u{spotInLine=subtract 1 spot} (userQueue uSt)
+       else uSt
+       where u    = user uSt
+             spot = spotInLine u
