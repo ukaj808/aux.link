@@ -3,7 +3,6 @@ const wsProtocol = (location.protocol != null && location.protocol === "https:")
 const roomsUrl = (location.protocol != null && location.protocol === "https:") ? "augslink-rooms.deno.dev" : "localhost:8080";
 const roomMainElement = document.getElementById("room");
 let userId;
-let spotInLine;
 let userName;
 
 // Workaround for the fact that js/ts can't serialize/deserialize maps
@@ -18,9 +17,9 @@ const reviver = (key, value) => {
 
 const publishRoomEvent = (e) => roomMainElement.dispatchEvent(e);
 const createUserWelcomeEvent = (eventData) => new CustomEvent('server-welcome',
-    {detail: {userId: eventData.userId, userName: eventData.userName, spotInLine: eventData.spotInLine}});
+    {detail: {userId: eventData.userId, userName: eventData.userName}});
 const createUserEnterEvent = (eventData) => new CustomEvent('user-enter',
-    {detail: {userId: eventData.userId, userName: eventData.userName, spotInLine: eventData.spotInLine}});
+    {detail: {userId: eventData.userId, userName: eventData.userName}});
 const createUserLeftEvent = (eventData) => new CustomEvent('user-left',
     {detail: {userId: eventData.userId}});
 const createAndPublishServerWelcomeMessage = (eventData) => publishRoomEvent(createUserWelcomeEvent(eventData));
@@ -52,15 +51,10 @@ const createNewUserListElement = (userDetails) => {
     li.id = userDetails.userId;
     li.classList.add('user-order-list__user');
 
-    const ord = document.createElement('span');
-    ord.textContent = userDetails.spotInLine + 1;
-    ord.classList.add('user-order-list__order-lbl');
-
     const uname = document.createElement('span');
     uname.textContent = userDetails.userName;
     uname.classList.add('user-order-list__username-lbl');
 
-    li.appendChild(ord);
     li.appendChild(uname);
 
     return li;
@@ -70,7 +64,6 @@ const onUserWelcome = ({detail}) => {
     document.getElementById("user-order-list").appendChild(createNewUserListElement(detail));
     userId = detail.userId;
     userName = detail.userName;
-    spotInLine = detail.spotInLine + 1;
 }
 
 const onUserJoin = ({detail}) => {
@@ -79,25 +72,8 @@ const onUserJoin = ({detail}) => {
 
 const onUserLeft = ({detail}) => {
     const userId = detail.userId;
-    const ol = document.getElementById('user-order-list');
-    const fragment = document.createDocumentFragment();
-    const liElements = Array.from(ol.children);
-    let userReached = false;
-    for (let i = 0; i < liElements.length; i++) {
-      const li = liElements[i];
-      const clonedLi = li.cloneNode(true);
-      if (li.id === userId) { 
-          userReached = true;
-          continue; 
-      }
-      if (userReached) {
-        const ordEl = clonedLi.querySelector('span');
-        ordEl.textContent = ordEl.textContent - 1;  
-      }
-      fragment.appendChild(clonedLi);
-    }
-    console.log(fragment);
-    ol.replaceChildren(fragment);
+    const li = document.getElementById(userId);
+    li.remove();
 }
 
 const roomElement = document.getElementById("room");

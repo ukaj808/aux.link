@@ -25,6 +25,7 @@ executable augslink-service
                       , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
                       , AugsLink.Core.Shared 
+                      , AugsLink.Core.User 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.GetHome 

@@ -20,20 +20,26 @@ data Room m = Room
   {
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
-  ,  presentInRoom         ::                                           m [User]
+  ,  presentInRoom         ::                                           m [User m]
   ,  currentlyPlaying      ::                                           m SongId
-  ,  enqueueSong           ::   UserId  -> SongInfo -> Priority      -> m SongId
-  ,  removeSong            ::   UserId  -> SongId                    -> m ()
+  ,  getUser               ::   UserId  ->                              m (Maybe (User m))
   ,  uploadSong            ::   SongId  -> SongFile m ->                m ()
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
 
-data User = User
+data User m = User
+  {
+    enqueueSong :: SongInfo -> Priority -> m SongId
+  , getUserData ::                         m UserData
+  , removeSong  :: SongId               -> m ()
+  --, uploadSong  :: SongId -> SongFile m -> m ()
+  }
+  
+data UserData = UserData
    {
      userId         :: UserId
    , userName       :: UserName
-   , spotInLine     :: Int
    }
 
 data Song = Song
@@ -49,15 +55,14 @@ data SongInfo = SongInfo
   ,  songLength :: Int
   }
 
-data RoomEvent = UserEnterEvent User
+data RoomEvent = UserEnterEvent UserData
   |              UserLeftEvent  UserId
-
 
 type Priority = Int
 
 newtype UserMessage = UserLeftMessage UserId
 
-newtype ServerMessage = ServerWelcomeMessage User
+newtype ServerMessage = ServerWelcomeMessage UserData
 
 type RoomId   = UUID
 type UserId   = UUID
@@ -68,10 +73,8 @@ type Vote     = Bool
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 
-instance Eq User where
+instance Eq UserData where
   u1 == u2 = userId     u1 == userId     u2
-instance Ord User where
-  u1 <= u2 = spotInLine u1 <= spotInLine u2 
 
 instance ToJSON RoomEvent where
   toJSON :: RoomEvent -> Value
@@ -80,7 +83,6 @@ instance ToJSON RoomEvent where
        "type"        .= ("UserEnterEvent" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
-    ,  "spotInLine"  .= spotInLine u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object 
     [
@@ -96,8 +98,7 @@ instance FromJSON RoomEvent where
         "UserEnterEvent" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
-          spotInLine <- obj .: "spotInLine"
-          return $ UserEnterEvent $ User userId userName spotInLine
+          return $ UserEnterEvent $ UserData userId userName
         "UserLeftEvent" -> do
           uid        <- obj .: "userId"
           return $ UserLeftEvent uid
@@ -126,7 +127,6 @@ instance ToJSON ServerMessage where
        "type"        .= ("ServerWelcomeMessage" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
-    ,  "spotInLine"  .= spotInLine u
     ]
 
 instance FromJSON ServerMessage where
@@ -137,5 +137,4 @@ instance FromJSON ServerMessage where
         "ServerWelcomeMessage" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
-          spotInLine <- obj .: "spotInLine"
-          return $ ServerWelcomeMessage $ User userId userName spotInLine
+          return $ ServerWelcomeMessage $ UserData userId userName

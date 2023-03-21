@@ -95,11 +95,6 @@ body {
     border-radius: var(--section-border-radius);
 }
 
-.user-order-list__order-lbl {
-    align-self: center;
-    padding-left: 10px;
-}
-
 .user-order-list__username-lbl {
     align-self: center;
 }

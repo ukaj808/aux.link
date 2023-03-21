@@ -9,7 +9,6 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Text.Blaze.Html5
 import Data.UUID
-import Data.List
 
 import qualified Data.Text                   as T
 import qualified Text.Blaze.Html5            as H
@@ -18,24 +17,22 @@ import qualified Text.Blaze.Html5.Attributes as A
 import AugsLink.Service.API
 import AugsLink.Core.API
 
-renderUser :: User -> H.Html
+renderUser :: UserData -> H.Html
 renderUser user = 
   let uid = toValue $ toText $ userId user
       uname = toMarkup $ userName user
-      ord = toMarkup $ spotInLine user + 1
   in
   H.li ! A.id uid ! A.class_ "user-order-list__user" $ do
-    H.span ! A.class_ "user-order-list__order-lbl"    $ ord
     H.span ! A.class_ "user-order-list__username-lbl" $ uname
 
 
-renderOrderSection :: [User] -> H.Html 
+renderOrderSection :: [UserData] -> H.Html 
 renderOrderSection users = 
   H.section ! A.id "order" ! A.class_ "order" $ do
     H.ol ! A.id "user-order-list" ! A.class_ "user-order-list" $ do
-      forM_ (sort users) renderUser 
+      forM_ users renderUser 
 
-renderRoomPage :: [User] -> H.Html
+renderRoomPage :: [UserData] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do
   H.head $ do
     H.title "Room"
@@ -64,7 +61,9 @@ room registry eId = do
   let rm = case possibleRoom of
                Just r -> r
                Nothing -> error "Room does not exist"
+  --  Maybe we need to hold lock on room somehow until result returned and confirmed. 
+  uIos <- liftIO $ presentInRoom rm
   
-  users <- liftIO $ presentInRoom rm
+  users <- liftIO $ mapM getUserData uIos
 
   return $ renderRoomPage users
