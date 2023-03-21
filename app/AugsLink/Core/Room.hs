@@ -18,16 +18,16 @@ import System.Directory
 import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.HashMap.Lazy    as Map
+import qualified Data.Heap            as Heap
 import qualified Network.WebSockets   as WS
 
-import Commons.Queue
 import AugsLink.Core.API
 import AugsLink.Core.Shared
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO       = MultipartData Mem
 
-type SongQueue = BatchedQueue Song
+type SongQueue = Heap.Heap (Heap.Entry Int Song)
 
 data RoomState = RoomState
   {
@@ -59,7 +59,6 @@ newRoom rId selfManage = do
     , enqueueSong       = enqueueSongImpl      stateVar
     , enterRoom         = enterRoomImpl        stateVar
     , leaveRoom         = leaveRoomImpl        stateVar
-    , modifyQueueOrder  = modifyQueueOrderImpl stateVar
     , presentInRoom     = presentInRoomImpl    stateVar
     , removeSong        = removeSongImpl       stateVar
     , uploadSong        = uploadSongImpl       rId
@@ -70,11 +69,11 @@ newRoom rId selfManage = do
 currentlyPlayingImpl :: MVar RoomState -> IO SongId
 currentlyPlayingImpl stateVar = undefined
 
-enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> IO SongId
-enqueueSongImpl stateVar uId sInfo = do
+enqueueSongImpl :: MVar RoomState -> UserId -> SongInfo -> Priority -> IO SongId
+enqueueSongImpl stateVar uId sInfo p = do
   sId <- nextRandom
   modifyMVar_ stateVar $ \st -> do
-    return $ modQueue st uId (\q -> enqueue q $ Song sId sInfo)
+    return $ modQueue st uId (Heap.insert (Heap.Entry p (Song sId sInfo)))
   return sId
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
@@ -104,11 +103,6 @@ leaveRoomImpl stateVar uId = do
    when (Map.size (roomUsers st) == 0) $
      selfDestruct $ selfManage st 
 
-modifyQueueOrderImpl :: MVar RoomState -> UserId -> [SongId] -> IO ()
-modifyQueueOrderImpl stateVar uId newOrder = do
-  modifyMVar_ stateVar $ \st -> do
-    return $ modQueue st uId (`reorder` newOrder)
-
 presentInRoomImpl :: MVar RoomState -> IO [User]
 presentInRoomImpl stateVar = do
   roomState <- readMVar stateVar
@@ -117,7 +111,7 @@ presentInRoomImpl stateVar = do
 removeSongImpl :: MVar RoomState -> UserId -> SongId -> IO ()
 removeSongImpl stateVar uId sId = do
   modifyMVar_ stateVar $ \st -> do
-    return $ modQueue st uId (`qremove` sId)
+    return $ modQueue st uId (Heap.filter (not . entryIsSong sId))
 
 uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO () 
 uploadSongImpl rId sId sFile = do
@@ -176,7 +170,7 @@ genNewUser :: WS.Connection -> Int -> IO UserState
 genNewUser conn spot = do
   uId <- nextRandom
   uName <- return "fisnik"
-  return $ UserState conn (User uId uName spot) qempty
+  return $ UserState conn (User uId uName spot) Heap.empty
 
 -- Pure functions
 
@@ -205,3 +199,6 @@ removeUser st@(RoomState users _ _) uId =
        else uSt
        where u    = user uSt
              spot = spotInLine u
+
+entryIsSong :: SongId -> Heap.Entry a Song -> Bool
+entryIsSong sId (Heap.Entry _ (Song sId' _)) = sId == sId'

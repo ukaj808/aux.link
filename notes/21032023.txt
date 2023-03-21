@@ -1,0 +1,5 @@
+2. Refactor from queue to Priority Heap
+  a. Use heap lib []
+  b. Rewrite code to use heap as SongQueue []
+  c. Read Chapter 3 in okasakis PFDS []
+  d. Complete heap excercises []

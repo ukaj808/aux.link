@@ -35,7 +35,6 @@ executable augslink-service
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
                       , Commons.State
-                      , Commons.Queue
     -- other-extensions:
     build-depends:      aeson
                       , async
@@ -45,6 +44,7 @@ executable augslink-service
                       , containers
                       , directory
                       , hashable
+                      , heaps
                       , mtl
                       , optparse-applicative
                       , random 

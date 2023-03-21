@@ -22,9 +22,8 @@ data Room m = Room
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  presentInRoom         ::                                           m [User]
   ,  currentlyPlaying      ::                                           m SongId
-  ,  enqueueSong           ::   UserId  -> SongInfo                  -> m SongId
+  ,  enqueueSong           ::   UserId  -> SongInfo -> Priority      -> m SongId
   ,  removeSong            ::   UserId  -> SongId                    -> m ()
-  ,  modifyQueueOrder      ::   UserId  -> [SongId]                  -> m ()
   ,  uploadSong            ::   SongId  -> SongFile m ->                m ()
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
@@ -39,19 +38,22 @@ data User = User
 
 data Song = Song
    {
-     id       :: SongId 
-   , songInfo :: SongInfo
+     songId       :: SongId 
+   , songInfo     :: SongInfo
    }
 
 data SongInfo = SongInfo
   {
-     title  :: Text
-  ,  artist :: Text
-  ,  length :: Int
+     songTitle  :: Text
+  ,  songArtist :: Text
+  ,  songLength :: Int
   }
 
 data RoomEvent = UserEnterEvent User
   |              UserLeftEvent  UserId
+
+
+type Priority = Int
 
 newtype UserMessage = UserLeftMessage UserId
 
