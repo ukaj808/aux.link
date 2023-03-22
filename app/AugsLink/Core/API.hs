@@ -20,7 +20,7 @@ data Room m = Room
   {
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
-  ,  presentInRoom         ::                                           m [User m]
+  ,  viewRoom              ::                                           m [RoomUser]
   ,  currentlyPlaying      ::                                           m SongId
   ,  getUser               ::   UserId  ->                              m (Maybe (User m))
   ,  uploadSong            ::   SongId  -> SongFile m ->                m ()
@@ -31,12 +31,12 @@ data Room m = Room
 data User m = User
   {
     enqueueSong :: SongInfo -> Priority -> m SongId
-  , getUserData ::                         m UserData
+  , getRoomUser ::                         m RoomUser
   , removeSong  :: SongId               -> m ()
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
   
-data UserData = UserData
+data RoomUser = RoomUser
    {
      userId         :: UserId
    , userName       :: UserName
@@ -55,14 +55,14 @@ data SongInfo = SongInfo
   ,  songLength :: Int
   }
 
-data RoomEvent = UserEnterEvent UserData
+data RoomEvent = UserEnterEvent RoomUser
   |              UserLeftEvent  UserId
 
 type Priority = Int
 
 newtype UserMessage = UserLeftMessage UserId
 
-newtype ServerMessage = ServerWelcomeMessage UserData
+newtype ServerMessage = ServerWelcomeMessage RoomUser
 
 type RoomId   = UUID
 type UserId   = UUID
@@ -73,7 +73,7 @@ type Vote     = Bool
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 
-instance Eq UserData where
+instance Eq RoomUser where
   u1 == u2 = userId     u1 == userId     u2
 
 instance ToJSON RoomEvent where
@@ -98,7 +98,7 @@ instance FromJSON RoomEvent where
         "UserEnterEvent" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
-          return $ UserEnterEvent $ UserData userId userName
+          return $ UserEnterEvent $ RoomUser userId userName
         "UserLeftEvent" -> do
           uid        <- obj .: "userId"
           return $ UserLeftEvent uid
@@ -137,4 +137,4 @@ instance FromJSON ServerMessage where
         "ServerWelcomeMessage" -> do
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
-          return $ ServerWelcomeMessage $ UserData userId userName
+          return $ ServerWelcomeMessage $ RoomUser userId userName

@@ -8,4 +8,4 @@
    so I can seperate out concurrency logic for room-level modifications and user-level modifications.
    I don't think a users modification of there own song queue should hold up the lock for the whole room.
    This seems like it'll be a pretty common occurence; amongst other possible user level modifcations; that
-   shouldnt need to be mixed up with room mvar locking. []
+   shouldnt need to be mixed up with room mvar locking. [X]

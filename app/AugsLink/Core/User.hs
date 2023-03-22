@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.User
   ( 
     newUser 
@@ -16,7 +15,7 @@ import AugsLink.Core.API
 type SongQueue = Heap.Heap (Heap.Entry Int Song)
 data UserState = UserState
   {
-    userData        :: UserData --rename? too vague maybe (over encompassing...) maybe seperate out id from data and rename to info
+    userData        :: RoomUser
   , userQueue       :: SongQueue
   }
 
@@ -24,11 +23,11 @@ newUser :: IO (User IO)
 newUser = do
   uId <- nextRandom
   uName <- return $ toText uId
-  stateVar <- newMVar $ UserState (UserData uId uName) Heap.empty
+  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
-  , getUserData = userData <$> readMVar stateVar
-  , removeSong = removeSongImpl stateVar
+  , getRoomUser = userData <$> readMVar stateVar
+  , removeSong  = removeSongImpl stateVar
   }
 
 enqueueSongImpl :: MVar UserState -> SongInfo -> Priority -> IO SongId

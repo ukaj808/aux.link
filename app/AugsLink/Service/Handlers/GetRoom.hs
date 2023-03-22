@@ -17,7 +17,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import AugsLink.Service.API
 import AugsLink.Core.API
 
-renderUser :: UserData -> H.Html
+renderUser :: RoomUser -> H.Html
 renderUser user = 
   let uid = toValue $ toText $ userId user
       uname = toMarkup $ userName user
@@ -26,13 +26,13 @@ renderUser user =
     H.span ! A.class_ "user-order-list__username-lbl" $ uname
 
 
-renderOrderSection :: [UserData] -> H.Html 
+renderOrderSection :: [RoomUser] -> H.Html 
 renderOrderSection users = 
   H.section ! A.id "order" ! A.class_ "order" $ do
     H.ol ! A.id "user-order-list" ! A.class_ "user-order-list" $ do
       forM_ users renderUser 
 
-renderRoomPage :: [UserData] -> H.Html
+renderRoomPage :: [RoomUser] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do
   H.head $ do
     H.title "Room"
@@ -62,8 +62,6 @@ room registry eId = do
                Just r -> r
                Nothing -> error "Room does not exist"
   --  Maybe we need to hold lock on room somehow until result returned and confirmed. 
-  uIos <- liftIO $ presentInRoom rm
+  roomView <- liftIO $ viewRoom rm
   
-  users <- liftIO $ mapM getUserData uIos
-
-  return $ renderRoomPage users
+  return $ renderRoomPage roomView
