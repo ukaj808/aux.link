@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Handlers.PostUploadSong
+module AugsLink.Service.Handlers.PutEnqueueSong
   (
-    upload
+    enqueue
   ) where 
 
 import Data.Text
@@ -14,8 +14,8 @@ import AugsLink.Core.API
 
 type instance SongFile IO = MultipartData Mem
 
-upload :: Registry IO -> Text -> Text -> MultipartData Mem -> Handler Text
-upload rr exRoomId exSongId file = liftIO $ do
+enqueue :: Registry IO -> Text -> EnqueueSongRequest -> Handler Text
+upload rr exRoomId req = liftIO $ do
   let rId = case fromText exRoomId of
               Just roomId -> roomId
               Nothing -> error "Invalid unique id"

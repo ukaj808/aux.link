@@ -31,8 +31,9 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.PostHome
-                      , AugsLink.Service.Handlers.PostScrapeSong
-                      , AugsLink.Service.Handlers.PostUploadSong
+                      , AugsLink.Service.Handlers.PutScrapeSong
+                      , AugsLink.Service.Handlers.PutUploadSong
+                      , AugsLink.Service.Handlers.PutEnqueueSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
                       , Commons.State

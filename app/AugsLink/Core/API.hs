@@ -32,6 +32,7 @@ data User m = User
   {
     enqueueSong :: SongInfo -> Priority -> m SongId
   , getRoomUser ::                         m RoomUser
+  , getNextSong ::                         m Song
   , removeSong  :: SongId               -> m ()
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
@@ -55,13 +56,20 @@ data SongInfo = SongInfo
   ,  songLength :: Int
   }
 
-data RoomEvent = UserEnterEvent RoomUser
+-- Event published from room to users but also published from the users browser solely to the Room
+data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
   |              UserLeftEvent  UserId
 
 type Priority = Int
 
-newtype UserMessage = UserLeftMessage UserId
+-- Command from User to Server
+data UserCommand = RemoveSong  SongId
+  |                EnqueueSong SongInfo Priority
 
+-- Command from Server to user
+newtype ServerCommand = UploadSong SongId
+
+-- Message from server to user
 newtype ServerMessage = ServerWelcomeMessage RoomUser
 
 type RoomId   = UUID
@@ -103,22 +111,15 @@ instance FromJSON RoomEvent where
           uid        <- obj .: "userId"
           return $ UserLeftEvent uid
 
-instance ToJSON UserMessage where
-  toJSON :: UserMessage -> Value
-  toJSON (UserLeftMessage uid) = Aeson.object 
+instance ToJSON SongInfo where
+  toJSON :: SongInfo -> Value
+  toJSON (SongInfo sTitle sArtist sLength) = Aeson.object 
     [
-       "type"        .= ("UserLeftMessage" :: Text)
-    ,  "userId"      .= uid
+      "title"      .= sTitle
+    , "artist"     .= sArtist
+    , "length"     .= sLength
     ]
 
-instance FromJSON UserMessage where
-  parseJSON :: Value -> Parser UserMessage
-  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
-      typ <- obj .: "type"
-      case typ :: Text of
-        "UserLeftMessage" -> do
-          userId     <- obj .: "userId"
-          return $ UserLeftMessage userId
 
 instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value

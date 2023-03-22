@@ -14,6 +14,7 @@ import Servant.API.WebSocket
 import Servant.HTML.Blaze
 import Servant.Multipart
 import Text.Blaze.Html5
+import AugsLink.Core.API
 
 type ServerHtml    = Html
 
@@ -34,12 +35,19 @@ newtype ScrapeSongRequest = ScrapeSongRequest
   } deriving (Generic, Show)
 instance FromJSON ScrapeSongRequest
 
+newtype EnqueueSongRequest = EnqueueSongRequest
+  {
+    song :: SongInfo
+  } deriving (Generic)
+instance FromJSON EnqueueSongRequest
+
 type API =   
         Get '[HTML] StaticHtml -- Home Page
         -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] Text) 
    :<|> Capture "roomid" Text :> Get '[HTML] ServerHtml
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
+   :<|> Capture "roomId" Text :> "songs" :> Capture "songId" Text :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
    :<|> Capture "roomId" Text :> "songs" :> Capture "songId" Text :> "upload" :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text
    :<|> Capture "roomId" Text :> "songs" :> "scrape" :> ReqBody '[JSON] ScrapeSongRequest     :> Put '[PlainText] Text
    -- maybe scrape request comes through websockets because there only passing a url...

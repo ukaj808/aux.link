@@ -1,4 +1,4 @@
-module AugsLink.Service.Handlers.PostScrapeSong 
+module AugsLink.Service.Handlers.PutScrapeSong 
   (
     scrape
   ) where 

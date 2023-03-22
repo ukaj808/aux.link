@@ -1,4 +1,6 @@
 1. Finish Spot In Line; 
-  a. Test and fix bugs []
+  a. Test and fix bugs [X]
 
 2. Hook in mechanism which pops next song from next users queue []
+
+3. Generate random usernames

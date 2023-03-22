@@ -27,6 +27,7 @@ newUser = do
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
   , getRoomUser = userData <$> readMVar stateVar
+  , getNextSong = getNextSongImpl stateVar
   , removeSong  = removeSongImpl stateVar
   }
 
@@ -37,6 +38,15 @@ enqueueSongImpl stateVar sInfo p = do
     return $ modQueue st (Heap.insert (Heap.Entry p (Song sId sInfo)))
   return sId
 
+getNextSongImpl :: MVar UserState -> IO Song
+getNextSongImpl stateVar = modifyMVar stateVar $ \st -> do
+    let nextEntry = case Heap.uncons $ userQueue st of
+                     Just nxt -> nxt
+                     Nothing -> error "User queue is empty"
+    let nxtSong = Heap.payload $ fst nextEntry
+    let q' = snd nextEntry
+    return (st{userQueue=q'}, nxtSong) 
+      
 removeSongImpl :: MVar UserState -> SongId -> IO ()
 removeSongImpl stateVar sId = do
   modifyMVar_ stateVar $ \st -> do
