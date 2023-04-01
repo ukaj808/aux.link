@@ -5,9 +5,17 @@ import Data.UUID
 import Data.Aeson.Types
 import Data.Kind
 import Data.Text
+import GHC.Generics
 
 import qualified Data.Aeson as Aeson
 
+{-
+ The Registry monadic interface. This datatype abstracts the actions that the registry 
+ can perform on any data type m. It's more useful to look at this data type as 
+ a description of what the Registry can do in this program. The registry is responsible
+ for the 'management' of rooms. It can create rooms, delete rooms, give you access to a room.
+ Think of this as sortve the manager for a hotel.
+-} 
 data Registry m = Registry
   {
      createRoom        ::   m RoomId
@@ -16,6 +24,16 @@ data Registry m = Registry
   ,  numRooms          ::                 m Int
   }
 
+{-
+ The Room monadic interface. This data type abstracts the actions that a room
+ can perform on any data type m. It's more useful to look at this data type as a 
+ description of what the Room can do in this program. The room is responsible
+ for the internals of a room. It allows users to enter or leave, it can give
+ you the current state of the internals of the room, it manages the song queue
+ of the room, it manages the current vote on the current song, and it tells you
+ what the current song is. Think of this as a sortve maitre d' for a restaurant
+ except every room in our program gets there own maitre d.
+ -}
 data Room m = Room
   {
      enterRoom             ::   Connection m                         -> m ()
@@ -28,6 +46,13 @@ data Room m = Room
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
 
+{-
+ The User monadic interface. This data type abstracts the actions that a User
+ can perform on any data type m. It's more useful to look at this data type as a 
+ description of what the User can do in this program. The user is responsible
+ for what a user can do in a room. You can modify your song queue, you expose the next
+ song in your queue for consumption by the room song player, you can vote on skipping a song.
+ -}
 data User m = User
   {
     enqueueSong :: SongInfo -> Priority -> m SongId
@@ -54,7 +79,7 @@ data SongInfo = SongInfo
      songTitle  :: Text
   ,  songArtist :: Text
   ,  songLength :: Int
-  }
+  } deriving (Generic, FromJSON)
 
 -- Event published from room to users but also published from the users browser solely to the Room
 data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
