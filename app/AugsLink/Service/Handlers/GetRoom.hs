@@ -8,7 +8,6 @@ import Servant
 import Control.Monad
 import Control.Monad.IO.Class
 import Text.Blaze.Html5
-import Data.UUID
 
 import qualified Data.Text                   as T
 import qualified Text.Blaze.Html5            as H
@@ -19,7 +18,7 @@ import AugsLink.Core.API
 
 renderUser :: RoomUser -> H.Html
 renderUser user = 
-  let uid = toValue $ toText $ userId user
+  let uid = toValue $ userId user
       uname = toMarkup $ userName user
   in
   H.li ! A.id uid ! A.class_ "user-order-list__user" $ do
@@ -50,11 +49,7 @@ renderRoomPage users = H.docTypeHtml $ do
       H.section ! A.id "queue"     ! A.class_ "queue"     $ ""
 
 room :: Registry IO -> T.Text -> Handler ServerHtml
-room registry eId = do
-
-  let rId = case fromText eId of
-              Just roomId -> roomId
-              Nothing -> error "Invalid room id"
+room registry rId = do
 
   possibleRoom <- liftIO $ getRoom registry rId
 

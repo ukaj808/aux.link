@@ -5,7 +5,6 @@ module AugsLink.Service.Handlers.RoomWs
 
 import Control.Monad.IO.Class
 import Data.Text
-import Data.UUID
 import Servant
 
 import qualified Network.WebSockets as WS
@@ -17,11 +16,7 @@ type instance Connection IO = WS.PendingConnection
 -- Should not terminate until the room is no longer required; because if it
 -- does then the ws connection will close on the browser
 enter :: Registry IO -> Text -> WS.PendingConnection -> Handler ()
-enter rr eId pc = liftIO $ do
-
-  let rId = case fromText eId of
-              Just roomId -> roomId
-              Nothing -> error "Invalid unique id"
+enter rr rId pc = liftIO $ do
 
   r <- getRoom rr rId
 

@@ -8,5 +8,5 @@ import Servant
 
 import AugsLink.Service.API (ScrapeSongRequest)
 
-scrape :: Text -> ScrapeSongRequest -> Handler Text
-scrape req = do undefined
+scrape :: Text -> Text -> ScrapeSongRequest -> Handler Text
+scrape xrid xsid req = do undefined

@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.API where
 
-import Data.UUID
 import Data.Aeson.Types
 import Data.Kind
 import Data.Text
@@ -59,6 +58,7 @@ data User m = User
   , getRoomUser ::                         m RoomUser
   , getNextSong ::                         m Song
   , removeSong  :: SongId               -> m ()
+  , moveSong    :: SongId               -> m () 
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
   
@@ -97,9 +97,9 @@ newtype ServerCommand = UploadSong SongId
 -- Message from server to user
 newtype ServerMessage = ServerWelcomeMessage RoomUser
 
-type RoomId   = UUID
-type UserId   = UUID
-type SongId   = UUID
+type RoomId   = Text
+type UserId   = Text
+type SongId   = Text
 type UserName = Text
 type Vote     = Bool
 

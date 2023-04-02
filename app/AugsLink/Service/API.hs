@@ -1,6 +1,7 @@
 module AugsLink.Service.API
   ( 
     API
+  , EnqueueSongRequest (..)
   , ScrapeSongRequest (..)
   , ServerHtml
   , StaticHtml (..)
@@ -35,9 +36,10 @@ newtype ScrapeSongRequest = ScrapeSongRequest
   } deriving (Generic, Show)
 instance FromJSON ScrapeSongRequest
 
-newtype EnqueueSongRequest = EnqueueSongRequest
+data EnqueueSongRequest = EnqueueSongRequest
   {
-    song :: SongInfo
+    song     :: SongInfo
+  , priority :: Int
   } deriving (Generic)
 instance FromJSON EnqueueSongRequest
 
@@ -47,9 +49,23 @@ type API =
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] Text) 
    :<|> Capture "roomid" Text :> Get '[HTML] ServerHtml
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
-   :<|> Capture "roomId" Text :> "songs" :> Capture "songId" Text :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
-   :<|> Capture "roomId" Text :> "songs" :> Capture "songId" Text :> "upload" :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text
-   :<|> Capture "roomId" Text :> "songs" :> "scrape" :> ReqBody '[JSON] ScrapeSongRequest     :> Put '[PlainText] Text
+
+   :<|> Capture "roomId" Text :> Capture "userId" Text 
+     :> "songs" :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
+
+   :<|> Capture "roomId" Text :> Capture "userId" Text 
+     :> "songs" :> Capture "songId" Text :> Put '[PlainText] Text
+
+   :<|> Capture "roomId" Text :> Capture "userId" Text 
+     :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text
+
+   :<|> Capture "roomId" Text :> "current-song" 
+     :> Capture "songId" Text :> "upload" 
+       :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text
+
+   :<|> Capture "roomId" Text :> "current-song" 
+     :> Capture "songId" Text :> "scrape" 
+       :> ReqBody '[JSON] ScrapeSongRequest     :> Put '[PlainText] Text
    -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw
    -- Need more endpoints for music file download + delete

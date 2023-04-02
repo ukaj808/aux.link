@@ -4,11 +4,14 @@ import Servant
 
 import AugsLink.Core.API
 import AugsLink.Service.API
+import AugsLink.Service.Handlers.DeleteSong
 import AugsLink.Service.Handlers.GetHome
 import AugsLink.Service.Handlers.GetRoom
 import AugsLink.Service.Handlers.PostHome
-import AugsLink.Service.Handlers.PostScrapeSong
-import AugsLink.Service.Handlers.PostUploadSong
+import AugsLink.Service.Handlers.PutEnqueueSong
+import AugsLink.Service.Handlers.PutMoveSong
+import AugsLink.Service.Handlers.PutScrapeSong
+import AugsLink.Service.Handlers.PutUploadSong
 import AugsLink.Service.Handlers.RoomWs
 import CommandLine
 
@@ -18,6 +21,9 @@ handlers opts rr =
   :<|> create rr
   :<|> room   rr
   :<|> enter  rr
+  :<|> enqueue rr
+  :<|> remove rr
+  :<|> move rr
   :<|> upload rr
   :<|> scrape
   :<|> public

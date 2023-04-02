@@ -10,7 +10,7 @@ module AugsLink.Core.Room
 
 import Control.Concurrent.MVar
 import Control.Monad
-import Data.UUID
+import Data.Text
 import Servant.Multipart
 import System.Directory
 
@@ -31,7 +31,6 @@ data RoomState = RoomState
   {
     roomId                       :: RoomId
   , roomUsers                    :: Map.HashMap UserId UserSession
-  , roomOrder                    :: [UserId]
   , selfManage                   :: SelfManage
   }
 
@@ -48,7 +47,6 @@ initialRoomState rId rsm = RoomState
   {
     roomId     = rId
   , roomUsers  = Map.empty
-  , roomOrder  = []
   , selfManage = rsm
   }
 
@@ -150,7 +148,7 @@ messageToUser rmSt uid msg = do
 
 uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
 uploadSongToRoom rId sId file = do
-  let filePath = "./rooms/" ++ toString rId ++ "/" ++ toString sId
+  let filePath = "./rooms/" ++ unpack rId ++ "/" ++ unpack sId
   fileExist <- doesFileExist filePath
   if fileExist 
   then 
@@ -161,12 +159,12 @@ uploadSongToRoom rId sId file = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users order _) uId uSession = 
-  st{roomUsers = Map.insert uId uSession users, roomOrder = order ++ [uId]}
+addUserToRoom st@(RoomState _ users _) uId uSession = 
+  st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users order _) uId = 
-  st{roomUsers= Map.delete uId users, roomOrder= filter (/= uId) order} 
+removeUser st@(RoomState _ users _) uId = 
+  st{roomUsers= Map.delete uId users} 
 
 sortUsers :: RoomState -> [RoomUser] -> [RoomUser]
 sortUsers st = sortBy (\u u' -> compare (spotInLine u) (spotInLine u'))

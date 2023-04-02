@@ -7,6 +7,7 @@ import qualified Data.Map as M
 
 import AugsLink.Core.API
 import Commons.State
+import Data.Text
 
 type InternalId = Int
 
@@ -28,10 +29,10 @@ modelRegistry = Registry
   , createRoom = State $ \st ->
       let iId = modelNextId st
           rId = fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
-      in ( rId
+      in ( pack ""
          , st { modelRooms  = M.insert iId initialRoomState (modelRooms st)
               , modelNextId = succ iId
-              , modelRoomIds = HM.insert rId iId (modelRoomIds st)
+              , modelRoomIds = HM.insert (pack "") iId (modelRoomIds st)
               }
          )
   , getRoom = undefined

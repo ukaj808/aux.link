@@ -5,26 +5,25 @@ module AugsLink.Service.Handlers.PutEnqueueSong
   ) where 
 
 import Data.Text
-import Data.UUID
 import Control.Monad.IO.Class
 import Servant
 import Servant.Multipart
 
 import AugsLink.Core.API
+import AugsLink.Service.API
 
 type instance SongFile IO = MultipartData Mem
 
-enqueue :: Registry IO -> Text -> EnqueueSongRequest -> Handler Text
-upload rr exRoomId req = liftIO $ do
-  let rId = case fromText exRoomId of
-              Just roomId -> roomId
-              Nothing -> error "Invalid unique id"
-  let sId = case fromText exSongId of
-              Just songId -> songId
-              Nothing -> error "Invalid unique id"
+enqueue :: Registry IO -> Text -> Text -> EnqueueSongRequest -> Handler Text
+enqueue rr rId uId req = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
                Just rm -> rm
                Nothing -> error "Room does not exist"
-  uploadSong room sId file
-  return "success"
+
+  u <- getUser room uId
+  let user = case u of
+               Just us -> us
+               Nothing -> error "User does not exist"
+  
+  enqueueSong user (song req) (priority req)

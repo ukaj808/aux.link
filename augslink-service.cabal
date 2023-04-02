@@ -28,12 +28,14 @@ executable augslink-service
                       , AugsLink.Core.User 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
+                      , AugsLink.Service.Handlers.DeleteSong
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.PostHome
+                      , AugsLink.Service.Handlers.PutEnqueueSong
+                      , AugsLink.Service.Handlers.PutMoveSong
                       , AugsLink.Service.Handlers.PutScrapeSong
                       , AugsLink.Service.Handlers.PutUploadSong
-                      , AugsLink.Service.Handlers.PutEnqueueSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
                       , Commons.State

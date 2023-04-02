@@ -21,19 +21,20 @@ data UserState = UserState
 
 newUser :: IO (User IO)
 newUser = do
-  uId <- nextRandom
-  uName <- return $ toText uId
+  uId <- toText <$> nextRandom
+  uName <- return uId
   stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
   , getRoomUser = userData <$> readMVar stateVar
   , getNextSong = getNextSongImpl stateVar
   , removeSong  = removeSongImpl stateVar
+  , moveSong    = moveSongImpl stateVar
   }
 
 enqueueSongImpl :: MVar UserState -> SongInfo -> Priority -> IO SongId
 enqueueSongImpl stateVar sInfo p = do
-  sId <- nextRandom
+  sId <- toText <$> nextRandom
   modifyMVar_ stateVar $ \st -> do
     return $ modQueue st (Heap.insert (Heap.Entry p (Song sId sInfo)))
   return sId
@@ -49,6 +50,11 @@ getNextSongImpl stateVar = modifyMVar stateVar $ \st -> do
       
 removeSongImpl :: MVar UserState -> SongId -> IO ()
 removeSongImpl stateVar sId = do
+  modifyMVar_ stateVar $ \st -> do
+    return $ modQueue st (Heap.filter (not . entryIsSong sId))
+
+moveSongImpl :: MVar UserState -> SongId -> IO ()
+moveSongImpl stateVar sId = do
   modifyMVar_ stateVar $ \st -> do
     return $ modQueue st (Heap.filter (not . entryIsSong sId))
 
