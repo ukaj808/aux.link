@@ -9,5 +9,5 @@ import Servant
 
 import AugsLink.Core.API
 
-move :: Registry IO -> Text -> Text -> Text -> Handler Text
-move rr xrid xuid xsid = undefined
+move :: Registry IO -> Text -> Text -> Text -> Int -> Handler Text
+move rr rId uId sId p = undefined

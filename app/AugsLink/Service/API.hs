@@ -54,7 +54,7 @@ type API =
      :> "songs" :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
 
    :<|> Capture "roomId" Text :> Capture "userId" Text 
-     :> "songs" :> Capture "songId" Text :> Put '[PlainText] Text
+     :> "songs" :> Capture "songId" Text :> Capture "priority" Int :> Put '[PlainText] Text
 
    :<|> Capture "roomId" Text :> Capture "userId" Text 
      :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text

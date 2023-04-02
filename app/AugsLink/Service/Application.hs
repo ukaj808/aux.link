@@ -22,8 +22,8 @@ handlers opts rr =
   :<|> room   rr
   :<|> enter  rr
   :<|> enqueue rr
-  :<|> remove rr
   :<|> move rr
+  :<|> remove rr
   :<|> upload rr
   :<|> scrape
   :<|> public
