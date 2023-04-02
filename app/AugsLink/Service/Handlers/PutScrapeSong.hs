@@ -6,7 +6,8 @@ module AugsLink.Service.Handlers.PutScrapeSong
 import Data.Text
 import Servant
 
-import AugsLink.Service.API (ScrapeSongRequest)
+import AugsLink.Core.API
+import AugsLink.Service.API
 
-scrape :: Text -> Text -> ScrapeSongRequest -> Handler Text
-scrape xrid xsid req = do undefined
+scrape :: RoomId -> SongId -> ScrapeSongRequest -> Handler Text
+scrape rId sId req = do undefined

@@ -14,7 +14,7 @@ import AugsLink.Service.API
 
 type instance SongFile IO = MultipartData Mem
 
-enqueue :: Registry IO -> Text -> Text -> EnqueueSongRequest -> Handler Text
+enqueue :: Registry IO -> RoomId -> UserId -> EnqueueSongRequest -> Handler Text
 enqueue rr rId uId req = liftIO $ do
   r <- getRoom rr rId
   let room = case r of

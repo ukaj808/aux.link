@@ -58,7 +58,7 @@ data User m = User
   , getRoomUser ::                         m RoomUser
   , getNextSong ::                         m Song
   , removeSong  :: SongId               -> m ()
-  , moveSong    :: SongId               -> m () 
+  , moveSong    :: SongId -> Priority   -> m () 
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
   

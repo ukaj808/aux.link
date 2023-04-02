@@ -9,7 +9,6 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Text.Blaze.Html5
 
-import qualified Data.Text                   as T
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -48,7 +47,7 @@ renderRoomPage users = H.docTypeHtml $ do
       H.section ! A.id "current"   ! A.class_ "current"   $ ""
       H.section ! A.id "queue"     ! A.class_ "queue"     $ ""
 
-room :: Registry IO -> T.Text -> Handler ServerHtml
+room :: Registry IO -> RoomId -> Handler ServerHtml
 room registry rId = do
 
   possibleRoom <- liftIO $ getRoom registry rId

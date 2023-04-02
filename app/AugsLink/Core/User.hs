@@ -53,8 +53,8 @@ removeSongImpl stateVar sId = do
   modifyMVar_ stateVar $ \st -> do
     return $ modQueue st (Heap.filter (not . entryIsSong sId))
 
-moveSongImpl :: MVar UserState -> SongId -> IO ()
-moveSongImpl stateVar sId = do
+moveSongImpl :: MVar UserState -> SongId -> Priority -> IO ()
+moveSongImpl stateVar sId p = do
   modifyMVar_ stateVar $ \st -> do
     return $ modQueue st (Heap.filter (not . entryIsSong sId))
 

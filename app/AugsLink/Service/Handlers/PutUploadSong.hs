@@ -13,7 +13,7 @@ import AugsLink.Core.API
 
 type instance SongFile IO = MultipartData Mem
 
-upload :: Registry IO -> Text -> Text -> MultipartData Mem -> Handler Text
+upload :: Registry IO -> RoomId -> SongId -> MultipartData Mem -> Handler Text
 upload rr rId sId file = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
