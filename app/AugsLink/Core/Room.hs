@@ -20,9 +20,9 @@ import qualified Data.HashMap.Lazy    as Map
 import qualified Network.WebSockets   as WS
 
 import AugsLink.Core.API
+import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
-import Data.List (sortBy)
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO       = MultipartData Mem
@@ -32,6 +32,7 @@ data RoomState = RoomState
     roomId                       :: RoomId
   , roomUsers                    :: Map.HashMap UserId UserSession
   , selfManage                   :: SelfManage
+  , music                        :: Music IO
   }
 
 
@@ -42,30 +43,28 @@ data UserSession = USession
   , user :: User IO
   }
 
-initialRoomState :: RoomId -> SelfManage -> RoomState
-initialRoomState rId rsm = RoomState 
+initialRoomState :: RoomId -> SelfManage -> Music IO -> RoomState
+initialRoomState rId rsm music = RoomState 
   {
     roomId     = rId
   , roomUsers  = Map.empty
   , selfManage = rsm
+  , music      = music 
   }
 
 newRoom :: RoomId -> SelfManage -> IO (Room IO)
 newRoom rId selfManage = do
-  stateVar <- newMVar $ initialRoomState rId selfManage
+  music <- newMusic
+  stateVar <- newMVar $ initialRoomState rId selfManage music
   return $ Room {
-      currentlyPlaying  = currentlyPlayingImpl stateVar
-    , enterRoom         = enterRoomImpl        stateVar
+      enterRoom         = enterRoomImpl        stateVar
     , getUser           = getUserImpl          stateVar
     , leaveRoom         = leaveRoomImpl        stateVar
-    , viewRoom          = viewRoomImpl    stateVar
+    , viewRoom          = viewRoomImpl         stateVar
     , uploadSong        = uploadSongImpl       rId
     }
 
 -- Room API Impls
-currentlyPlayingImpl :: MVar RoomState -> IO SongId
-currentlyPlayingImpl stateVar = undefined
-
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <-     WS.acceptRequest pend
@@ -159,11 +158,11 @@ uploadSongToRoom rId sId file = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _) uId uSession = 
+addUserToRoom st@(RoomState _ users _ _) uId uSession = 
   st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _) uId = 
+removeUser st@(RoomState _ users _ _) uId = 
   st{roomUsers= Map.delete uId users} 
 
 sortUsers :: RoomState -> [RoomUser] -> [RoomUser]

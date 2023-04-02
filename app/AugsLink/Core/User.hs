@@ -41,12 +41,12 @@ enqueueSongImpl stateVar sInfo p = do
 
 getNextSongImpl :: MVar UserState -> IO Song
 getNextSongImpl stateVar = modifyMVar stateVar $ \st -> do
-    let nextEntry = case Heap.uncons $ userQueue st of
-                     Just nxt -> nxt
-                     Nothing -> error "User queue is empty"
-    let nxtSong = Heap.payload $ fst nextEntry
-    let q' = snd nextEntry
-    return (st{userQueue=q'}, nxtSong) 
+  let nextEntry = case Heap.uncons $ userQueue st of
+                   Just nxt -> nxt
+                   Nothing -> error "User queue is empty"
+  let nxtSong = Heap.payload $ fst nextEntry
+  let q' = snd nextEntry
+  return (st{userQueue=q'}, nxtSong) 
       
 removeSongImpl :: MVar UserState -> SongId -> IO ()
 removeSongImpl stateVar sId = do
@@ -56,7 +56,9 @@ removeSongImpl stateVar sId = do
 moveSongImpl :: MVar UserState -> SongId -> Priority -> IO ()
 moveSongImpl stateVar sId p = do
   modifyMVar_ stateVar $ \st -> do
-    return $ modQueue st (Heap.filter (not . entryIsSong sId))
+    let s =  Heap.payload $ Heap.minimum $ Heap.filter (entryIsSong sId) (userQueue st)
+    let s' = Heap.Entry p $ Song (songId s) (songInfo s)
+    return $ modQueue st (Heap.insert s' . Heap.filter (not . entryIsSong sId))
 
 modQueue :: UserState -> (SongQueue -> SongQueue) -> UserState
 modQueue st@(UserState _ q) f = st{userQueue = f q}

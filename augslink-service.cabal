@@ -22,6 +22,7 @@ executable augslink-service
 
     other-modules:      AugsLink.Core.API
                       , AugsLink.Core.Model 
+                      , AugsLink.Core.Music 
                       , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
                       , AugsLink.Core.Shared 

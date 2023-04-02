@@ -38,7 +38,6 @@ data Room m = Room
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  viewRoom              ::                                           m [RoomUser]
-  ,  currentlyPlaying      ::                                           m SongId
   ,  getUser               ::   UserId  ->                              m (Maybe (User m))
   ,  uploadSong            ::   SongId  -> SongFile m ->                m ()
   -- maybe package everyting into "Current RoomState" and return that?
@@ -61,6 +60,13 @@ data User m = User
   , moveSong    :: SongId -> Priority   -> m () 
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
+
+data Music m = Music 
+  {
+    start :: m ()
+  , currentlyPlaying :: m SongId
+  , confirmReady :: UserId -> m ()
+  }
   
 data RoomUser = RoomUser
    {
@@ -72,14 +78,14 @@ data Song = Song
    {
      songId       :: SongId 
    , songInfo     :: SongInfo
-   }
+   } deriving (Show)
 
 data SongInfo = SongInfo
   {
      songTitle  :: Text
   ,  songArtist :: Text
   ,  songLength :: Int
-  } deriving (Generic, FromJSON)
+  } deriving (Generic, FromJSON, Show)
 
 -- Event published from room to users but also published from the users browser solely to the Room
 data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
