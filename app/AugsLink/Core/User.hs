@@ -11,25 +11,28 @@ import Data.UUID
 import qualified Data.Heap         as Heap
 
 import AugsLink.Core.API
+import AugsLink.Core.Shared
 
 type SongQueue = Heap.Heap (Heap.Entry Int Song)
 data UserState = UserState
   {
     userData        :: RoomUser
   , userQueue       :: SongQueue
+  , roomManage      :: Maybe RoomManage
   }
 
-newUser :: IO (User IO)
-newUser = do
+newUser :: Maybe RoomManage -> IO (User IO)
+newUser rm = do
   uId <- toText <$> nextRandom
   uName <- return uId
-  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty
+  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty rm
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
   , getRoomUser = userData <$> readMVar stateVar
   , getNextSong = getNextSongImpl stateVar
   , removeSong  = removeSongImpl stateVar
   , moveSong    = moveSongImpl stateVar
+  , startMusic  = startMusicImpl stateVar
   }
 
 enqueueSongImpl :: MVar UserState -> SongInfo -> Priority -> IO SongId
@@ -53,6 +56,13 @@ removeSongImpl stateVar sId = do
   modifyMVar_ stateVar $ \st -> do
     return $ modQueue st (Heap.filter (not . entryIsSong sId))
 
+startMusicImpl :: MVar UserState -> IO ()
+startMusicImpl stateVar = do
+  st <- readMVar stateVar
+  maybe 
+    (error "User does not have permission to do so") 
+    startMusicCallback  (roomManage st)
+
 moveSongImpl :: MVar UserState -> SongId -> Priority -> IO ()
 moveSongImpl stateVar sId p = do
   modifyMVar_ stateVar $ \st -> do
@@ -61,7 +71,7 @@ moveSongImpl stateVar sId p = do
     return $ modQueue st (Heap.insert s' . Heap.filter (not . entryIsSong sId))
 
 modQueue :: UserState -> (SongQueue -> SongQueue) -> UserState
-modQueue st@(UserState _ q) f = st{userQueue = f q}
+modQueue st@(UserState _ q _) f = st{userQueue = f q}
 
 entryIsSong :: SongId -> Heap.Entry a Song -> Bool
 entryIsSong sId (Heap.Entry _ (Song sId' _)) = sId == sId'

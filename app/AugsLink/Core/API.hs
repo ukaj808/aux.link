@@ -58,6 +58,7 @@ data User m = User
   , getNextSong ::                         m Song
   , removeSong  :: SongId               -> m ()
   , moveSong    :: SongId -> Priority   -> m () 
+  , startMusic  ::                         m ()
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
 

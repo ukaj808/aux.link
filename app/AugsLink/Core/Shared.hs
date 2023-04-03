@@ -1,8 +1,13 @@
 module AugsLink.Core.Shared 
   ( 
-    SelfManage(..) 
+    RegistryManage(..) 
+  , RoomManage(..)
   ) where
 
-newtype SelfManage = SelfManage {
-  selfDestruct :: IO ()
+newtype RegistryManage = RegistryManage {
+  selfDestructCallback :: IO ()
+}
+
+newtype RoomManage = RoomManage {
+  startMusicCallback :: IO ()
 }

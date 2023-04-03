@@ -10,6 +10,7 @@ module AugsLink.Core.Room
 
 import Control.Concurrent.MVar
 import Control.Monad
+import Data.List
 import Data.Text
 import Servant.Multipart
 import System.Directory
@@ -31,7 +32,7 @@ data RoomState = RoomState
   {
     roomId                       :: RoomId
   , roomUsers                    :: Map.HashMap UserId UserSession
-  , selfManage                   :: SelfManage
+  , registryManage               :: RegistryManage
   , music                        :: Music IO
   }
 
@@ -43,19 +44,19 @@ data UserSession = USession
   , user :: User IO
   }
 
-initialRoomState :: RoomId -> SelfManage -> Music IO -> RoomState
+initialRoomState :: RoomId -> RegistryManage -> Music IO -> RoomState
 initialRoomState rId rsm music = RoomState 
   {
     roomId     = rId
   , roomUsers  = Map.empty
-  , selfManage = rsm
+  , registryManage = rsm
   , music      = music 
   }
 
-newRoom :: RoomId -> SelfManage -> IO (Room IO)
-newRoom rId selfManage = do
+newRoom :: RoomId -> RegistryManage -> IO (Room IO)
+newRoom rId registryManage = do
   music <- newMusic
-  stateVar <- newMVar $ initialRoomState rId selfManage music
+  stateVar <- newMVar $ initialRoomState rId registryManage music
   return $ Room {
       enterRoom         = enterRoomImpl        stateVar
     , getUser           = getUserImpl          stateVar
@@ -65,11 +66,12 @@ newRoom rId selfManage = do
     }
 
 -- Room API Impls
+
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <-     WS.acceptRequest pend
   uId <- modifyMVar stateVar $ \st -> do
-    u       <-     newUser
+    u       <-     newUser (roomManagementPermission st)
     rUser   <-     getRoomUser u
     let spot =     Map.size $ roomUsers st
     let st'  =     addUserToRoom st (userId rUser) (USession spot conn u)
@@ -77,8 +79,17 @@ enterRoomImpl stateVar pend = do
     publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
     return  (st', userId rUser)
   WS.withPingThread conn 30 (return ()) $ handleIncomingMessages stateVar conn uId
+  where
+    roomManagementPermission :: RoomState -> Maybe RoomManage
+    roomManagementPermission st = 
+      if Map.size (roomUsers st) == 0 
+      then Just $ RoomManage $ start $ music st
+      else Nothing
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
+  --
+
+startMusic = undefine
 
 getUserImpl :: MVar RoomState -> UserId -> IO (Maybe (User IO))
 getUserImpl stateVar uId = do
@@ -94,7 +105,7 @@ leaveRoomImpl stateVar uId = do
    
    st <- readMVar stateVar
    when (Map.size (roomUsers st) == 0) $
-     selfDestruct $ selfManage st 
+     selfDestructCallback $ registryManage st 
 
 viewRoomImpl :: MVar RoomState -> IO [RoomUser]
 viewRoomImpl stateVar = do

@@ -1,6 +1,6 @@
 module AugsLink.Core.Registry 
   ( 
-    SelfManage(..)
+    RegistryManage(..)
   , newRegistry
   ) where
 
@@ -39,7 +39,7 @@ newRegistry = do
         Map.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
         rId       <- toText <$> nextRandom
-        room      <- newRoom rId $ SelfManage {selfDestruct=deleteRoomImpl stateVar rId}
+        room      <- newRoom rId $ RegistryManage {selfDestructCallback=deleteRoomImpl stateVar rId}
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = Map.insert rId room $ rooms st
           return (st{rooms =  rooms'}, Map.size rooms')
