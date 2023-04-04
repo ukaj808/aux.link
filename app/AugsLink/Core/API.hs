@@ -66,7 +66,7 @@ data Music m = Music
   {
     start :: m ()
   , currentlyPlaying :: m SongId
-  , confirmReady :: UserId -> m ()
+  , listen :: UserId -> Connection m -> m ()
   }
   
 data RoomUser = RoomUser
