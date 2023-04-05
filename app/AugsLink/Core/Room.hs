@@ -14,6 +14,8 @@ import Data.List
 import Data.Text
 import Servant.Multipart
 import System.Directory
+import Data.UUID
+import Data.UUID.V4
 
 import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString.Lazy as LBS
@@ -45,17 +47,17 @@ data UserSession = USession
   }
 
 initialRoomState :: RoomId -> RegistryManage -> Music IO -> RoomState
-initialRoomState rId rsm music = RoomState 
+initialRoomState rId rsm music = RoomState
   {
-    roomId     = rId
-  , roomUsers  = Map.empty
+    roomId         = rId
+  , roomUsers      = Map.empty
   , registryManage = rsm
-  , music      = music 
+  , music          = music
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
 newRoom rId registryManage = do
-  music <- newMusic
+  music    <- newMusic
   stateVar <- newMVar $ initialRoomState rId registryManage music
   return $ Room {
       enterRoom         = enterRoomImpl        stateVar
@@ -69,43 +71,49 @@ newRoom rId registryManage = do
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
-  conn <-     WS.acceptRequest pend
-  uId <- modifyMVar stateVar $ \st -> do
-    u       <-     newUser (roomManagementPermission st)
-    rUser   <-     getRoomUser u
-    let spot =     Map.size $ roomUsers st
-    let st'  =     addUserToRoom st (userId rUser) (USession spot conn u)
+  conn <- WS.acceptRequest pend
+  uId  <- toText <$> nextRandom
+  print $ "User ID: " ++ unpack uId
+  modifyMVar_ stateVar $ \st -> do
+    u        <-     newUser uId (buildCallbacks st uId)
+    rUser    <-     getRoomUser u
+    let spot =      Map.size $ roomUsers st
+    let st'  =      addUserToRoom st (userId rUser) (USession spot conn u)
     messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
     publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
-    return  (st', userId rUser)
-  WS.withPingThread conn 30 (return ()) $ handleIncomingMessages stateVar conn uId
+    return  st'
+  WS.withPingThread conn 30 (return ()) $
+    handleIncomingMessages stateVar conn uId
   where
-    roomManagementPermission :: RoomState -> Maybe RoomManage
-    roomManagementPermission st = 
-      if Map.size (roomUsers st) == 0 
-      then Just $ RoomManage $ start $ music st
-      else Nothing
+    buildCallbacks :: RoomState -> UserId -> RoomManage
+    buildCallbacks st uId = RoomManage
+        {
+          startMusicCallback =
+            if Map.size (roomUsers st) == 0
+            then Right $ start $ music st
+            else Left "This user doesnt have permission to start the music"
+        , listenToMusicCallback = listen (music st) uId
+        , stopListenToMusicCallback = stopListening (music st) uId
+        }
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
-
-startMusic = undefine
 
 getUserImpl :: MVar RoomState -> UserId -> IO (Maybe (User IO))
 getUserImpl stateVar uId = do
   st <- readMVar stateVar
   return $ user <$> Map.lookup uId (roomUsers st)
-    
+
 leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
 leaveRoomImpl stateVar uId = do
    modifyMVar_ stateVar $ \st -> do
      let st'' = removeUser st uId
      publishToRoom st'' $ UserLeftEvent uId
      return st''
-   
+
    st <- readMVar stateVar
    when (Map.size (roomUsers st) == 0) $
-     selfDestructCallback $ registryManage st 
+     selfDestructCallback $ registryManage st
 
 viewRoomImpl :: MVar RoomState -> IO [RoomUser]
 viewRoomImpl stateVar = do
@@ -113,11 +121,11 @@ viewRoomImpl stateVar = do
   users <- mapM (getRoomUser . user) (Map.elems $ roomUsers roomState)
   return $ sortUsers roomState users
 
-uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO () 
+uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO ()
 uploadSongImpl rId sId sFile = do
   let file = lookupFile "song" sFile
-  either 
-    (error "No file present in request") 
+  either
+    (error "No file present in request")
     (uploadSongToRoom rId sId) file
 
 
@@ -160,8 +168,8 @@ uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
 uploadSongToRoom rId sId file = do
   let filePath = "./rooms/" ++ unpack rId ++ "/" ++ unpack sId
   fileExist <- doesFileExist filePath
-  if fileExist 
-  then 
+  if fileExist
+  then
    error "Song already uploaded to this room"
   else do
     LBS.writeFile filePath (fdPayload file)
@@ -169,12 +177,12 @@ uploadSongToRoom rId sId file = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _) uId uSession = 
+addUserToRoom st@(RoomState _ users _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _) uId = 
-  st{roomUsers= Map.delete uId users} 
+removeUser st@(RoomState _ users _ _) uId =
+  st{roomUsers= Map.delete uId users}
 
 sortUsers :: RoomState -> [RoomUser] -> [RoomUser]
 sortUsers st = sortBy (\u u' -> compare (spotInLine u) (spotInLine u'))

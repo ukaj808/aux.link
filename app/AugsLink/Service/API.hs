@@ -59,6 +59,10 @@ type API =
    :<|> Capture "roomId" Text :> Capture "userId" Text 
      :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text
 
+   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "listen"           :> WebSocketPending
+   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "stop-listening"   :> Put '[PlainText] Text
+   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "start"            :> Put '[PlainText] Text
+
    :<|> Capture "roomId" Text :> "current-song" 
      :> Capture "songId" Text :> "upload" 
        :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text

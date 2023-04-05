@@ -1,6 +1,6 @@
 module AugsLink.Service.Handlers.PostHome 
   ( 
-    create
+    createHandler
   ) where
 
 import Servant
@@ -9,8 +9,8 @@ import Data.Text
 
 import AugsLink.Core.API
 
-create :: Registry IO -> Handler (Headers '[Header "Location" Text] Text)
-create rr = do
+createHandler :: Registry IO -> Handler (Headers '[Header "Location" Text] Text)
+createHandler rr = do
   rId <- liftIO $ createRoom rr
   return $ addHeader (genLocation rId) rId
 

@@ -1,6 +1,6 @@
 module AugsLink.Service.Handlers.PutScrapeSong 
   (
-    scrape
+    scrapeHandler
   ) where 
 
 import Data.Text
@@ -9,5 +9,5 @@ import Servant
 import AugsLink.Core.API
 import AugsLink.Service.API
 
-scrape :: RoomId -> SongId -> ScrapeSongRequest -> Handler Text
-scrape rId sId req = do undefined
+scrapeHandler :: RoomId -> SongId -> ScrapeSongRequest -> Handler Text
+scrapeHandler rId sId req = do undefined

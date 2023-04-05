@@ -53,20 +53,22 @@ data Room m = Room
  -}
 data User m = User
   {
-    enqueueSong :: SongInfo -> Priority -> m SongId
-  , getRoomUser ::                         m RoomUser
-  , getNextSong ::                         m Song
-  , removeSong  :: SongId               -> m ()
-  , moveSong    :: SongId -> Priority   -> m () 
-  , startMusic  ::                         m ()
+    enqueueSong       :: SongInfo -> Priority -> m SongId
+  , getRoomUser       ::                         m RoomUser
+  , getNextSong       ::                         m Song
+  , removeSong        :: SongId               -> m ()
+  , moveSong          :: SongId -> Priority   -> m () 
+  , startMusic        ::                         m ()
+  , listenToMusic     :: Connection m         -> m () 
+  , stopListenToMusic ::                         m () 
   --, uploadSong  :: SongId -> SongFile m -> m ()
   }
 
 data Music m = Music 
   {
-    start :: m ()
-  , currentlyPlaying :: m SongId
-  , listen :: UserId -> Connection m -> m ()
+    start         :: m ()
+  , listen        :: UserId -> Connection m -> m ()
+  , stopListening :: UserId -> m ()
   }
   
 data RoomUser = RoomUser

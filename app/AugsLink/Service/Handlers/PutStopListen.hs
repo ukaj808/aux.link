@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Handlers.PutMoveSong
+module AugsLink.Service.Handlers.PutStopListen
   (
-    moveHandler
+    stopListenHandler
   ) where 
 
 import Data.Text
@@ -10,8 +10,8 @@ import Servant
 
 import AugsLink.Core.API
 
-moveHandler :: Registry IO -> RoomId -> UserId -> SongId -> Priority -> Handler Text
-moveHandler rr rId uId sId p = liftIO $ do
+stopListenHandler :: Registry IO -> RoomId -> UserId -> Handler Text
+stopListenHandler rr rId uId = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
                Just rm -> rm
@@ -22,6 +22,6 @@ moveHandler rr rId uId sId p = liftIO $ do
                Just us -> us
                Nothing -> error "User does not exist"
   
-  moveSong user sId p
+  stopListenToMusic user
 
-  return sId
+  return "stop"

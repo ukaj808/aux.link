@@ -57,6 +57,14 @@ const createNewUserListElement = (userDetails) => {
 
     li.appendChild(uname);
 
+    li.addEventListener('click', () => {
+      let ws;
+      if (ws) ws.close();
+      ws = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${userId}/music/listen`);
+      ws.addEventListener("message", (m) => console.log(m));
+      fetch(`http://${roomsUrl}/${roomId}/${userId}/music/start`, { method: 'PUT'});
+    });
+
     return li;
 }
 

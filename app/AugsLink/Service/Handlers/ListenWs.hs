@@ -1,6 +1,6 @@
-module AugsLink.Service.Handlers.RoomWs 
+module AugsLink.Service.Handlers.ListenWs
   ( 
-    enterHandler
+    listenHandler
   ) where
 
 import Control.Monad.IO.Class
@@ -9,14 +9,14 @@ import Servant
 
 import qualified Network.WebSockets as WS
 
-import AugsLink.Core.API
+import AugsLink.Core.API hiding (listen)
 
 type instance Connection IO = WS.PendingConnection
 
 -- Should not terminate until the room is no longer required; because if it
 -- does then the ws connection will close on the browser
-enterHandler :: Registry IO -> Text -> WS.PendingConnection -> Handler ()
-enterHandler rr rId pc = liftIO $ do
+listenHandler :: Registry IO -> Text ->  Text -> WS.PendingConnection -> Handler ()
+listenHandler rr rId uId pc = liftIO $ do
 
   r <- getRoom rr rId
 
@@ -24,5 +24,9 @@ enterHandler rr rId pc = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-  enterRoom room pc
-
+  u <- getUser room uId
+  let user = case u of
+               Just us -> us
+               Nothing -> error "User does not exist"
+  
+  listenToMusic user pc

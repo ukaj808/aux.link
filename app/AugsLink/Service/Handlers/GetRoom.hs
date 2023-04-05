@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.GetRoom
   ( 
-    room
+    roomHandler
   ) where
 
 import Servant
@@ -47,8 +47,8 @@ renderRoomPage users = H.docTypeHtml $ do
       H.section ! A.id "current"   ! A.class_ "current"   $ ""
       H.section ! A.id "queue"     ! A.class_ "queue"     $ ""
 
-room :: Registry IO -> RoomId -> Handler ServerHtml
-room registry rId = do
+roomHandler :: Registry IO -> RoomId -> Handler ServerHtml
+roomHandler registry rId = do
 
   possibleRoom <- liftIO $ getRoom registry rId
 

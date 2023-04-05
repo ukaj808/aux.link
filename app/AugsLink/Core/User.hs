@@ -9,21 +9,22 @@ import Data.UUID.V4
 import Data.UUID
 
 import qualified Data.Heap         as Heap
+import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
 import AugsLink.Core.Shared
 
+type instance Connection IO = WS.PendingConnection
 type SongQueue = Heap.Heap (Heap.Entry Int Song)
 data UserState = UserState
   {
     userData        :: RoomUser
   , userQueue       :: SongQueue
-  , roomManage      :: Maybe RoomManage
+  , roomManage      :: RoomManage
   }
 
-newUser :: Maybe RoomManage -> IO (User IO)
-newUser rm = do
-  uId <- toText <$> nextRandom
+newUser :: UserId -> RoomManage -> IO (User IO)
+newUser uId rm = do
   uName <- return uId
   stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty rm
   return $ User {
@@ -33,6 +34,8 @@ newUser rm = do
   , removeSong  = removeSongImpl stateVar
   , moveSong    = moveSongImpl stateVar
   , startMusic  = startMusicImpl stateVar
+  , stopListenToMusic = stopListenToMusicImpl stateVar
+  , listenToMusic = listenToMusicImpl stateVar
   }
 
 enqueueSongImpl :: MVar UserState -> SongInfo -> Priority -> IO SongId
@@ -59,9 +62,18 @@ removeSongImpl stateVar sId = do
 startMusicImpl :: MVar UserState -> IO ()
 startMusicImpl stateVar = do
   st <- readMVar stateVar
-  maybe 
-    (error "User does not have permission to do so") 
-    startMusicCallback  (roomManage st)
+  either error id 
+    (startMusicCallback (roomManage st))
+
+stopListenToMusicImpl :: MVar UserState -> IO ()
+stopListenToMusicImpl stateVar = do
+  st <- readMVar stateVar
+  stopListenToMusicCallback (roomManage st)
+
+listenToMusicImpl :: MVar UserState -> Connection IO ->IO ()
+listenToMusicImpl stateVar pend = do
+  st <- readMVar stateVar
+  listenToMusicCallback (roomManage st) pend
 
 moveSongImpl :: MVar UserState -> SongId -> Priority -> IO ()
 moveSongImpl stateVar sId p = do

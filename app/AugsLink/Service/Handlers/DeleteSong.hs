@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.DeleteSong
   (
-    remove
+    removeHandler
   ) where 
 
 import Data.Text
@@ -10,8 +10,8 @@ import Servant
 
 import AugsLink.Core.API
 
-remove :: Registry IO -> RoomId -> UserId -> SongId -> Handler Text
-remove rr rId uId sId = liftIO $ do
+removeHandler :: Registry IO -> RoomId -> UserId -> SongId -> Handler Text
+removeHandler rr rId uId sId = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
                Just rm -> rm

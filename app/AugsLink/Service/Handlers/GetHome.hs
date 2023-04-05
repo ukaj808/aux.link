@@ -1,6 +1,6 @@
 module AugsLink.Service.Handlers.GetHome 
   ( 
-    home
+    homeHandler
   ) where
 
 import Control.Monad.IO.Class
@@ -10,7 +10,7 @@ import AugsLink.Service.API
 import CommandLine
 import Data.Text.IO as T
 
-home :: CLArgs -> Handler StaticHtml
-home opts = do
+homeHandler :: CLArgs -> Handler StaticHtml
+homeHandler opts = do
   homeHtmlFile <- liftIO $ T.readFile $ homeViewPath opts 
   return $ StaticHtml homeHtmlFile
