@@ -23,13 +23,7 @@ startHandler rr rId uId = liftIO $ do
                Just us -> us
                Nothing -> error "Room does not exist"
 
-  canStart <- isCreator user
-
-  if canStart
-  then (do
-    m <- getMusic room
-    start m uId
-   )
-  else error "User wasnt the creator"
+  m <- getMusic room
+  start m user
     
   return "start"

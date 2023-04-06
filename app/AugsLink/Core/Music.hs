@@ -14,17 +14,19 @@ import AugsLink.Core.API
 
 type instance Connection IO = WS.PendingConnection
 
-newtype UserListenSession = ULSession
+data UserListenSession = ULSession
   {
     conn :: WS.Connection
+  , user :: User IO
   }
 
 data PlayState = NotStarted | Playing
 
 data MusicState = MusicState
   {
-    playState   :: PlayState
-  , listening   :: Map.HashMap UserId UserListenSession
+    playState        :: PlayState
+  , listening        :: Map.HashMap UserId UserListenSession
+  , currentlyPlaying :: Maybe Song
   }
 
 -- 1)Maybe I can use a media player on the host to get a sort of signal to how far along the song is...
@@ -32,42 +34,52 @@ data MusicState = MusicState
 --    I could then use this pulse to know when the song is done?
 newMusic :: IO (Music IO)
 newMusic = do
-  stateVar <- newMVar $ MusicState NotStarted Map.empty
+  stateVar <- newMVar $ MusicState NotStarted Map.empty Nothing
   return $ Music {
       listen        = listenImpl        stateVar
     , start         = startImpl         stateVar
     , stopListening = stopListeningImpl stateVar
     }
 
-listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
-listenImpl stateVar uId pend = do
-  conn <-     WS.acceptRequest pend
+listenImpl :: MVar MusicState -> User IO -> Connection IO -> IO ()
+listenImpl stateVar user pend = do
+  conn  <-     WS.acceptRequest pend
+  uId <-     userId <$> getRoomUser user
   modifyMVar_ stateVar $ \st -> do
-    let u   = ULSession conn
+    let u   = ULSession conn user
     let st' = st{listening= Map.insert uId u (listening st)}
     return st'
   WS.withPingThread conn 30 (return ()) $ 
     handleIncomingMessages stateVar conn uId
 
-startImpl :: MVar MusicState -> UserId -> IO ()
-startImpl stateVar uId = do
-  modifyMVar_ stateVar $ \st ->
-    return st{playState=Playing}
-  stream
+startImpl :: MVar MusicState -> User IO -> IO ()
+startImpl stateVar user = do
+  createdRoom <- isCreator user
+  if createdRoom then do
+    modifyMVar_ stateVar $ \st ->
+      return st{playState=Playing}
+    stream
+  else error "This user did not create the room"
   where
     stream :: IO ()
-    stream  = do
-      st <- readMVar stateVar
-      case playState st of
-        Playing -> do
-          forM_ (listening st) $ \session ->
-            WS.sendTextData (conn session) (pack "streaming!");
-            threadDelay 1000000 -- 1 second
-        _ -> return ()
+    stream  = do 
+      modifyMVar_ stateVar $ \st ->
+        case playState st of
+          Playing -> do
+            forM_ (listening st) $ \session ->
+              case currentlyPlaying st of
+                Just s -> do
+                  WS.sendTextData (conn session) (songTitle $ songInfo s)
+                  threadDelay 1000000 -- 1 second
+                Nothing -> return ()
+            return st
+
+          _ -> return st
       stream
 
-stopListeningImpl :: MVar MusicState -> UserId -> IO ()
-stopListeningImpl stateVar uId = do
+stopListeningImpl :: MVar MusicState -> User IO -> IO ()
+stopListeningImpl stateVar user = do
+  uId <-     userId <$> getRoomUser user
   modifyMVar_ stateVar $ \st -> 
     return st{listening= Map.delete uId (listening st)}
 

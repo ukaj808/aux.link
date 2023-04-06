@@ -18,7 +18,12 @@ stopListenHandler rr rId uId = liftIO $ do
                Nothing -> error "Room does not exist"
 
   m <- getMusic room
+
+  u <- getUser room uId
+  let user = case u of
+               Just us -> us
+               Nothing -> error "Room does not exist"
   
-  stopListening m uId
+  stopListening m user
 
   return "stop"

@@ -24,6 +24,11 @@ listenHandler rr rId uId pc = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
+  u <- getUser room uId
+  let user = case u of
+               Just us -> us
+               Nothing -> error "Room does not exist"
+
   m <- getMusic room
   
-  listen m uId pc
+  listen m user pc

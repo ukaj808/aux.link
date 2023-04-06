@@ -58,14 +58,15 @@ data User m = User
   , getRoomUser       ::                         m RoomUser
   , removeSong        :: SongId               -> m ()
   , moveSong          :: SongId -> Priority   -> m () 
+  , dequeueSong          ::                      m (Maybe Song)
   , isCreator         ::                         m Bool
   }
 
 data Music m = Music 
   {
-    start         :: UserId -> m ()
-  , listen        :: UserId -> Connection m -> m ()
-  , stopListening :: UserId -> m ()
+    start         :: User IO -> m ()
+  , listen        :: User IO -> Connection m -> m ()
+  , stopListening :: User IO -> m ()
   }
   
 data RoomUser = RoomUser

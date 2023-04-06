@@ -32,7 +32,20 @@ newUser uId createdRoom = do
   , removeSong  = removeSongImpl stateVar
   , moveSong    = moveSongImpl stateVar
   , isCreator   = creator <$> readMVar stateVar
+  , dequeueSong    = nextSongImpl stateVar
   }
+
+nextSongImpl :: MVar UserState -> IO (Maybe Song)
+nextSongImpl stateVar = do
+ modifyMVar stateVar $ \st -> do
+   let poll = Heap.uncons (userQueue st)
+   case poll of 
+     Just (e, q) -> 
+       return (st{userQueue=q}, Just $ Heap.payload e)
+     Nothing     -> 
+       return (st, Nothing)
+
+   
 
 enqueueSongImpl :: MVar UserState -> SongInfo -> Priority -> IO SongId
 enqueueSongImpl stateVar sInfo p = do
