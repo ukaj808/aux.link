@@ -8,7 +8,7 @@ import Data.Text
 import Control.Monad.IO.Class
 import Servant
 
-import AugsLink.Core.API hiding (start)
+import AugsLink.Core.API
 
 startHandler :: Registry IO -> RoomId -> UserId -> Handler Text
 startHandler rr rId uId = liftIO $ do
@@ -17,11 +17,19 @@ startHandler rr rId uId = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
+
   u <- getUser room uId
   let user = case u of
                Just us -> us
-               Nothing -> error "User does not exist"
-  
-  startMusic user
+               Nothing -> error "Room does not exist"
 
+  canStart <- isCreator user
+
+  if canStart
+  then (do
+    m <- getMusic room
+    start m uId
+   )
+  else error "User wasnt the creator"
+    
   return "start"

@@ -49,8 +49,8 @@ listenImpl stateVar uId pend = do
   WS.withPingThread conn 30 (return ()) $ 
     handleIncomingMessages stateVar conn uId
 
-startImpl :: MVar MusicState -> IO ()
-startImpl stateVar = do
+startImpl :: MVar MusicState -> UserId -> IO ()
+startImpl stateVar uId = do
   modifyMVar_ stateVar $ \st ->
     return st{playState=Playing}
   stream

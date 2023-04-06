@@ -36,6 +36,7 @@ data RoomState = RoomState
   , roomUsers                    :: Map.HashMap UserId UserSession
   , registryManage               :: RegistryManage
   , music                        :: Music IO
+  , creator                      :: Maybe UserId
   }
 
 
@@ -53,6 +54,7 @@ initialRoomState rId rsm music = RoomState
   , roomUsers      = Map.empty
   , registryManage = rsm
   , music          = music
+  , creator        = Nothing
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
@@ -65,6 +67,7 @@ newRoom rId registryManage = do
     , leaveRoom         = leaveRoomImpl        stateVar
     , viewRoom          = viewRoomImpl         stateVar
     , uploadSong        = uploadSongImpl       rId
+    , getMusic          = getMusicImpl         stateVar
     }
 
 -- Room API Impls
@@ -73,31 +76,22 @@ enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend
   uId  <- toText <$> nextRandom
-  print $ "User ID: " ++ unpack uId
   modifyMVar_ stateVar $ \st -> do
-    u        <-     newUser uId (buildCallbacks st uId)
-    rUser    <-     getRoomUser u
     let spot =      Map.size $ roomUsers st
+    u        <-     newUser uId (spot == 0)
+    rUser    <-     getRoomUser u
     let st'  =      addUserToRoom st (userId rUser) (USession spot conn u)
     messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
     publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
     return  st'
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
-  where
-    buildCallbacks :: RoomState -> UserId -> RoomManage
-    buildCallbacks st uId = RoomManage
-        {
-          startMusicCallback =
-            if Map.size (roomUsers st) == 0
-            then Right $ start $ music st
-            else Left "This user doesnt have permission to start the music"
-        , listenToMusicCallback = listen (music st) uId
-        , stopListenToMusicCallback = stopListening (music st) uId
-        }
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
   --
+
+getMusicImpl :: MVar RoomState -> IO (Music IO)
+getMusicImpl stateVar = music <$> readMVar stateVar
 
 getUserImpl :: MVar RoomState -> UserId -> IO (Maybe (User IO))
 getUserImpl stateVar uId = do
@@ -177,11 +171,11 @@ uploadSongToRoom rId sId file = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _) uId =
+removeUser st@(RoomState _ users _ _ _) uId =
   st{roomUsers= Map.delete uId users}
 
 sortUsers :: RoomState -> [RoomUser] -> [RoomUser]
