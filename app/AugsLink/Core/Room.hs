@@ -81,11 +81,17 @@ enterRoomImpl stateVar pend = do
   uId  <-
     modifyMVar stateVar $ \st -> do
       let uId  =      userCount st
+      print "debug 4"
       u        <-     newUser (roomId st) uId (uId == 0)
+      print "debug 5"
       rUser    <-     getRoomUser u
+      print "debug 6"
       let st'  =      addUserToRoom st (userId rUser) (USession conn u)
+      print "debug 7"
       messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
+      print "debug 8"
       publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
+      print "debug 9"
       return  (st'{userCount=uId + 1}, uId)
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
@@ -115,8 +121,7 @@ leaveRoomImpl stateVar uId = do
 viewRoomImpl :: MVar RoomState -> IO [RoomUser]
 viewRoomImpl stateVar = do
   roomState <- readMVar stateVar
-  let ks = [0 .. userCount roomState]
-  let userSessions = Data.List.map (roomUsers roomState Map.!) ks
+  let userSessions = Map.elems $ roomUsers roomState
   users <- mapM (getRoomUser . user) userSessions
   return $ sort users
 
@@ -161,6 +166,7 @@ publishToRoom rmSt e = do
 
 messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
 messageToUser rmSt uid msg = do
+  print "debug 3"
   let uSession = roomUsers rmSt Map.! uid
   WS.sendTextData (conn uSession) (Aeson.encode msg)
 
