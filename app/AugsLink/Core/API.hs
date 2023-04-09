@@ -14,7 +14,7 @@ import qualified Data.Aeson as Aeson
  a description of what the Registry can do in this program. The registry is responsible
  for the 'management' of rooms. It can create rooms, delete rooms, give you access to a room.
  Think of this as sortve the manager for a hotel.
--} 
+-}
 data Registry m = Registry
   {
      createRoom        ::   m RoomId
@@ -38,9 +38,9 @@ data Room m = Room
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  viewRoom              ::                                           m [RoomUser]
-  ,  getUser               ::   UserId  ->                              m (Maybe (User m))
+  ,  getUser               ::   UserId                              ->  m (Maybe (User m))
   ,  getMusic              ::                                           m (Music m)
-  ,  uploadSong            ::   SongId  -> SongFile m ->                m ()
+  ,  nextUp                ::                                           m (User m)
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -54,21 +54,22 @@ data Room m = Room
  -}
 data User m = User
   {
-    enqueueSong       :: SongInfo -> Priority -> m SongId
-  , getRoomUser       ::                         m RoomUser
-  , removeSong        :: SongId               -> m ()
-  , moveSong          :: SongId -> Priority   -> m () 
-  , dequeueSong          ::                      m (Maybe Song)
-  , isCreator         ::                         m Bool
+    enqueueSong       :: Priority -> m SongId
+  , uploadSong        :: SongId   -> SongFile m -> m ()
+  , getRoomUser       ::                           m RoomUser
+  , removeSong        :: SongId                 -> m ()
+  , moveSong          :: SongId -> Priority     -> m ()
+  , dequeueSong          ::                        m (Either String (Maybe SongId)) -- Either failed to upload or user hasnt queued anything...
+  , isCreator         ::                           m Bool
   }
 
-data Music m = Music 
+data Music m = Music
   {
-    start         :: User IO -> m ()
-  , listen        :: User IO -> Connection m -> m ()
-  , stopListening :: User IO -> m ()
+    start         :: Room IO -> User IO                 -> m ()
+  , listen        :: Room IO -> User IO -> Connection m -> m ()
+  , stopListening :: Room IO -> User IO                 -> m ()
   }
-  
+
 data RoomUser = RoomUser
    {
      userId         :: UserId
@@ -77,7 +78,7 @@ data RoomUser = RoomUser
 
 data Song = Song
    {
-     songId       :: SongId 
+     songId       :: SongId
    , songInfo     :: SongInfo
    } deriving (Show)
 
@@ -102,10 +103,11 @@ data UserCommand = RemoveSong  SongId
 newtype ServerCommand = UploadSong SongId
 
 -- Message from server to user
-newtype ServerMessage = ServerWelcomeMessage RoomUser
+data ServerMessage = ServerWelcomeMessage RoomUser
+  |                  ServerUploadSong SongId
 
 type RoomId   = Text
-type UserId   = Text
+type UserId   = Int
 type SongId   = Text
 type UserName = Text
 type Vote     = Bool
@@ -114,22 +116,26 @@ type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 
 instance Eq RoomUser where
-  u1 == u2 = userId     u1 == userId     u2
+  u1 == u2 = userId u1 == userId u2
+
+instance Ord RoomUser where
+  u1 <= u2 = userId u1 <= userId u2
+
 
 instance ToJSON RoomEvent where
   toJSON :: RoomEvent -> Value
-  toJSON (UserEnterEvent u) = Aeson.object 
+  toJSON (UserEnterEvent u) = Aeson.object
     [
        "type"        .= ("UserEnterEvent" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ]
-  toJSON (UserLeftEvent uid) = Aeson.object 
+  toJSON (UserLeftEvent uid) = Aeson.object
     [
        "type"        .= ("UserLeftEvent"  :: Text)
     ,  "userId"      .= uid
     ]
-  
+
 instance FromJSON RoomEvent where
   parseJSON :: Value -> Parser RoomEvent
   parseJSON = Aeson.withObject "RoomEvent" $ \obj -> do
@@ -145,7 +151,7 @@ instance FromJSON RoomEvent where
 
 instance ToJSON SongInfo where
   toJSON :: SongInfo -> Value
-  toJSON (SongInfo sTitle sArtist sLength) = Aeson.object 
+  toJSON (SongInfo sTitle sArtist sLength) = Aeson.object
     [
       "title"      .= sTitle
     , "artist"     .= sArtist
@@ -155,11 +161,16 @@ instance ToJSON SongInfo where
 
 instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value
-  toJSON (ServerWelcomeMessage u) = Aeson.object 
+  toJSON (ServerWelcomeMessage u) = Aeson.object
     [
        "type"        .= ("ServerWelcomeMessage" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
+    ]
+  toJSON (ServerUploadSong sId) = Aeson.object
+    [
+       "type"        .= ("ServerUploadSong" :: Text)
+    ,  "songId"      .= sId
     ]
 
 instance FromJSON ServerMessage where
@@ -171,3 +182,6 @@ instance FromJSON ServerMessage where
           userId     <- obj .: "userId"
           userName   <- obj .: "userName"
           return $ ServerWelcomeMessage $ RoomUser userId userName
+        "ServerUploadSong" -> do
+          songId     <- obj .: "songId"
+          return $ ServerUploadSong songId

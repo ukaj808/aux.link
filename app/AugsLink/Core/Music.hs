@@ -1,16 +1,16 @@
-module AugsLink.Core.Music 
-  ( 
+module AugsLink.Core.Music
+  (
     newMusic
   ) where
 
 import Control.Concurrent
 import Control.Monad
-import Data.Text
 
 import qualified Data.HashMap.Lazy as Map
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
+import Data.Text
 
 type instance Connection IO = WS.PendingConnection
 
@@ -22,11 +22,17 @@ data UserListenSession = ULSession
 
 data PlayState = NotStarted | Playing
 
+data SongState = SongState
+  {
+    song        :: Song
+  , timeElapsed :: Int
+  }
+
 data MusicState = MusicState
   {
-    playState        :: PlayState
+    started          :: Bool
   , listening        :: Map.HashMap UserId UserListenSession
-  , currentlyPlaying :: Maybe Song
+  , currentlyPlaying :: Maybe SongState
   }
 
 -- 1)Maybe I can use a media player on the host to get a sort of signal to how far along the song is...
@@ -34,53 +40,71 @@ data MusicState = MusicState
 --    I could then use this pulse to know when the song is done?
 newMusic :: IO (Music IO)
 newMusic = do
-  stateVar <- newMVar $ MusicState NotStarted Map.empty Nothing
+  stateVar <- newMVar $ MusicState False Map.empty Nothing
   return $ Music {
       listen        = listenImpl        stateVar
     , start         = startImpl         stateVar
     , stopListening = stopListeningImpl stateVar
     }
 
-listenImpl :: MVar MusicState -> User IO -> Connection IO -> IO ()
-listenImpl stateVar user pend = do
+uploadSongImpl :: MVar MusicState -> SongId -> SongFile IO -> IO ()
+uploadSongImpl sId sFile = undefined
+
+listenImpl :: MVar MusicState -> Room IO -> User IO -> Connection IO -> IO ()
+listenImpl stateVar room user pend = do
   conn  <-     WS.acceptRequest pend
   uId <-     userId <$> getRoomUser user
   modifyMVar_ stateVar $ \st -> do
     let u   = ULSession conn user
     let st' = st{listening= Map.insert uId u (listening st)}
     return st'
-  WS.withPingThread conn 30 (return ()) $ 
+  WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
 
-startImpl :: MVar MusicState -> User IO -> IO ()
-startImpl stateVar user = do
+startImpl :: MVar MusicState -> Room IO -> User IO -> IO ()
+startImpl stateVar room user = do
   createdRoom <- isCreator user
   if createdRoom then do
     modifyMVar_ stateVar $ \st ->
-      return st{playState=Playing}
-    stream
+      return st{started=True}
+    nextSong
   else error "This user did not create the room"
   where
-    stream :: IO ()
-    stream  = do 
-      modifyMVar_ stateVar $ \st ->
-        case playState st of
-          Playing -> do
-            forM_ (listening st) $ \session ->
-              case currentlyPlaying st of
-                Just s -> do
-                  WS.sendTextData (conn session) (songTitle $ songInfo s)
-                  threadDelay 1000000 -- 1 second
-                Nothing -> return ()
-            return st
+    nextSong  :: IO ()
+    nextSong  = do
+      nxtUser <-  nextUp room
+      next    <-  dequeueSong nxtUser
+      -- Does user have song queued? Lets pull it
+      case next of
+        -- Yes they do, lets take it
+        Right (Just sId) -> do
+          -- Lets put there 'possible' next song in the tape player
+          cp <- modifyMVar stateVar $ \st -> do
+            let streamFile = undefined
+            let sngSt = undefined
+            return (st{currentlyPlaying=Just sngSt}, sngSt)
+          stream cp
+          nextSong
+          where
+            stream :: SongState -> IO ()
+            stream sngSt = do
+              if timeElapsed sngSt >= songLength (songInfo $ song sngSt)
+              then return ()
+              else do
+                modifyMVar_ stateVar $ \st -> do
+                  forM_ (listening st) $ \session ->
+                    WS.sendTextData (conn session) (pack "streaming!")
+                  return st{currentlyPlaying=Just sngSt{timeElapsed=timeElapsed sngSt + 1}}
+                stream sngSt
+        -- Either they dont have any or something failed on upload
+        Right Nothing  -> nextSong
+        Left err -> undefined
 
-          _ -> return st
-      stream
 
-stopListeningImpl :: MVar MusicState -> User IO -> IO ()
-stopListeningImpl stateVar user = do
+stopListeningImpl :: MVar MusicState -> Room IO -> User IO -> IO ()
+stopListeningImpl stateVar room user = do
   uId <-     userId <$> getRoomUser user
-  modifyMVar_ stateVar $ \st -> 
+  modifyMVar_ stateVar $ \st ->
     return st{listening= Map.delete uId (listening st)}
 
 

@@ -1,14 +1,9 @@
 module AugsLink.Core.Shared 
   ( 
-    RegistryManage(..) 
-  , MusicFns
+    RegistryManage(..)  
   ) where
-import AugsLink.Core.API
+
 
 newtype RegistryManage = RegistryManage {
   selfDestructCallback :: IO ()
-}
-
-newtype MusicFns = MusicFns {
-  songEnded :: IO ()
 }

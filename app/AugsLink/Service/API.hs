@@ -36,10 +36,9 @@ newtype ScrapeSongRequest = ScrapeSongRequest
   } deriving (Generic, Show)
 instance FromJSON ScrapeSongRequest
 
-data EnqueueSongRequest = EnqueueSongRequest
+newtype EnqueueSongRequest = EnqueueSongRequest
   {
-    song     :: SongInfo
-  , priority :: Int
+    priority :: Int
   } deriving (Generic)
 instance FromJSON EnqueueSongRequest
 
@@ -50,26 +49,23 @@ type API =
    :<|> Capture "roomid" Text :> Get '[HTML] ServerHtml
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
 
-   :<|> Capture "roomId" Text :> Capture "userId" Text 
+   :<|> Capture "roomId" Text :> Capture "userId" UserId 
      :> "songs" :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> Capture "userId" Text 
+   :<|> Capture "roomId" Text :> Capture "userId" UserId 
      :> "songs" :> Capture "songId" Text :> Capture "priority" Int :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> Capture "userId" Text 
-     :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text
-
-   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "listen"           :> WebSocketPending
-   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "stop-listening"   :> Put '[PlainText] Text
-   :<|> Capture "roomid" Text :> Capture "userId" Text :> "music" :> "start"            :> Put '[PlainText] Text
-
-   :<|> Capture "roomId" Text :> "current-song" 
-     :> Capture "songId" Text :> "upload" 
+   :<|> Capture "roomId" Text :> Capture "userId" UserId
+     :> "songs" :> Capture "songId" Text :> "upload" 
        :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> "current-song" 
-     :> Capture "songId" Text :> "scrape" 
-       :> ReqBody '[JSON] ScrapeSongRequest     :> Put '[PlainText] Text
+   :<|> Capture "roomId" Text :> Capture "userId" UserId
+     :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text
+
+   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
+   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "stop-listening"   :> Put '[PlainText] Text
+   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
+
    -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw
    -- Need more endpoints for music file download + delete

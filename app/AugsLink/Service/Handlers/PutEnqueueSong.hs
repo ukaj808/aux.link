@@ -26,4 +26,4 @@ enqueueHandler rr rId uId req = liftIO $ do
                Just us -> us
                Nothing -> error "User does not exist"
   
-  enqueueSong user (song req) (priority req)
+  enqueueSong user (priority req)

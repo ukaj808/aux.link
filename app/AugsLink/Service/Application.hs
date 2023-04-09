@@ -11,7 +11,6 @@ import AugsLink.Service.Handlers.ListenWs
 import AugsLink.Service.Handlers.PostHome
 import AugsLink.Service.Handlers.PutEnqueueSong
 import AugsLink.Service.Handlers.PutMoveSong
-import AugsLink.Service.Handlers.PutScrapeSong
 import AugsLink.Service.Handlers.PutStartMusic
 import AugsLink.Service.Handlers.PutStopListen
 import AugsLink.Service.Handlers.PutUploadSong
@@ -26,12 +25,11 @@ handlers opts rr =
   :<|> enterHandler  rr
   :<|> enqueueHandler rr
   :<|> moveHandler rr
+  :<|> uploadHandler rr
   :<|> removeHandler rr
   :<|> listenHandler rr
   :<|> stopListenHandler rr
   :<|> startHandler rr
-  :<|> uploadHandler rr
-  :<|> scrapeHandler
   :<|> publicHandler
   where 
     publicHandler = serveDirectoryWebApp $ staticDirPath opts

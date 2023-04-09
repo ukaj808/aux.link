@@ -19,7 +19,7 @@ import Data.UUID.V4
 
 import qualified Data.Aeson           as Aeson
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.HashMap.Lazy    as Map
+import qualified Data.Map    as Map
 import qualified Network.WebSockets   as WS
 
 import AugsLink.Core.API
@@ -33,17 +33,18 @@ type instance SongFile IO       = MultipartData Mem
 data RoomState = RoomState
   {
     roomId                       :: RoomId
-  , roomUsers                    :: Map.HashMap UserId UserSession
+  , roomUsers                    :: Map.Map UserId UserSession
   , registryManage               :: RegistryManage
   , music                        :: Music IO
   , creator                      :: Maybe UserId
+  , nextPos                      :: Int
+  , userCount                    :: Int
   }
 
 
 data UserSession = USession
   {
-    spot :: Int
-  , conn :: WS.Connection
+    conn :: WS.Connection
   , user :: User IO
   }
 
@@ -55,6 +56,8 @@ initialRoomState rId rsm music = RoomState
   , registryManage = rsm
   , music          = music
   , creator        = Nothing
+  , nextPos     = 0
+  , userCount      = 0
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
@@ -66,8 +69,8 @@ newRoom rId registryManage = do
     , getUser           = getUserImpl          stateVar
     , leaveRoom         = leaveRoomImpl        stateVar
     , viewRoom          = viewRoomImpl         stateVar
-    , uploadSong        = uploadSongImpl       rId
     , getMusic          = getMusicImpl         stateVar
+    , nextUp            =  nextUpImpl       stateVar
     }
 
 -- Room API Impls
@@ -75,15 +78,15 @@ newRoom rId registryManage = do
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend
-  uId  <- toText <$> nextRandom
-  modifyMVar_ stateVar $ \st -> do
-    let spot =      Map.size $ roomUsers st
-    u        <-     newUser uId (spot == 0)
-    rUser    <-     getRoomUser u
-    let st'  =      addUserToRoom st (userId rUser) (USession spot conn u)
-    messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
-    publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
-    return  st'
+  uId  <-
+    modifyMVar stateVar $ \st -> do
+      let uId  =      userCount st
+      u        <-     newUser (roomId st) uId (uId == 0)
+      rUser    <-     getRoomUser u
+      let st'  =      addUserToRoom st (userId rUser) (USession conn u)
+      messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
+      publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
+      return  (st'{userCount=uId + 1}, uId)
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
   -- todo: deal with async threads
@@ -112,15 +115,19 @@ leaveRoomImpl stateVar uId = do
 viewRoomImpl :: MVar RoomState -> IO [RoomUser]
 viewRoomImpl stateVar = do
   roomState <- readMVar stateVar
-  users <- mapM (getRoomUser . user) (Map.elems $ roomUsers roomState)
-  return $ sortUsers roomState users
+  let ks = [0 .. userCount roomState]
+  let userSessions = Data.List.map (roomUsers roomState Map.!) ks
+  users <- mapM (getRoomUser . user) userSessions
+  return $ sort users
 
-uploadSongImpl :: RoomId -> SongId -> SongFile IO -> IO ()
-uploadSongImpl rId sId sFile = do
-  let file = lookupFile "song" sFile
-  either
-    (error "No file present in request")
-    (uploadSongToRoom rId sId) file
+nextUpImpl :: MVar RoomState -> IO (User IO)
+nextUpImpl stateVar = do
+  modifyMVar stateVar $ \st -> do
+    let curr = nextPos st
+    messageToUser st curr (ServerUploadSong "")
+    let u = user $ roomUsers st Map.! curr
+    return (st{nextPos=curr+1}, u)
+
 
 
 -- Messaging Via Websockets
@@ -151,33 +158,18 @@ publishToRoom rmSt e = do
   forM_ (roomUsers rmSt) $ \uSession ->
     WS.sendTextData (conn uSession) (Aeson.encode e)
 
+
 messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
 messageToUser rmSt uid msg = do
   let uSession = roomUsers rmSt Map.! uid
   WS.sendTextData (conn uSession) (Aeson.encode msg)
 
--- Song uploading
-
-uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
-uploadSongToRoom rId sId file = do
-  let filePath = "./rooms/" ++ unpack rId ++ "/" ++ unpack sId
-  fileExist <- doesFileExist filePath
-  if fileExist
-  then
-   error "Song already uploaded to this room"
-  else do
-    LBS.writeFile filePath (fdPayload file)
-
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users}
-
-sortUsers :: RoomState -> [RoomUser] -> [RoomUser]
-sortUsers st = sortBy (\u u' -> compare (spotInLine u) (spotInLine u'))
-  where spotInLine u = spot $ roomUsers st Map.! userId u

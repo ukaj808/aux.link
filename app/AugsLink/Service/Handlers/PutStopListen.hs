@@ -24,6 +24,6 @@ stopListenHandler rr rId uId = liftIO $ do
                Just us -> us
                Nothing -> error "Room does not exist"
   
-  stopListening m user
+  stopListening m room user
 
   return "stop"
