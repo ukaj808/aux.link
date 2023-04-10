@@ -17,13 +17,7 @@ startHandler rr rId uId = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-
-  u <- getUser room uId
-  let user = case u of
-               Just us -> us
-               Nothing -> error "Room does not exist"
-
   m <- getMusic room
-  start m room user
+  start m room uId
     
   return "start"

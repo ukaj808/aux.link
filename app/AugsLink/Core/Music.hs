@@ -14,10 +14,9 @@ import Data.Text
 
 type instance Connection IO = WS.PendingConnection
 
-data UserListenSession = ULSession
+newtype UserListenSession = ULSession
   {
     conn :: WS.Connection
-  , user :: User IO
   }
 
 data PlayState = NotStarted | Playing
@@ -50,20 +49,22 @@ newMusic = do
 uploadSongImpl :: MVar MusicState -> SongId -> SongFile IO -> IO ()
 uploadSongImpl sId sFile = undefined
 
-listenImpl :: MVar MusicState -> Room IO -> User IO -> Connection IO -> IO ()
-listenImpl stateVar room user pend = do
+listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
+listenImpl stateVar uId pend = do
   conn  <-     WS.acceptRequest pend
-  uId <-     userId <$> getRoomUser user
   modifyMVar_ stateVar $ \st -> do
-    let u   = ULSession conn user
+    let u   = ULSession conn
     let st' = st{listening= Map.insert uId u (listening st)}
     return st'
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
 
-startImpl :: MVar MusicState -> Room IO -> User IO -> IO ()
-startImpl stateVar room user = do
-  createdRoom <- isCreator user
+startImpl :: MVar MusicState -> Room IO -> UserId -> IO ()
+startImpl stateVar room uId = do
+  creatorId <- getCreatorId room
+  let createdRoom = case creatorId of 
+                     Just userId -> userId == uId
+                     Nothing     -> False
   if createdRoom then do
     modifyMVar_ stateVar $ \st ->
       return st{started=True}
@@ -101,9 +102,8 @@ startImpl stateVar room user = do
         Left err -> undefined
 
 
-stopListeningImpl :: MVar MusicState -> Room IO -> User IO -> IO ()
-stopListeningImpl stateVar room user = do
-  uId <-     userId <$> getRoomUser user
+stopListeningImpl :: MVar MusicState -> UserId -> IO ()
+stopListeningImpl stateVar uId = do
   modifyMVar_ stateVar $ \st ->
     return st{listening= Map.delete uId (listening st)}
 

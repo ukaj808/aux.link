@@ -25,20 +25,17 @@ data UserState = UserState
   {
     userData        :: RoomUser
   , userQueue       :: SongQueue
-  , creator         :: Bool
-  , roomId          :: RoomId
   }
 
-newUser :: RoomId -> UserId -> Bool -> IO (User IO)
-newUser rId uId createdRoom = do
+newUser :: RoomId -> UserId -> IO (User IO)
+newUser rId uId = do
   let uName = pack $ show uId
-  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty createdRoom rId
+  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
   , getRoomUser = userData <$> readMVar stateVar
   , removeSong  = removeSongImpl stateVar
   , moveSong    = moveSongImpl stateVar
-  , isCreator   = creator <$> readMVar stateVar
   , dequeueSong = dequeueSongImpl stateVar
   , uploadSong  = uploadSongImpl rId
   }
@@ -50,18 +47,18 @@ dequeueSongImpl stateVar = do
    case poll of
      Just (e, q) -> do
        let sId = Heap.payload e
-       songUploaded <- wasSongUploaded st sId
+       songUploaded <- wasSongUploaded sId
        case songUploaded of
          Left msg -> return (st{userQueue=q}, Left msg)
          Right _ -> return (st{userQueue=q}, Right $ Just sId)
      Nothing     ->
        return (st, Right Nothing)
 
-wasSongUploaded :: UserState -> SongId -> IO (Either String ())
-wasSongUploaded (UserState _ _ _ rId) sId = do
-  songUploaded <- pollForFile ("/" ++ unpack rId) (unpack sId ++ ".mp3") 5
-  if songUploaded 
-  then return $ Right () 
+wasSongUploaded :: SongId -> IO (Either String ())
+wasSongUploaded sId = do
+  songUploaded <- pollForFile "/uploads" (unpack sId ++ ".mp3") 5
+  if songUploaded
+  then return $ Right ()
   else return $ Left "Song wasnt uploaded"
   where
     pollForFile :: FilePath -> String -> Int -> IO Bool
@@ -101,21 +98,20 @@ uploadSongImpl rId sId sFile = do
   let file = lookupFile "song" sFile
   either
     (error "No file present in request")
-    (uploadSongToRoom rId sId) file
+    (uploadSongToLocal rId sId) file
 
-uploadSongToRoom :: RoomId -> SongId -> FileData Mem -> IO ()
-uploadSongToRoom rId sId file = do
-  let filePath = "./rooms/" ++ unpack rId ++ "/" ++ unpack sId
+uploadSongToLocal :: RoomId -> SongId -> FileData Mem -> IO ()
+uploadSongToLocal rId sId file = do
+  let filePath = "./uploads/" ++ unpack rId ++ "/" ++ unpack sId
   fileExist <- doesFileExist filePath
   if fileExist
   then
-   error "Song already uploaded to this room"
+   error "Song already uploaded"
   else do
     LBS.writeFile filePath (fdPayload file)
 
 modQueue :: UserState -> (SongQueue -> SongQueue) -> UserState
-modQueue st@(UserState _ q _ _) f = st{userQueue = f q}
+modQueue st@(UserState _ q) f = st{userQueue = f q}
 
 entryIsSong :: SongId -> Heap.Entry a SongId -> Bool
 entryIsSong sId (Heap.Entry _ sId') = sId == sId'
-

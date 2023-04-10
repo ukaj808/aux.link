@@ -41,6 +41,7 @@ data Room m = Room
   ,  getUser               ::   UserId                              ->  m (Maybe (User m))
   ,  getMusic              ::                                           m (Music m)
   ,  nextUp                ::                                           m (User m)
+  ,  getCreatorId          ::                                           m (Maybe UserId)
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -60,14 +61,13 @@ data User m = User
   , removeSong        :: SongId                 -> m ()
   , moveSong          :: SongId -> Priority     -> m ()
   , dequeueSong          ::                        m (Either String (Maybe SongId)) -- Either failed to upload or user hasnt queued anything...
-  , isCreator         ::                           m Bool
   }
 
 data Music m = Music
   {
-    start         :: Room IO -> User IO                 -> m ()
-  , listen        :: Room IO -> User IO -> Connection m -> m ()
-  , stopListening :: Room IO -> User IO                 -> m ()
+    start         :: Room m  -> UserId                 -> m ()
+  , listen        :: UserId -> Connection m -> m ()
+  , stopListening :: UserId                 -> m ()
   }
 
 data RoomUser = RoomUser

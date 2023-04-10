@@ -11,14 +11,9 @@ module AugsLink.Core.Room
 import Control.Concurrent.MVar
 import Control.Monad
 import Data.List
-import Data.Text
 import Servant.Multipart
-import System.Directory
-import Data.UUID
-import Data.UUID.V4
 
 import qualified Data.Aeson           as Aeson
-import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Map    as Map
 import qualified Network.WebSockets   as WS
 
@@ -71,6 +66,7 @@ newRoom rId registryManage = do
     , viewRoom          = viewRoomImpl         stateVar
     , getMusic          = getMusicImpl         stateVar
     , nextUp            =  nextUpImpl       stateVar
+    , getCreatorId        = creator <$> readMVar stateVar
     }
 
 -- Room API Impls
@@ -81,23 +77,19 @@ enterRoomImpl stateVar pend = do
   uId  <-
     modifyMVar stateVar $ \st -> do
       let uId  =      userCount st
-      print "debug 4"
-      u        <-     newUser (roomId st) uId (uId == 0)
-      print "debug 5"
+      u        <-     newUser (roomId st) uId
       rUser    <-     getRoomUser u
-      print "debug 6"
       let st'  =      addUserToRoom st (userId rUser) (USession conn u)
-      print "debug 7"
+      let c = case creator st of 
+               Just existing -> Just existing
+               Nothing       -> Just uId
       messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
-      print "debug 8"
       publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
-      print "debug 9"
-      return  (st'{userCount=uId + 1}, uId)
+      return  (st'{userCount=uId + 1, creator=c}, uId)
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
-  --
 
 getMusicImpl :: MVar RoomState -> IO (Music IO)
 getMusicImpl stateVar = music <$> readMVar stateVar
@@ -166,7 +158,6 @@ publishToRoom rmSt e = do
 
 messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
 messageToUser rmSt uid msg = do
-  print "debug 3"
   let uSession = roomUsers rmSt Map.! uid
   WS.sendTextData (conn uSession) (Aeson.encode msg)
 
