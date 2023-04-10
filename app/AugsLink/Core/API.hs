@@ -55,17 +55,17 @@ data Room m = Room
  -}
 data User m = User
   {
-    enqueueSong       :: Priority -> m SongId
+    enqueueSong       :: Priority ->               m SongId
   , uploadSong        :: SongId   -> SongFile m -> m ()
   , getRoomUser       ::                           m RoomUser
   , removeSong        :: SongId                 -> m ()
-  , moveSong          :: SongId -> Priority     -> m ()
-  , dequeueSong          ::                        m (Either String (Maybe SongId)) -- Either failed to upload or user hasnt queued anything...
+  , moveSong          :: SongId   -> Priority   -> m ()
+  , dequeueSong       ::                           m (Either String (Maybe SongId)) -- Either failed to upload or user hasnt queued anything...
   }
 
 data Music m = Music
   {
-    start         :: Room m  -> UserId                 -> m ()
+    start         :: Room m -> UserId       -> m ()
   , listen        :: UserId -> Connection m -> m ()
   , stopListening :: UserId                 -> m ()
   }

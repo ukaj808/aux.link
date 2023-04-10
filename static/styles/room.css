@@ -5,96 +5,32 @@
     --primary-btn-bg-color: #89b3f7;
     --secondary-bg-color: #303135;
     --tertiary-bg-color: #404046;
-
-    --section-border-radius: 10px;
-
 }
 
-html {
+html, body {
     height: 100%;
-}
-
-body {
-    height: 95%;
+    padding: 0;
+    margin: 0;
     background-color: var(--primary-bg-color);
 }
 
-.room {
+.full-flex {
     height: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    grid-gap: 10px;
+    display: flex;
     padding: 10px;
+    box-sizing: border-box;
 }
 
-.order {
-    grid-row: 1 / 3;
-    background-color: var(--secondary-bg-color);
-    color: var(--primary-fnt-color);
+.column {
+  flex-direction: column;
+}
 
-    display: flex;
-    align-items: center;
+.section {
+   flex: 1;
+}
+
+.centered {
     justify-content: center;
-
-    border-radius: var(--section-border-radius);
-}
-
-.drop {
-    background-color: var(--secondary-bg-color);
-    color: var(--primary-fnt-color);
-    border-radius: var(--section-border-radius);
-}
-
-.queue {
-    background-color: var(--secondary-bg-color);
-    color: var(--primary-fnt-color);
-    border-radius: var(--section-border-radius);
-}
-
-.current {
-    background-color: var(--secondary-bg-color);
-    color: var(--primary-fnt-color);
-    border-radius: var(--section-border-radius);
-
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 20px;
-}
-
-.democracy {
-    background-color: var(--secondary-bg-color);
-    color: var(--primary-fnt-color);
-    border-radius: var(--section-border-radius);
-}
-
-.user-order-list {
-    list-style: none;
-    width: 95%;
-    height: 95%;
-    overflow: auto;
-    counter-reset: user-order;
-}
-
-
-.user-order-list__user {
-    width: 95%;
-    height: 10%;
-    background-color: var(--tertiary-bg-color);
-    /* For spacing between users */
-    margin-top: 10px;
-
-    display: flex;
-    /* This is "magically" making the image fit in the div and maintaining its ratio as it resizes */
-    justify-content: space-evenly;
-
-    font-size: 30px;
-
-    border-radius: var(--section-border-radius);
-}
-
-.user-order-list__username-lbl {
-    align-self: center;
+    text-align: center;
 }

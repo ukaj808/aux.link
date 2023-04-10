@@ -6,10 +6,8 @@
     <title>creating room...</title>
     <script type="module" src="/public/scripts/room.js"></script>
     <script type="module" src="/public/scripts/current-section.js"></script>
-    <script type="module" src="/public/scripts/democracy-section.js"></script>
     <script type="module" src="/public/scripts/drop-section.js"></script>
     <script type="module" src="/public/scripts/order-section.js"></script>
-    <script type="module" src="/public/scripts/queue-section.js"></script>
     <link rel="icon" type="image/x-icon" href="/public/images/favicon.ico" />
     <link rel="stylesheet" href="/public/styles/room.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,14 +28,14 @@
             back of your card."
       ></order-section>
 
-      <democracy-section
-        id="democracy"
-        class="democracy"
+      <current-section
+        id="current"
+        class="current"
         img="img/alt.png"
         data-text="Your card validation code (CVC)
             is an extra security feature — it is the last 3 or 4 numbers on the
             back of your card."
-      ></democracy-section>
+      ></current-section>
 
       <drop-section
         id="drop"
@@ -48,23 +46,6 @@
             back of your card."
       ></drop-section>
 
-      <current-section
-        id="current"
-        class="current"
-        img="img/alt.png"
-        data-text="Your card validation code (CVC)
-            is an extra security feature — it is the last 3 or 4 numbers on the
-            back of your card."
-      ></current-section>
-
-      <queue-section
-        id="queue"
-        class="queue"
-        img="img/alt.png"
-        data-text="Your card validation code (CVC)
-            is an extra security feature — it is the last 3 or 4 numbers on the
-            back of your card."
-      ></queue-section>
     </main>
   </body>
 </html>

@@ -26,9 +26,19 @@ renderUser user =
 
 renderOrderSection :: [RoomUser] -> H.Html 
 renderOrderSection users = 
-  H.section ! A.id "order" ! A.class_ "order" $ do
-    H.ol ! A.id "user-order-list" ! A.class_ "user-order-list" $ do
+  H.section ! A.id "order" ! A.class_ "full-flex section centered" $ do
+    H.ol ! A.id "user-order-list" ! A.class_ "full-flex section centered" $ do
       forM_ users renderUser 
+
+renderCurrentSection :: H.Html
+renderCurrentSection = 
+  H.section ! A.id "current"   ! A.class_ "full-flex section centered"    $ do
+    H.div ! A.id "media-player" ! A.class_ "full-flex section centered" $ ""
+
+renderDropSection :: H.Html
+renderDropSection = 
+  H.section ! A.id "drop"      ! A.class_ "full-flex section centered"  $ do
+    H.div ! A.id "drop-zone" ! A.class_ "full-flex section centered" $ ""
 
 renderRoomPage :: [RoomUser] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do
@@ -40,12 +50,10 @@ renderRoomPage users = H.docTypeHtml $ do
     H.link   ! A.rel "stylesheet" ! A.href    "/public/styles/room.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/images/favicon.ico"
   H.body $ do
-    H.main ! A.id "room" ! A.class_ "room" $ do
+    H.main ! A.id "room" ! A.class_ "full-flex column" $ do
       renderOrderSection users
-      H.section ! A.id "democracy" ! A.class_ "democracy" $ ""
-      H.section ! A.id "drop"      ! A.class_ "drop"      $ ""
-      H.section ! A.id "current"   ! A.class_ "current"   $ ""
-      H.section ! A.id "queue"     ! A.class_ "queue"     $ ""
+      renderCurrentSection
+      renderDropSection
 
 roomHandler :: Registry IO -> RoomId -> Handler ServerHtml
 roomHandler registry rId = do
