@@ -20,25 +20,24 @@ renderUser user =
   let uid = toValue $ userId user
       uname = toMarkup $ userName user
   in
-  H.li ! A.id uid ! A.class_ "user-order-list__user" $ do
+  H.li ! A.id uid ! A.class_ "full-flex section centered tertiary-theme" $ do
     H.span ! A.class_ "user-order-list__username-lbl" $ uname
 
 
 renderOrderSection :: [RoomUser] -> H.Html 
 renderOrderSection users = 
   H.section ! A.id "order" ! A.class_ "full-flex section centered" $ do
-    H.ol ! A.id "user-order-list" ! A.class_ "full-flex section centered" $ do
+    H.ol ! A.id "user-order-list" ! A.class_ "full-flex section centered secondary-theme" $ do
       forM_ users renderUser 
 
 renderCurrentSection :: H.Html
 renderCurrentSection = 
-  H.section ! A.id "current"   ! A.class_ "full-flex section centered"    $ do
-    H.div ! A.id "media-player" ! A.class_ "full-flex section centered" $ ""
+  H.section ! A.id "current"   ! A.class_ "full-flex section centered" $ "Click to connect to music"
 
 renderDropSection :: H.Html
 renderDropSection = 
   H.section ! A.id "drop"      ! A.class_ "full-flex section centered"  $ do
-    H.div ! A.id "drop-zone" ! A.class_ "full-flex section centered" $ ""
+    H.div ! A.id "drop-zone" ! A.class_ "full-flex section centered secondary-theme" $ ""
 
 renderRoomPage :: [RoomUser] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do

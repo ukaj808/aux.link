@@ -34,3 +34,11 @@ html, body {
     align-items: center;
     text-align: center;
 }
+
+.secondary-theme {
+  background-color: var(--secondary-bg-color)
+}
+
+.tertiary-theme {
+  background-color: var(--tertiary-bg-color)
+}
