@@ -11,14 +11,13 @@ import qualified Data.HashMap.Lazy as Map
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
-import Data.Text
 import GHC.IO.Handle
-import System.IO (openFile, openBinaryFile)
-import GHC.IO.IOMode
+import System.IO
 import System.Process
 import Foreign
 import qualified Data.ByteString as B
 import System.Posix
+import AugsLink.Core.FFMpeg (FFProbeData)
 
 type instance Connection IO = WS.PendingConnection
 
@@ -32,9 +31,9 @@ data SongState = SongState
     song        :: Song
   , timeElapsed :: Int
   , filePath    :: FilePath
-  , fileBytes   :: Int 
   , fileHandle  :: Handle
   , fileBuffer  :: Ptr Int8
+  , ffprobeData :: FFProbeData
   }
 
 data MusicState = MusicState
