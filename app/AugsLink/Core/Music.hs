@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.Music
   (
     newMusic
@@ -11,6 +12,13 @@ import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
 import Data.Text
+import GHC.IO.Handle
+import System.IO (openFile, openBinaryFile)
+import GHC.IO.IOMode
+import System.Process
+import Foreign
+import qualified Data.ByteString as B
+import System.Posix
 
 type instance Connection IO = WS.PendingConnection
 
@@ -19,12 +27,14 @@ newtype UserListenSession = ULSession
     conn :: WS.Connection
   }
 
-data PlayState = NotStarted | Playing
-
 data SongState = SongState
   {
     song        :: Song
   , timeElapsed :: Int
+  , filePath    :: FilePath
+  , fileBytes   :: Int 
+  , fileHandle  :: Handle
+  , fileBuffer  :: Ptr Int8
   }
 
 data MusicState = MusicState
@@ -62,51 +72,87 @@ listenImpl stateVar uId pend = do
 startImpl :: MVar MusicState -> Room IO -> UserId -> IO ()
 startImpl stateVar room uId = do
   creatorId <- getCreatorId room
-  let createdRoom = case creatorId of 
+  let createdRoom = case creatorId of
                      Just userId -> userId == uId
                      Nothing     -> False
   if createdRoom then do
     modifyMVar_ stateVar $ \st ->
       return st{started=True}
-    nextSong
+    _ <- forkIO nextSong
+    return ()
   else error "This user did not create the room"
   where
     nextSong  :: IO ()
     nextSong  = do
       nxtUser <-  nextUp room
       next    <-  dequeueSong nxtUser
+      print next
       -- Does user have song queued? Lets pull it
       case next of
         -- Yes they do, lets take it
         Right (Just sId) -> do
           -- Lets put there 'possible' next song in the tape player
+          ffmpegConvert sId
+          sngSt <- initialSongState (SongInfo "" "" 10000000) sId
           cp <- modifyMVar stateVar $ \st -> do
-            let streamFile = undefined
-            let sngSt = undefined
             return (st{currentlyPlaying=Just sngSt}, sngSt)
           stream cp
           nextSong
           where
             stream :: SongState -> IO ()
             stream sngSt = do
+              print "streaming!"
+              print ("time elapsed: " ++ (show $ timeElapsed sngSt))
+              print ("song length: " ++ (show $ songLength $ songInfo $ song sngSt))
               if timeElapsed sngSt >= songLength (songInfo $ song sngSt)
               then return ()
               else do
-                modifyMVar_ stateVar $ \st -> do
-                  forM_ (listening st) $ \session ->
-                    WS.sendTextData (conn session) (pack "streaming!")
-                  return st{currentlyPlaying=Just sngSt{timeElapsed=timeElapsed sngSt + 1}}
-                stream sngSt
+                sngSt' <- modifyMVar stateVar $ \st -> do
+                  forM_ (listening st) $ \session -> do
+                    let h = fileHandle sngSt
+                    let b = fileBuffer sngSt
+                    i <- hGetBuf h b 8
+                    bs <- peek b
+                    let wsData = B.pack [ fromIntegral bs]
+                    WS.sendBinaryData (conn session) wsData
+                  let sngSt' = sngSt{timeElapsed = timeElapsed sngSt + 1}
+                  return (st{currentlyPlaying=Just sngSt'}, sngSt')
+                stream sngSt'
         -- Either they dont have any or something failed on upload
         Right Nothing  -> nextSong
         Left err -> undefined
 
 
+initialSongState :: SongInfo -> SongId -> IO SongState
+initialSongState sInfo sId = do
+  let filePath = "./static/song.wav"
+  fileStatus <- getFileStatus filePath
+  handle <- openBinaryFile filePath ReadMode
+  let fsz :: Int = fromIntegral $ fileSize fileStatus
+  let song = Song {
+    songInfo = sInfo 
+  , songId = sId
+  }
+  buffer <- mallocBytes 8
+  return $ SongState {
+     timeElapsed=0
+    ,filePath=filePath
+    ,fileHandle=handle
+    ,fileBuffer=buffer
+    ,fileBytes=fsz
+    ,song=song
+  }
+
+ffmpegConvert :: SongId -> IO ()
+ffmpegConvert sId = do
+  let inputFile = "./static/song.mp3"
+  let outputFile = "./static/song.wav"
+  callProcess "ffmpeg" ["-i", inputFile, outputFile]
+
 stopListeningImpl :: MVar MusicState -> UserId -> IO ()
 stopListeningImpl stateVar uId = do
   modifyMVar_ stateVar $ \st ->
     return st{listening= Map.delete uId (listening st)}
-
 
 handleIncomingMessages :: MVar MusicState -> WS.Connection -> UserId -> IO ()
 handleIncomingMessages stateVar conn uId = go
@@ -118,4 +164,5 @@ handleIncomingMessages stateVar conn uId = go
         WS.DataMessage {} -> do
           putStrLn "Should not be possible"
           go
+        WS.ControlMessage WS.Close {} -> return ()
         WS.ControlMessage _ -> go

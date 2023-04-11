@@ -55,6 +55,7 @@ executable augslink-service
                       , heaps
                       , mtl
                       , optparse-applicative
+                      , process
                       , random 
                       , servant-blaze
                       , servant-multipart
@@ -62,6 +63,7 @@ executable augslink-service
                       , servant-websockets
                       , text 
                       , unordered-containers
+                      , unix
                       , uuid
                       , wai
                       , warp
