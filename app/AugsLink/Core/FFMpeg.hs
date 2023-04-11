@@ -19,53 +19,53 @@ type FFProbeExecutableDir = FilePath
 
 data FFProbeStream = Stream 
   {
-    streamIndex :: Int
-  , codecName :: Text
-  , codecLongName :: Text 
-  , codecType :: Text
-  , codecTimeBase :: Text
-  , codecTagString :: Text
-  , codecTag :: Text
-  , width :: Int
-  , height :: Int
-  , hasBFrames :: Int
-  , pixelFormat :: Text
-  , level :: Int
-  , isAvc :: Int
-  , nalLengthSize :: Int
-  , rFrameRate :: Text
-  , avgFrameRate :: Text
-  , timeBase :: Text
-  , streamStartTime :: Double
-  , streamDuration :: Double
-  , streamBitRate :: Int
-  , nbFrames :: Int
-  , streamTags :: Map String String
+    streamIndex :: Maybe Int
+  , codecName :: Maybe Text
+  , codecLongName :: Maybe Text 
+  , codecType :: Maybe Text
+  , codecTimeBase :: Maybe Text
+  , codecTagString :: Maybe Text
+  , codecTag :: Maybe Text
+  , width :: Maybe Int
+  , height :: Maybe Int
+  , hasBFrames :: Maybe Int
+  , pixelFormat :: Maybe Text
+  , level :: Maybe Int
+  , isAvc :: Maybe Int
+  , nalLengthSize :: Maybe Int
+  , rFrameRate :: Maybe Text
+  , avgFrameRate :: Maybe Text
+  , timeBase :: Maybe Text
+  , streamStartTime :: Maybe Double
+  , streamDuration :: Maybe Double
+  , streamBitRate :: Maybe Int
+  , nbFrames :: Maybe Int
+  , streamTags :: Maybe (Map String String)
   } deriving Show
 
 instance FromJSON FFProbeStream where
   parseJSON = withObject "FFProbeStream" $ \o -> do
-    idx <- o .: "index"
-    codec <- o .: "codec_name"
-    codecLong <- o .: "codec_long_name"
-    codecType <- o .: "codec_type"
-    codecTimeBase <- o .: "codec_time_base"
-    codecTagStr <- o .: "codec_tag_string"
-    codecTag <- o .: "codec_tag"
-    width <- o .: "width"
-    height <- o .: "height"
-    hasBFrames <- o .: "has_b_frames"
-    pixFmt <- o .: "pix_fmt"
-    lvl <- o .: "level"
-    isAvc <- o .: "is_avc"
-    nalLengthSize <- o .: "nal_length_size"
-    rFrameRate <- o .: "r_frame_rate"
-    avgFrameRate <- o .: "avg_frame_rate"
-    timeBase <- o .: "time_base"
-    startTime <- o .: "start_time"
-    duration <- o .: "duration"
-    bitRate <- o .: "bit_rate"
-    nbFrames <- o .: "nb_frames"
+    idx <- o .:? "index"
+    codec <- o .:? "codec_name"
+    codecLong <- o .:? "codec_long_name"
+    codecType <- o .:?"codec_type"
+    codecTimeBase <- o .:? "codec_time_base"
+    codecTagStr <- o .:? "codec_tag_string"
+    codecTag <- o .:? "codec_tag"
+    width <- o .:? "width"
+    height <- o .:? "height"
+    hasBFrames <- o .:? "has_b_frames"
+    pixFmt <- o .:? "pix_fmt"
+    lvl <- o .:? "level"
+    isAvc <- o .:? "is_avc"
+    nalLengthSize <- o .:? "nal_length_size"
+    rFrameRate <- o .:? "r_frame_rate"
+    avgFrameRate <- o .:? "avg_frame_rate"
+    timeBase <- o .:? "time_base"
+    startTime <- o .:? "start_time"
+    duration <- o .:? "duration"
+    bitRate <- o .:? "bit_rate"
+    nbFrames <- o .:? "nb_frames"
     tags <- o .:? "tags" .!= Map.empty
     return Stream
       { streamIndex = idx
