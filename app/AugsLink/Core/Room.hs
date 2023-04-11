@@ -82,6 +82,7 @@ enterRoomImpl stateVar pend = do
       let st'  =      addUserToRoom st (userId rUser) (USession conn u)
       let c = case creator st of 
                Just existing -> Just existing
+
                Nothing       -> Just uId
       messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
       publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)

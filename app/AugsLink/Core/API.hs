@@ -114,6 +114,7 @@ type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
+type family RawMusicConverterExec (m :: Type -> Type) :: Type
 
 instance Eq RoomUser where
   u1 == u2 = userId u1 == userId u2
