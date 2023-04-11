@@ -1,6 +1,6 @@
 module AugsLink.Core.FFMpeg 
   (
-    ffmpegConvert
+    ffmpegConvertAudio
   , ffprobeAudio
   , FFProbeData (..)
   ) where
@@ -18,8 +18,8 @@ data FFProbeData = FFProbeData {
 , numBytes   :: Int
 } deriving Show
 
-ffmpegConvert :: FFMpegExecutableDir -> FilePath -> FilePath -> IO ()
-ffmpegConvert ffmpeg inputFile outputFile = do 
+ffmpegConvertAudio :: FFMpegExecutableDir -> FilePath -> FilePath -> IO ()
+ffmpegConvertAudio ffmpeg inputFile outputFile = do 
   callProcess ffmpeg ["-i", inputFile, outputFile]
 
 ffprobeAudio :: FFProbeExecutableDir -> FilePath -> IO FFProbeData
