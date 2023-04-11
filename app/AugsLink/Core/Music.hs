@@ -6,18 +6,16 @@ module AugsLink.Core.Music
 
 import Control.Concurrent
 import Control.Monad
+import Foreign
+import GHC.IO.Handle
+import System.IO
 
-import qualified Data.HashMap.Lazy as Map
+import qualified Data.ByteString    as B
+import qualified Data.HashMap.Lazy  as Map
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
-import GHC.IO.Handle
-import System.IO
-import System.Process
-import Foreign
-import qualified Data.ByteString as B
-import System.Posix
-import AugsLink.Core.FFMpeg (FFProbeData)
+import AugsLink.Core.FFMpeg
 
 type instance Connection IO = WS.PendingConnection
 
@@ -43,9 +41,6 @@ data MusicState = MusicState
   , currentlyPlaying :: Maybe SongState
   }
 
--- 1)Maybe I can use a media player on the host to get a sort of signal to how far along the song is...
--- 2) Maybe The media players in the browser can send a pulse every second of the song which updates the music player here
---    I could then use this pulse to know when the song is done?
 newMusic :: IO (Music IO)
 newMusic = do
   stateVar <- newMVar $ MusicState False Map.empty Nothing
@@ -54,9 +49,6 @@ newMusic = do
     , start         = startImpl         stateVar
     , stopListening = stopListeningImpl stateVar
     }
-
-uploadSongImpl :: MVar MusicState -> SongId -> SongFile IO -> IO ()
-uploadSongImpl sId sFile = undefined
 
 listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
 listenImpl stateVar uId pend = do
@@ -91,18 +83,14 @@ startImpl stateVar room uId = do
         -- Yes they do, lets take it
         Right (Just sId) -> do
           -- Lets put there 'possible' next song in the tape player
-          ffmpegConvert sId
-          sngSt <- initialSongState (SongInfo "" "" 10000000) sId
-          cp <- modifyMVar stateVar $ \st -> do
+          sngSt <- initializeSongState sId (SongInfo "" "" 10000000)
+          currentlyPlaying <- modifyMVar stateVar $ \st -> do
             return (st{currentlyPlaying=Just sngSt}, sngSt)
-          stream cp
+          stream currentlyPlaying
           nextSong
           where
             stream :: SongState -> IO ()
             stream sngSt = do
-              print "streaming!"
-              print ("time elapsed: " ++ (show $ timeElapsed sngSt))
-              print ("song length: " ++ (show $ songLength $ songInfo $ song sngSt))
               if timeElapsed sngSt >= songLength (songInfo $ song sngSt)
               then return ()
               else do
@@ -122,12 +110,12 @@ startImpl stateVar room uId = do
         Left err -> undefined
 
 
-initialSongState :: SongInfo -> SongId -> IO SongState
-initialSongState sInfo sId = do
+initializeSongState :: SongId -> SongInfo -> IO SongState
+initializeSongState sId sInfo = do
+  ffmpegConvertAudio "ffmpeg" "./static/song.mp3" "./static/song.wav"
+  ffpd <- ffprobeAudio "ffprobe" "./static/song.wav"
   let filePath = "./static/song.wav"
-  fileStatus <- getFileStatus filePath
   handle <- openBinaryFile filePath ReadMode
-  let fsz :: Int = fromIntegral $ fileSize fileStatus
   let song = Song {
     songInfo = sInfo 
   , songId = sId
@@ -138,15 +126,9 @@ initialSongState sInfo sId = do
     ,filePath=filePath
     ,fileHandle=handle
     ,fileBuffer=buffer
-    ,fileBytes=fsz
     ,song=song
+    ,ffprobeData=ffpd
   }
-
-ffmpegConvert :: SongId -> IO ()
-ffmpegConvert sId = do
-  let inputFile = "./static/song.mp3"
-  let outputFile = "./static/song.wav"
-  callProcess "ffmpeg" ["-i", inputFile, outputFile]
 
 stopListeningImpl :: MVar MusicState -> UserId -> IO ()
 stopListeningImpl stateVar uId = do
