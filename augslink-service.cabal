@@ -21,6 +21,7 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
+                      , AugsLink.Core.FFMpeg 
                       , AugsLink.Core.Model 
                       , AugsLink.Core.Music 
                       , AugsLink.Core.Registry 
