@@ -30,7 +30,7 @@ data SongState = SongState
   , timeElapsed :: Int
   , filePath    :: FilePath
   , fileHandle  :: Handle
-  , fileBuffer  :: Ptr Int8
+  , fileBuffer  :: Ptr Int64
   , ffprobeData :: FFProbeData
   }
 
@@ -77,7 +77,6 @@ startImpl stateVar room uId = do
     nextSong  = do
       nxtUser <-  nextUp room
       next    <-  dequeueSong nxtUser
-      print next
       -- Does user have song queued? Lets pull it
       case next of
         -- Yes they do, lets take it
@@ -98,12 +97,13 @@ startImpl stateVar room uId = do
                   forM_ (listening st) $ \session -> do
                     let h = fileHandle sngSt
                     let b = fileBuffer sngSt
-                    i <- hGetBuf h b 8
+                    _ <- hGetBuf h b 96000
                     bs <- peek b
                     let wsData = B.pack [ fromIntegral bs]
                     WS.sendBinaryData (conn session) wsData
                   let sngSt' = sngSt{timeElapsed = timeElapsed sngSt + 1}
                   return (st{currentlyPlaying=Just sngSt'}, sngSt')
+                threadDelay 1000000
                 stream sngSt'
         -- Either they dont have any or something failed on upload
         Right Nothing  -> nextSong
@@ -112,15 +112,14 @@ startImpl stateVar room uId = do
 
 initializeSongState :: SongId -> SongInfo -> IO SongState
 initializeSongState sId sInfo = do
-  ffmpegConvertAudio "ffmpeg" "./static/song.mp3" "./static/song.wav"
-  ffpd <- ffprobeAudio "ffprobe" "./static/song.wav"
-  let filePath = "./static/song.wav"
+  ffpd <- ffprobe "ffprobe" "./static/song.mp3"
+  let filePath = "./static/song.mp3"
   handle <- openBinaryFile filePath ReadMode
   let song = Song {
     songInfo = sInfo 
   , songId = sId
   }
-  buffer <- mallocBytes 8
+  buffer <- mallocBytes 96000
   return $ SongState {
      timeElapsed=0
     ,filePath=filePath

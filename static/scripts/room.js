@@ -119,8 +119,9 @@ const connectToMusic = async () => {
     processor.connect(audioContext.destination);
 
     
-    musicWs.addEventListener("message", ({data}) => {
-        console.log(data);
+    musicWs.addEventListener("message", (event) => {
+        let reader = new FileReader();
+        console.log(reader.readAsText(event.data));
         bufferQueue.push(data);
 
         if (!isPlaying) {
