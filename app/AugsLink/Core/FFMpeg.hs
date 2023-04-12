@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.FFMpeg 
   (
-    ffmpegConvertAudio
-  , ffprobeAudio
+    ffprobe
   , FFProbeData (..)
   ) where
 
@@ -14,7 +13,6 @@ import System.Process
 import qualified Data.Text                  as T
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
-type FFMpegExecutableDir = FilePath
 type FFProbeExecutableDir = FilePath
 
 data FFProbeStream = Stream 
@@ -76,20 +74,20 @@ instance FromJSON FFProbeStream where
       , codecTimeBase   = codecTimeBase
       , codecTagString  = codecTagStr
       , codecTag        = codecTag
-      , width           = width
-      , height          = height
-      , hasBFrames      = hasBFrames
+      , width           = read . T.unpack <$> width
+      , height          = read . T.unpack <$> height
+      , hasBFrames      = read . T.unpack <$> hasBFrames
       , pixelFormat     = pixFmt
-      , level           = lvl
-      , isAvc           = isAvc
-      , nalLengthSize   = nalLengthSize
+      , level           = read . T.unpack <$> lvl
+      , isAvc           = read . T.unpack <$> isAvc
+      , nalLengthSize   = read . T.unpack <$> nalLengthSize
       , rFrameRate      = rFrameRate
       , avgFrameRate    = avgFrameRate
       , timeBase        = timeBase
       , streamStartTime = read . T.unpack <$> startTime
       , streamDuration  = read . T.unpack <$> duration
-      , streamBitRate   = bitRate
-      , nbFrames        = nbFrames
+      , streamBitRate   = read . T.unpack <$> bitRate
+      , nbFrames        = read . T.unpack <$> nbFrames
       , streamTags      = tags
       }
 
@@ -124,10 +122,10 @@ instance FromJSON FFProbeFormat where
       , nbStreams       = nbStreams
       , formatName      = formatName
       , formatLongName  = formatLongName
-      , formatStartTime = formatStartTime
-      , formatDuration  = formatDuration
-      , formatSize      = formatSize
-      , formatBitRate   = formatBitRate
+      , formatStartTime = read . T.unpack <$> formatStartTime
+      , formatDuration  = read . T.unpack <$> formatDuration
+      , formatSize      = read . T.unpack <$> formatSize
+      , formatBitRate   = read . T.unpack <$> formatBitRate
       , formatTags      = formatTags
       }
 
@@ -156,13 +154,9 @@ ffprobeJsonOutArgs filePath =
   , filePath
   ]
 
-ffmpegConvertAudio :: FFMpegExecutableDir -> FilePath -> FilePath -> IO ()
-ffmpegConvertAudio ffmpeg inputFile outputFile = do 
-  callProcess ffmpeg ["-i", inputFile, outputFile]
-
-ffprobeAudio :: FFProbeExecutableDir -> FilePath -> IO FFProbeData
-ffprobeAudio ffprobe filePath = do
-  jsonResponse <- readProcess ffprobe (ffprobeJsonOutArgs filePath) ""
+ffprobe :: FFProbeExecutableDir -> FilePath -> IO FFProbeData
+ffprobe exec filePath = do
+  jsonResponse <- readProcess exec (ffprobeJsonOutArgs filePath) ""
   let result   = eitherDecode (LBS.pack jsonResponse)
   case result of
     Left err    -> 
