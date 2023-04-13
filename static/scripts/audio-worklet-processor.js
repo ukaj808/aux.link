@@ -1,29 +1,31 @@
 class AudioProcessor extends AudioWorkletProcessor {
-    static get parameterDescriptors() {
-        return [];
-    }
 
     constructor() {
         super();
+        this.port.onmessage = (event) => {
+          this.audioBuffer = event.data;
+        };
     }
 
-    process(inputs, outputs) {
-        const inputBuffer = inputs[0][0];
-        const outputBuffer = outputs[0][0];
-        
-        if (!inputBuffer || !outputBuffer) {
-            return false;
-        }
-        
-        const inputChannel = inputBuffer.getChannelData(0);
-        const outputChannel = outputBuffer.getChannelData(0);
-        
-        for (let i = 0; i < outputChannel.length; i++) {
-            outputChannel[i] = inputChannel[i];
-        }
-        
-        return true;
+  process(inputs, outputs, parameters) {
+    const output = outputs[0];
+    if (!this.audioBuffer || this.audioBuffer.length === 0) {
+      return true; // Keep the processor alive
     }
+
+    for (let channel = 0; channel < output.length; ++channel) {
+      const outputChannel = output[channel];
+      if (this.audioBuffer[channel]) {
+        outputChannel.set(this.audioBuffer[channel]);
+      } else {
+        outputChannel.fill(0);
+      }
+    }
+
+    // Remove the played data from the buffer
+    this.audioBuffer.shift();
+    return true; // Keep the processor alive
+  }
 }
 
 registerProcessor('audio-processor', AudioProcessor);
