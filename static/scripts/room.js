@@ -108,53 +108,19 @@ const connectToMusic = async () => {
     if (musicWs) throw Error('Invalid state; Already connected to music');
     musicEnabled = true;
     musicWs = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${userId}/music/listen`);
+    musicWs.binaryType = 'arraybuffer';
 
     const audioContext = new AudioContext();
-    const bufferQueue = [];
-    let isPlaying = false;
-
-
     await audioContext.audioWorklet.addModule('public/scripts/audio-worklet-processor.js');
     const processor = new AudioWorkletNode(audioContext, 'audio-processor');
     processor.connect(audioContext.destination);
 
+    const audioBuffer = [];
     
     musicWs.addEventListener("message", (event) => {
-        let reader = new FileReader();
-        console.log(reader.readAsText(event.data));
-        bufferQueue.push(data);
-
-        if (!isPlaying) {
-            const processAudioData = () => {
-                while (isPlaying && bufferQueue.length > 0) {
-                    const bufferData = bufferQueue.shift();
-                    const inputData = new Float32Array(bufferData);
-                    const inputBuffer = new AudioBuffer({
-                        length: inputData.length,
-                        numberOfChannels: 1,
-                        sampleRate: audioContext.sampleRate
-                    });
-                    
-                    // Copy the audio data to the input buffer
-                    inputBuffer.copyToChannel(inputData, 0);
-                    
-                    // Send the input buffer to the audio worklet processor
-                    processor.port.postMessage(inputBuffer);
-                }
-            
-                // Stop playing audio if there is no more data in the buffer queue
-                if (!isPlaying) {
-                    return;
-                }
-                
-                // Continue the playback loop
-                setTimeout(() => {
-                    processAudioData();
-                }, 100);
-                    }
-                    isPlaying = true;
-                }
-
+        const arr = new Float32Array(event.data);
+        audioBuffer.push(arr);
+        processor.port.postMessage(audioBuffer);
     });
 }
 const disconnectMusic = () => {
