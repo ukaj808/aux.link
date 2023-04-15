@@ -63,6 +63,7 @@ executable augslink-service
                       , servant-server
                       , servant-websockets
                       , text 
+                      , time
                       , unordered-containers
                       , unix
                       , uuid
