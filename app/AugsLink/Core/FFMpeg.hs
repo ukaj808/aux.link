@@ -3,6 +3,7 @@ module AugsLink.Core.FFMpeg
   (
     ffprobe
   , FFProbeData (..)
+  , formatDuration
   ) where
 
 import Data.Aeson

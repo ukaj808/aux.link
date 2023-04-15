@@ -6,9 +6,11 @@ module AugsLink.Core.Music
 
 import Control.Concurrent
 import Control.Monad
+import Data.Time.Clock
 import Foreign
 import GHC.IO.Handle
 import System.IO
+
 
 import qualified Data.ByteString    as B
 import qualified Data.HashMap.Lazy  as Map
@@ -16,6 +18,7 @@ import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
 import AugsLink.Core.FFMpeg
+import Data.Maybe (fromMaybe)
 
 type instance Connection IO = WS.PendingConnection
 
@@ -26,11 +29,10 @@ newtype UserListenSession = ULSession
 
 data SongState = SongState
   {
-    song        :: Song
-  , timeElapsed :: Int
+    sId      :: SongId
+  , startTime   :: UTCTime
   , filePath    :: FilePath
   , fileHandle  :: Handle
-  , fileBuffer  :: Ptr Int64
   , ffprobeData :: FFProbeData
   }
 
@@ -82,7 +84,7 @@ startImpl stateVar room uId = do
         -- Yes they do, lets take it
         Right (Just sId) -> do
           -- Lets put there 'possible' next song in the tape player
-          sngSt <- initializeSongState sId (SongInfo "" "" 10000000)
+          sngSt <- initializeSongState sId
           currentlyPlaying <- modifyMVar stateVar $ \st -> do
             return (st{currentlyPlaying=Just sngSt}, sngSt)
           stream currentlyPlaying
@@ -90,42 +92,33 @@ startImpl stateVar room uId = do
           where
             stream :: SongState -> IO ()
             stream sngSt = do
-              if timeElapsed sngSt >= songLength (songInfo $ song sngSt)
+              currentTime <- getCurrentTime
+              let duration = fromMaybe (error "Couldnt derive the duration of the song") (formatDuration (format (ffprobeData sngSt)))
+              let endTime = addUTCTime (realToFrac duration :: NominalDiffTime) (startTime sngSt)
+              if currentTime >= endTime
               then return ()
               else do
-                sngSt' <- modifyMVar stateVar $ \st -> do
-                  forM_ (listening st) $ \session -> do
-                    let h = fileHandle sngSt
-                    let b = fileBuffer sngSt
-                    _ <- hGetBuf h b 96000
-                    bs <- peek b
-                    let wsData = B.pack [ fromIntegral bs]
-                    WS.sendBinaryData (conn session) wsData
-                  let sngSt' = sngSt{timeElapsed = timeElapsed sngSt + 1}
-                  return (st{currentlyPlaying=Just sngSt'}, sngSt')
-                threadDelay 1000000
-                stream sngSt'
+                st <- readMVar stateVar
+                forM_ (listening st) $ \session -> do
+                  bs <- B.hGet (fileHandle sngSt) 96000
+                  WS.sendBinaryData (conn session) bs
+                stream sngSt
         -- Either they dont have any or something failed on upload
         Right Nothing  -> nextSong
         Left err -> undefined
 
 
-initializeSongState :: SongId -> SongInfo -> IO SongState
-initializeSongState sId sInfo = do
+initializeSongState :: SongId -> IO SongState
+initializeSongState sId = do
   ffpd <- ffprobe "ffprobe" "./static/song.mp3"
   let filePath = "./static/song.mp3"
   handle <- openBinaryFile filePath ReadMode
-  let song = Song {
-    songInfo = sInfo 
-  , songId = sId
-  }
-  buffer <- mallocBytes 96000
+  currentTime <- getCurrentTime
   return $ SongState {
-     timeElapsed=0
+     sId = sId
+    ,startTime=currentTime
     ,filePath=filePath
     ,fileHandle=handle
-    ,fileBuffer=buffer
-    ,song=song
     ,ffprobeData=ffpd
   }
 
