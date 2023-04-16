@@ -7,7 +7,6 @@ module AugsLink.Core.Music
 import Control.Concurrent
 import Control.Monad
 import Data.Time.Clock
-import Foreign
 import GHC.IO.Handle
 import System.IO
 
@@ -19,6 +18,7 @@ import qualified Network.WebSockets as WS
 import AugsLink.Core.API
 import AugsLink.Core.FFMpeg
 import Data.Maybe (fromMaybe)
+import Data.Int
 
 type instance Connection IO = WS.PendingConnection
 
@@ -29,11 +29,14 @@ newtype UserListenSession = ULSession
 
 data SongState = SongState
   {
-    sId      :: SongId
-  , startTime   :: UTCTime
-  , filePath    :: FilePath
-  , fileHandle  :: Handle
-  , ffprobeData :: FFProbeData
+    chunkDelayMs     :: Int
+  , chunkSizeBytes   :: Int
+  , duration         :: Double
+  , fileHandle       :: Handle
+  , filePath         :: FilePath
+  , sId              :: SongId
+  , startTime        :: UTCTime
+  , endTime          :: UTCTime
   }
 
 data MusicState = MusicState
@@ -93,15 +96,14 @@ startImpl stateVar room uId = do
             stream :: SongState -> IO ()
             stream sngSt = do
               currentTime <- getCurrentTime
-              let duration = fromMaybe (error "Couldnt derive the duration of the song") (formatDuration (format (ffprobeData sngSt)))
-              let endTime = addUTCTime (realToFrac duration :: NominalDiffTime) (startTime sngSt)
-              if currentTime >= endTime
+              if currentTime >= endTime sngSt
               then return ()
               else do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
-                  bs <- B.hGet (fileHandle sngSt) 96000
+                  bs <- B.hGet (fileHandle sngSt) (chunkSizeBytes sngSt)
                   WS.sendBinaryData (conn session) bs
+                threadDelay $ chunkDelayMs sngSt
                 stream sngSt
         -- Either they dont have any or something failed on upload
         Right Nothing  -> nextSong
@@ -114,12 +116,16 @@ initializeSongState sId = do
   let filePath = "./static/song.mp3"
   handle <- openBinaryFile filePath ReadMode
   currentTime <- getCurrentTime
+  let dur = fromMaybe (error "Coudlnt derive duration of the song") (formatDuration $ format ffpd)
   return $ SongState {
-     sId = sId
-    ,startTime=currentTime
-    ,filePath=filePath
-    ,fileHandle=handle
-    ,ffprobeData=ffpd
+      chunkDelayMs  = calcChunkDelay ffpd
+    , chunkSizeBytes= calcChunkSize ffpd
+    , duration      = dur
+    , endTime       = addUTCTime (realToFrac dur :: NominalDiffTime) currentTime 
+    , fileHandle    = handle
+    , filePath      = filePath
+    , sId           = sId
+    , startTime     = currentTime
   }
 
 stopListeningImpl :: MVar MusicState -> UserId -> IO ()
@@ -139,3 +145,10 @@ handleIncomingMessages stateVar conn uId = go
           go
         WS.ControlMessage WS.Close {} -> return ()
         WS.ControlMessage _ -> go
+
+calcChunkDelay :: FFProbeData -> Int
+calcChunkDelay = undefined
+
+calcChunkSize :: FFProbeData -> Int
+calcChunkSize = undefined
+
