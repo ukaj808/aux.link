@@ -7,39 +7,42 @@ module AugsLink.Core.FFMpeg
   ) where
 
 import Data.Aeson
-import Data.Map
-import Data.Text
 import System.Process
 
 import qualified Data.Text                  as T
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.Map as Map
+import Data.Int
+import Data.Maybe
 
 type FFProbeExecutableDir = FilePath
 
 data FFProbeStream = Stream 
   {
     streamIndex     :: Maybe Int
-  , codecName       :: Maybe Text
-  , codecLongName   :: Maybe Text 
-  , codecType       :: Maybe Text
-  , codecTimeBase   :: Maybe Text
-  , codecTagString  :: Maybe Text
-  , codecTag        :: Maybe Text
+  , codecName       :: Maybe T.Text
+  , codecLongName   :: Maybe T.Text 
+  , codecType       :: Maybe T.Text
+  , codecTimeBase   :: Maybe T.Text
+  , codecTagString  :: Maybe T.Text
+  , codecTag        :: Maybe T.Text
+  , channels        :: Maybe Int
   , width           :: Maybe Int
   , height          :: Maybe Int
   , hasBFrames      :: Maybe Int
-  , pixelFormat     :: Maybe Text
+  , pixelFormat     :: Maybe T.Text
   , level           :: Maybe Int
   , isAvc           :: Maybe Int
   , nalLengthSize   :: Maybe Int
-  , rFrameRate      :: Maybe Text
-  , avgFrameRate    :: Maybe Text
-  , timeBase        :: Maybe Text
+  , rFrameRate      :: Maybe T.Text
+  , avgFrameRate    :: Maybe T.Text
+  , timeBase        :: Maybe T.Text
+  , sampleRate      :: Maybe Int
   , streamStartTime :: Maybe Double
   , streamDuration  :: Maybe Double
   , streamBitRate   :: Maybe Int
   , nbFrames        :: Maybe Int
-  , streamTags      :: Maybe (Map String String)
+  , streamTags      :: Maybe (Map.Map String String)
   } deriving Show
 
 instance FromJSON FFProbeStream where
@@ -51,6 +54,7 @@ instance FromJSON FFProbeStream where
     codecTimeBase <- o .:? "codec_time_base"
     codecTagStr   <- o .:? "codec_tag_string"
     codecTag      <- o .:? "codec_tag"
+    channels      <- o .:? "channels"
     width         <- o .:? "width"
     height        <- o .:? "height"
     hasBFrames    <- o .:? "has_b_frames"
@@ -64,6 +68,7 @@ instance FromJSON FFProbeStream where
     startTime     <- o .:? "start_time"
     duration      <- o .:? "duration"
     bitRate       <- o .:? "bit_rate"
+    sampleRate    <- o .:? "sample_rate"
     nbFrames      <- o .:? "nb_frames"
     tags          <- o .:? "tags" .!= Nothing
     return Stream
@@ -75,6 +80,7 @@ instance FromJSON FFProbeStream where
       , codecTimeBase   = codecTimeBase
       , codecTagString  = codecTagStr
       , codecTag        = codecTag
+      , channels        = channels
       , width           = read . T.unpack <$> width
       , height          = read . T.unpack <$> height
       , hasBFrames      = read . T.unpack <$> hasBFrames
@@ -85,6 +91,7 @@ instance FromJSON FFProbeStream where
       , rFrameRate      = rFrameRate
       , avgFrameRate    = avgFrameRate
       , timeBase        = timeBase
+      , sampleRate      = read . T.unpack <$> sampleRate
       , streamStartTime = read . T.unpack <$> startTime
       , streamDuration  = read . T.unpack <$> duration
       , streamBitRate   = read . T.unpack <$> bitRate
@@ -94,15 +101,15 @@ instance FromJSON FFProbeStream where
 
 data FFProbeFormat = Format
   {
-    fileName        :: Maybe Text
+    fileName        :: Maybe T.Text
   , nbStreams       :: Maybe Int
-  , formatName      :: Maybe Text
-  , formatLongName  :: Maybe Text
+  , formatName      :: Maybe T.Text
+  , formatLongName  :: Maybe T.Text
   , formatStartTime :: Maybe Double
   , formatDuration  :: Maybe Double
   , formatSize      :: Maybe Int
   , formatBitRate   :: Maybe Int
-  , formatTags      :: Maybe (Map String String)
+  , formatTags      :: Maybe (Map.Map String String)
   } deriving Show
 
 
@@ -165,3 +172,49 @@ ffprobe exec filePath = do
     Right value -> 
       return value
 
+
+mp3FrameSize :: Int      -- ^ Bitrate (kbps)
+             -> Int      -- ^ Sample rate (samples/sec)
+             -> Int64      -- ^ Frame size (bytes)
+mp3FrameSize bitrate sampleRate =
+  let frameDuration = (1152 :: Double) -- MP3 frame duration in samples
+      frameSize = fromIntegral bitrate * 1000 * frameDuration / fromIntegral sampleRate / 8
+  in round frameSize
+
+data AudioFormat = Raw | MP3
+
+calculateChunkSize :: AudioFormat -- ^ Audio format
+                   -> Int         -- ^ Bit depth (bits/sample) or bitrate (kbps) for compressed formats
+                   -> Int         -- ^ Sample rate (samples/sec)
+                   -> Double      -- ^ Duration of audio (seconds)
+                   -> Int         -- ^ Number of channels
+                   -> Int         -- ^ Desired duration of each chunk (milliseconds)
+                   -> Int64       -- ^ Chunk size (bytes)
+calculateChunkSize format bitDepthOrBitrate sampleRate duration numChannels chunkDurationMs =
+  let totalBytes = case format of
+                     Raw  -> fromIntegral bitDepthOrBitrate * fromIntegral sampleRate * fromIntegral numChannels * duration / 8
+                     MP3  -> fromIntegral bitDepthOrBitrate * 1000 * duration / 8
+      chunkDurationSec = fromIntegral chunkDurationMs / 1000
+      baseChunkSize :: Int64 = round (totalBytes * chunkDurationSec / duration)
+      adjustedChunkSize = case format of
+                            Raw  -> baseChunkSize
+                            MP3  -> let frameSize = mp3FrameSize bitDepthOrBitrate sampleRate
+                                    in (baseChunkSize `div` frameSize) * frameSize
+  in adjustedChunkSize
+
+
+calculateChunkSizeFromFFProbeData :: Int -> FFProbeData -> Int64
+calculateChunkSizeFromFFProbeData chunkDurationMs ffprobeData  =
+  let audioStream = head $ filter (\stream -> codecType stream == Just "audio") (streams ffprobeData)
+      audioFormat = case codecName audioStream of
+                      Just "pcm_s16le" -> Raw
+                      Just "mp3"       -> MP3
+                      _                -> error "Unsupported audio format"
+      bitDepthOrBitrate = fromMaybe 0 (streamBitRate audioStream)
+      sampleRate' = fromMaybe 0 (sampleRate audioStream)
+      duration = fromMaybe 0 (streamDuration audioStream)
+      numChannels = fromMaybe 0 (channels audioStream)
+  in calculateChunkSize audioFormat bitDepthOrBitrate sampleRate' duration numChannels chunkDurationMs
+
+calc :: IO FFProbeData -> IO Int64
+calc ffpd = calculateChunkSizeFromFFProbeData 50 <$> ffpd
