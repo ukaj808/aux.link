@@ -1,129 +1,173 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.Room
   (
-    initialRegistryState 
-  , initialRoomState
-  , newRegistry
-  , Registry (..)
-  , RegistryState (..)
-  , RoomState (..)
-  , RoomEvent (..)
-  , Room (..)
-  , RoomId
+    initialRoomState
+  , Room          (..)
+  , RoomState     (..)
+  , newRoom
   )
   where
 
-import qualified Data.Aeson as Aeson
-import           Control.Concurrent.MVar (newMVar, readMVar, MVar)
-import qualified Data.HashMap.Lazy as HM
-import           Control.Concurrent      (modifyMVar_)
-import           Data.UUID.V4            (nextRandom)
-import qualified Network.WebSockets as WS
-import Control.Monad (forM_)
-import qualified Data.Text as T
+import Control.Concurrent.MVar
+import Control.Monad
+import Data.List
+import Servant.Multipart
 
-import  AugsLink.Core.API
+import qualified Data.Aeson           as Aeson
+import qualified Data.Map    as Map
+import qualified Network.WebSockets   as WS
 
-newtype RegistryState = RegistryState
-  {
-     rooms :: HM.HashMap RoomId (Room IO)
-  }
+import AugsLink.Core.API
+import AugsLink.Core.Music
+import AugsLink.Core.Shared
+import AugsLink.Core.User
+
+type instance Connection IO = WS.PendingConnection
+type instance SongFile IO       = MultipartData Mem
 
 data RoomState = RoomState
   {
-    roomUsers       :: HM.HashMap UserId UserState               
-  , roomCurrentSong :: Maybe Song
-  , roomVote        :: [Vote]
+    roomId                       :: RoomId
+  , roomUsers                    :: Map.Map UserId UserSession
+  , registryManage               :: RegistryManage
+  , music                        :: Music IO
+  , creator                      :: Maybe UserId
+  , nextPos                      :: Int
+  , userCount                    :: Int
   }
 
-data UserState = UserState
+
+data UserSession = USession
   {
-     userConn  :: WS.Connection
-  ,  userQueue :: [Song]
-  ,  userOrder :: Int
-  ,  userName  :: Username
+    conn :: WS.Connection
+  , user :: User IO
   }
 
-          
-
-data Song = Song
+initialRoomState :: RoomId -> RegistryManage -> Music IO -> RoomState
+initialRoomState rId rsm music = RoomState
   {
-    title    :: String
-  , artist   :: String
-  , duration :: Int
+    roomId         = rId
+  , roomUsers      = Map.empty
+  , registryManage = rsm
+  , music          = music
+  , creator        = Nothing
+  , nextPos     = 0
+  , userCount      = 0
   }
 
-type instance Connection IO = WS.PendingConnection
-
-initialRegistryState :: RegistryState
-initialRegistryState = RegistryState {rooms=HM.empty}
-
-initialRoomState :: RoomState
-initialRoomState = RoomState {roomUsers=HM.empty, roomCurrentSong=Nothing, roomVote=[]}
-
-newRegistry :: IO (Registry IO)
-newRegistry = do
-  stateVar <- newMVar initialRegistryState
-  return $ Registry
-    {
-      numRooms = 
-        HM.size . rooms <$> readMVar stateVar
-    , getRoom = \rId ->
-        HM.lookup rId . rooms <$> readMVar stateVar
-    , createRoom = do
-        room <- newRoom
-        rId <- nextRandom
-        modifyMVar_ stateVar $ \st -> return st{
-            rooms =  HM.insert rId room (rooms st)
-          }
-        return rId
-    }
-
-newRoom :: IO (Room IO)
-newRoom = do
-  stateVar <- newMVar initialRoomState
+newRoom :: RoomId -> RegistryManage -> IO (Room IO)
+newRoom rId registryManage = do
+  music    <- newMusic
+  stateVar <- newMVar $ initialRoomState rId registryManage music
   return $ Room {
-      presentInRoom =
-        HM.keys . roomUsers <$> readMVar stateVar
-
-    , enterRoom = enterRoomImpl stateVar
-    , leaveRoom = \u ->
-        modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.delete u (roomUsers st)}
-    , publishToRoom = publishToRoomImpl stateVar
+      enterRoom         = enterRoomImpl        stateVar
+    , getUser           = getUserImpl          stateVar
+    , leaveRoom         = leaveRoomImpl        stateVar
+    , viewRoom          = viewRoomImpl         stateVar
+    , getMusic          = getMusicImpl         stateVar
+    , nextUp            =  nextUpImpl       stateVar
+    , getCreatorId        = creator <$> readMVar stateVar
     }
+
+-- Room API Impls
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
-       
-    conn <- WS.acceptRequest pend
-    putStrLn "accepted connection"
-    uuid <- nextRandom 
-    let uid = uuid
-    let user = UserState {userConn=conn, userQueue=[], userOrder=1, userName="fisnik"} 
-    publishToRoomImpl stateVar $ UserEnterEvent uid $ userName user
-    modifyMVar_ stateVar $ \st -> return st{roomUsers = HM.insert uid user $ roomUsers st}
-    WS.withPingThread conn 30 (return ()) $ handleIncomingEvents stateVar conn
-    -- todo: deal with async threads
-    -- we should keep a reference to the thread so when room is empty we can terminate it 
+  conn <- WS.acceptRequest pend
+  uId  <-
+    modifyMVar stateVar $ \st -> do
+      let uId  =      userCount st
+      u        <-     newUser (roomId st) uId
+      rUser    <-     getRoomUser u
+      let st'  =      addUserToRoom st (userId rUser) (USession conn u)
+      let c = case creator st of 
+               Just existing -> Just existing
 
-publishToRoomImpl :: MVar RoomState -> RoomEvent -> IO ()
-publishToRoomImpl stateVar e = do
-  rmSt <- readMVar stateVar
-  forM_ (roomUsers rmSt) $ \u ->
-    WS.sendTextData (userConn u) (Aeson.encode e)
-  
-handleIncomingEvents :: MVar RoomState -> WS.Connection -> IO ()
-handleIncomingEvents stateVar conn = do
-  putStrLn "Start handle events"
+               Nothing       -> Just uId
+      messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
+      publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
+      return  (st'{userCount=uId + 1, creator=c}, uId)
+  WS.withPingThread conn 30 (return ()) $
+    handleIncomingMessages stateVar conn uId
+  -- todo: deal with async threads
+  -- we should keep a reference to the thread so when room is empty we can terminate it 
+
+getMusicImpl :: MVar RoomState -> IO (Music IO)
+getMusicImpl stateVar = music <$> readMVar stateVar
+
+getUserImpl :: MVar RoomState -> UserId -> IO (Maybe (User IO))
+getUserImpl stateVar uId = do
+  st <- readMVar stateVar
+  return $ user <$> Map.lookup uId (roomUsers st)
+
+leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
+leaveRoomImpl stateVar uId = do
+   modifyMVar_ stateVar $ \st -> do
+     let st'' = removeUser st uId
+     publishToRoom st'' $ UserLeftEvent uId
+     return st''
+
+   st <- readMVar stateVar
+   when (Map.size (roomUsers st) == 0) $
+     selfDestructCallback $ registryManage st
+
+viewRoomImpl :: MVar RoomState -> IO [RoomUser]
+viewRoomImpl stateVar = do
+  roomState <- readMVar stateVar
+  let userSessions = Map.elems $ roomUsers roomState
+  users <- mapM (getRoomUser . user) userSessions
+  return $ sort users
+
+nextUpImpl :: MVar RoomState -> IO (User IO)
+nextUpImpl stateVar = do
+  modifyMVar stateVar $ \st -> do
+    let curr = nextPos st
+    messageToUser st curr (ServerUploadSong "")
+    let u = user $ roomUsers st Map.! curr
+    return (st{nextPos=curr+1}, u)
+
+
+
+-- Messaging Via Websockets
+
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
+handleIncomingMessages stateVar conn uid = do
   go
   where
-    go :: IO () 
-    go  = do 
-      msg <- WS.receiveData conn
-      print msg
-      case Aeson.eitherDecode msg of
-        Left e -> do 
-          print e
-          WS.sendClose conn $ T.pack e
-        Right event -> do 
-          publishToRoomImpl stateVar event
+    go :: IO ()
+    go  = do
+      msg <- WS.receive conn
+      case msg of
+        WS.DataMessage {} -> do
+          putStrLn "Should not be possible"
           go
+        WS.ControlMessage WS.Close {} -> do
+          leaveRoomImpl stateVar uid
+        WS.ControlMessage _ -> go
+
+publishToAllBut :: RoomState -> (RoomUser -> Bool) -> RoomEvent -> IO ()
+publishToAllBut rmSt p e = do
+  forM_ (roomUsers rmSt) $ \uSession -> do
+    rUser <- getRoomUser $ user uSession
+    when (p rUser) $ WS.sendTextData (conn uSession) (Aeson.encode e)
+
+publishToRoom ::  RoomState -> RoomEvent -> IO ()
+publishToRoom rmSt e = do
+  forM_ (roomUsers rmSt) $ \uSession ->
+    WS.sendTextData (conn uSession) (Aeson.encode e)
+
+
+messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
+messageToUser rmSt uid msg = do
+  let uSession = roomUsers rmSt Map.! uid
+  WS.sendTextData (conn uSession) (Aeson.encode msg)
+
+-- Pure functions
+
+addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
+addUserToRoom st@(RoomState _ users _ _ _ _ _) uId uSession =
+  st{roomUsers = Map.insert uId uSession users}
+
+removeUser :: RoomState -> UserId -> RoomState
+removeUser st@(RoomState _ users _ _ _ _ _) uId =
+  st{roomUsers= Map.delete uId users}

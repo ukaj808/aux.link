@@ -1,17 +1,18 @@
 module AugsLink.Service.Handlers.PostHome 
-  ( create
+  ( 
+    createHandler
   ) where
 
 import Servant
-import Control.Monad.Cont (MonadIO(liftIO))
-import Data.UUID (toString)
+import Control.Monad.IO.Class
+import Data.Text
 
 import AugsLink.Core.API
 
-create :: Registry IO -> Handler (Headers '[Header "Location" [Char]] [Char])
-create rr = do
+createHandler :: Registry IO -> Handler (Headers '[Header "Location" Text] Text)
+createHandler rr = do
   rId <- liftIO $ createRoom rr
-  return $ addHeader (genLocation rId) (toString rId)
+  return $ addHeader (genLocation rId) rId
 
-genLocation :: RoomId -> String
-genLocation roomId = "http://localhost:8080/" ++ toString roomId
+genLocation :: RoomId -> Text
+genLocation = append (pack "http://localhost:8080/")

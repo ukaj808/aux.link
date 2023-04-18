@@ -1,0 +1,4 @@
+1. Finish Music m
+  a. Allow the starting of the music player []
+     i. Should stream song to connecteed users []
+  b. Allow connecting a websocket to a music player []

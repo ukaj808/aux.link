@@ -1,15 +1,16 @@
 module AugsLink.Service.Handlers.GetHome 
-  ( home
+  ( 
+    homeHandler
   ) where
 
-import Control.Monad.IO.Class ( liftIO )
-import qualified Data.ByteString.Lazy as Lazy
+import Control.Monad.IO.Class
 import Servant
 
-import AugsLink.Service.API ( RawHtml (..) )
-import CommandLine ( homeViewPath , CLArgs )
+import AugsLink.Service.API
+import CommandLine
+import Data.Text.IO as T
 
-home :: CLArgs -> Handler RawHtml
-home opts = do
-  homeHtmlFile <- liftIO $ Lazy.readFile $ homeViewPath opts 
-  return $ RawHtml homeHtmlFile
+homeHandler :: CLArgs -> Handler StaticHtml
+homeHandler opts = do
+  homeHtmlFile <- liftIO $ T.readFile $ homeViewPath opts 
+  return $ StaticHtml homeHtmlFile

@@ -21,30 +21,51 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
+                      , AugsLink.Core.FFMpeg 
                       , AugsLink.Core.Model 
+                      , AugsLink.Core.Music 
+                      , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
-                      , AugsLink.Internal.State 
+                      , AugsLink.Core.Shared 
+                      , AugsLink.Core.User 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
+                      , AugsLink.Service.Handlers.DeleteSong
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
+                      , AugsLink.Service.Handlers.ListenWs 
                       , AugsLink.Service.Handlers.PostHome
+                      , AugsLink.Service.Handlers.PutEnqueueSong
+                      , AugsLink.Service.Handlers.PutMoveSong
+                      , AugsLink.Service.Handlers.PutScrapeSong
+                      , AugsLink.Service.Handlers.PutStartMusic
+                      , AugsLink.Service.Handlers.PutStopListen
+                      , AugsLink.Service.Handlers.PutUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
+                      , Commons.State
     -- other-extensions:
-    build-depends:       aeson
-                      ,  async
-                      ,  base ^>=4.17.0.0
+    build-depends:      aeson
+                      , async
+                      , base ^>=4.16.0.0
+                      , blaze-html
                       , bytestring
                       , containers
-                      , http-media
+                      , directory
+                      , hashable
+                      , heaps
                       , mtl
                       , optparse-applicative
+                      , process
                       , random 
+                      , servant-blaze
+                      , servant-multipart
                       , servant-server
                       , servant-websockets
                       , text 
+                      , time
                       , unordered-containers
+                      , unix
                       , uuid
                       , wai
                       , warp

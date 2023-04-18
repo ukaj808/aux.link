@@ -1,5 +1,6 @@
 module CommandLine
-  ( CLArgs(..)
+  ( 
+    CLArgs(..)
   , getCLArgs
   ) where
 
@@ -21,27 +22,27 @@ parseOptions = CLArgs
 
 parseStaticDirPath :: Parser FilePath
 parseStaticDirPath =
-    option str $ mconcat 
-      [
-        long "static"
-      , help "Directory of the static files"
-      ]
+  option str $ mconcat 
+    [
+      long "static"
+    , help "Directory of the static files"
+    ]
 
 parseHomeViewPath :: Parser FilePath
 parseHomeViewPath =
-    option str $ mconcat 
-      [
-        long "home"
-      , help "Path to the home view (html)"
-      ]
+  option str $ mconcat 
+    [
+      long "home"
+    , help "Path to the home view (html)"
+    ]
     
 parseRoomViewPath :: Parser FilePath
 parseRoomViewPath =
-    option str $ mconcat 
-      [
-        long "room"
-      , help "Path to the room view (html)"
-      ]
+  option str $ mconcat 
+    [
+      long "room"
+    , help "Path to the room view (html)"
+    ]
 
 getCLArgs :: IO CLArgs
 getCLArgs = execParser $ info (parseOptions <**> helper) fullDesc

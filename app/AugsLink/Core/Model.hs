@@ -1,11 +1,13 @@
 module AugsLink.Core.Model where
 
-import qualified Data.UUID as UUID
+import Data.UUID
+
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 
 import AugsLink.Core.API
-import AugsLink.Internal.State
+import Commons.State
+import Data.Text
 
 type InternalId = Int
 
@@ -26,11 +28,11 @@ modelRegistry = Registry
     numRooms = M.size . modelRooms <$> get
   , createRoom = State $ \st ->
       let iId = modelNextId st
-          rId = UUID.fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
-      in ( rId
+          rId = fromWords 0 0 0 (fromIntegral iId) --Where is the type enforcement coming from?
+      in ( pack ""
          , st { modelRooms  = M.insert iId initialRoomState (modelRooms st)
               , modelNextId = succ iId
-              , modelRoomIds = HM.insert rId iId (modelRoomIds st)
+              , modelRoomIds = HM.insert (pack "") iId (modelRoomIds st)
               }
          )
   , getRoom = undefined
@@ -39,9 +41,7 @@ modelRegistry = Registry
 modelRoom :: Room (State Model)
 modelRoom = Room
   {
-    presentInRoom = undefined
-  , enterRoom = undefined
+    enterRoom = undefined
   , leaveRoom = undefined 
-  , publishToRoom = undefined
   }
 

@@ -1,0 +1,11 @@
+2. Refactor from queue to Priority Heap
+  a. Use heap lib [X]
+  b. Rewrite code to use heap as SongQueue [X]
+  c. Read Chapter 3 in okasakis PFDS []
+  d. Complete heap excercises []
+
+3. Create a User m mobit. I think I could create a mvar for every user in the room
+   so I can seperate out concurrency logic for room-level modifications and user-level modifications.
+   I don't think a users modification of there own song queue should hold up the lock for the whole room.
+   This seems like it'll be a pretty common occurence; amongst other possible user level modifcations; that
+   shouldnt need to be mixed up with room mvar locking. [X]
