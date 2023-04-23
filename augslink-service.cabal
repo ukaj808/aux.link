@@ -28,6 +28,7 @@ executable augslink-service
                       , AugsLink.Core.Room 
                       , AugsLink.Core.Shared 
                       , AugsLink.Core.User 
+                      , AugsLink.Core.Wav 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.DeleteSong
@@ -48,6 +49,7 @@ executable augslink-service
     build-depends:      aeson
                       , async
                       , base ^>=4.16.0.0
+                      , binary
                       , blaze-html
                       , bytestring
                       , containers

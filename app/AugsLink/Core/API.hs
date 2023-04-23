@@ -105,6 +105,7 @@ newtype ServerCommand = UploadSong SongId
 -- Message from server to user
 data ServerMessage = ServerWelcomeMessage RoomUser
   |                  ServerUploadSong SongId
+  |                  ServerSongStarting Int Int Int
 
 type RoomId   = Text
 type UserId   = Int

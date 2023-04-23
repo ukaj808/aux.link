@@ -6,19 +6,17 @@ module AugsLink.Core.Music
 
 import Control.Concurrent
 import Control.Monad
-import Data.Time.Clock
 import GHC.IO.Handle
-import System.IO
-
 
 import qualified Data.ByteString    as B
+import qualified Data.ByteString.Lazy    as LB
 import qualified Data.HashMap.Lazy  as Map
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
-import AugsLink.Core.FFMpeg
-import Data.Maybe (fromMaybe)
-import Data.Int
+import AugsLink.Core.FFMpeg (convertToWav)
+import System.IO
+import AugsLink.Core.Wav (parseWavHeader, WavHeader, byteRate)
 
 type instance Connection IO = WS.PendingConnection
 
@@ -27,23 +25,11 @@ newtype UserListenSession = ULSession
     conn :: WS.Connection
   }
 
-data SongState = SongState
-  {
-    chunkDelayMs     :: Int
-  , chunkSizeBytes   :: Int
-  , duration         :: Double
-  , fileHandle       :: Handle
-  , filePath         :: FilePath
-  , sId              :: SongId
-  , startTime        :: UTCTime
-  , endTime          :: UTCTime
-  }
-
 data MusicState = MusicState
   {
     started          :: Bool
   , listening        :: Map.HashMap UserId UserListenSession
-  , currentlyPlaying :: Maybe SongState
+  , currentlyPlaying :: Maybe SongId
   }
 
 newMusic :: IO (Music IO)
@@ -87,46 +73,31 @@ startImpl stateVar room uId = do
         -- Yes they do, lets take it
         Right (Just sId) -> do
           -- Lets put there 'possible' next song in the tape player
-          sngSt <- initializeSongState sId
-          currentlyPlaying <- modifyMVar stateVar $ \st -> do
-            return (st{currentlyPlaying=Just sngSt}, sngSt)
-          stream currentlyPlaying
+                     
+          wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
+          handle    <- openFile wavFile ReadMode
+          wavHeader <- parseWavHeader <$> LB.hGet handle 44
+          modifyMVar_ stateVar $ \st -> do
+            return st{currentlyPlaying=Just sId} 
+          liveStream wavHeader handle
           nextSong
           where
-            stream :: SongState -> IO ()
-            stream sngSt = do
-              currentTime <- getCurrentTime
-              if currentTime >= endTime sngSt
-              then return ()
-              else do
+            liveStream :: WavHeader -> Handle -> IO ()
+            liveStream header handle = do
+              playing <- not <$> hIsEOF handle
+              when playing $ do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
-                  bs <- B.hGet (fileHandle sngSt) (chunkSizeBytes sngSt)
-                  WS.sendBinaryData (conn session) bs
-                threadDelay $ chunkDelayMs sngSt
-                stream sngSt
+                  chunk <- B.hGet handle (byteRate header)
+                  WS.sendBinaryData (conn session) chunk
+                threadDelay 1000000
+                liveStream header handle
+
+
         -- Either they dont have any or something failed on upload
         Right Nothing  -> nextSong
         Left err -> undefined
 
-
-initializeSongState :: SongId -> IO SongState
-initializeSongState sId = do
-  ffpd <- ffprobe "ffprobe" "./static/song.mp3"
-  let filePath = "./static/song.mp3"
-  handle <- openBinaryFile filePath ReadMode
-  currentTime <- getCurrentTime
-  let dur = fromMaybe (error "Coudlnt derive duration of the song") (formatDuration $ format ffpd)
-  return $ SongState {
-      chunkDelayMs  = calcChunkDelay ffpd
-    , chunkSizeBytes= calcChunkSize ffpd
-    , duration      = dur
-    , endTime       = addUTCTime (realToFrac dur :: NominalDiffTime) currentTime 
-    , fileHandle    = handle
-    , filePath      = filePath
-    , sId           = sId
-    , startTime     = currentTime
-  }
 
 stopListeningImpl :: MVar MusicState -> UserId -> IO ()
 stopListeningImpl stateVar uId = do
@@ -145,10 +116,3 @@ handleIncomingMessages stateVar conn uId = go
           go
         WS.ControlMessage WS.Close {} -> return ()
         WS.ControlMessage _ -> go
-
-calcChunkDelay :: FFProbeData -> Int
-calcChunkDelay = undefined
-
-calcChunkSize :: FFProbeData -> Int
-calcChunkSize = undefined
-
