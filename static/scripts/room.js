@@ -1,3 +1,4 @@
+import FreeQueue from "./free-queue";
 // Global
 const roomId = location.pathname.substr(1);
 const wsProtocol = (location.protocol != null && location.protocol === "https:") ? "wss" : "ws";
@@ -104,35 +105,20 @@ const createNewUserListElement = (userDetails) => {
 // Current
 const currentElement = document.getElementById("current");
 
-const concatFloat32Arrays = (arr1, arr2) => {
-  const out = new Float32Array(arr1.length + arr2.length);
-  out.set(arr1);
-  out.set(arr2, arr1.length);
-  return out;
-}
-
 const connectToMusic = async () => {
     if (musicWs) throw Error('Invalid state; Already connected to music');
     musicEnabled = true;
-    musicWs = new WebSocket(`${wsProtocol}://${roomsUrl}/${roomId}/${userId}/music/listen`);
-    musicWs.binaryType = 'arraybuffer';
 
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const audioBufferNode = audioContext.createBuffer(1, 44100, 44100);
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBufferNode;
-    source.connect(audioContext.destination);
-    source.start();
-    
-    musicWs.addEventListener("message", (event) => {
-        const rawData = new Float32Array(event.data);
-        audioBufferNode.copyToChannel(rawData, 0);
-        console.log('Audio buffer:', source.context.currentTime);
-        console.log('Audio context state: ', audioContext.state);
-        console.log('Audio buffer source node playback state: ', source.playbackRate);
-    });
+    const audioQueue = new FreeQueue(4096, 2);
+    // Create a WebWorker for Audio Processing.
+    // Give queue
+    const worker = new Worker('worker.js', { type: 'module'});
 
+    const audioContext = new AudioContext();
+    await audioContext.audioWorklet.addModule('queue-output-processor.js')
+    const processorNode = new AudioWorkletNode(audioContext, 'queue-output-processor', {queue: audioQueue});
 
+    processorNode.connect(audioContext.destination);
 }
 const disconnectMusic = () => {
     if (!musicWs) throw Error('Invalid state; Cant disconnect music ws if it doesnt exist');

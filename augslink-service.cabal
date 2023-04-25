@@ -69,6 +69,7 @@ executable augslink-service
                       , unordered-containers
                       , unix
                       , uuid
+                      , utf8-string
                       , wai
                       , warp
                       , websockets

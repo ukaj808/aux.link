@@ -1,37 +1,68 @@
 module AugsLink.Core.Wav
   (
-    parseWavHeader
+    parseWavHeaderFromHandle
   , WavHeader (..)
   ) where
 
-import Data.ByteString.Lazy
 import Data.Binary
 import Data.Binary.Get
+import Data.Aeson (ToJSON)
+import GHC.Generics
+import qualified Data.ByteString.Lazy as L
+import GHC.IO.Handle
 
 data WavHeader = WavHeader
   {
-    sampleRate :: Int
-  , byteRate   :: Int
-  } deriving (Show)
+    chunkId    :: Word32
+  , chunkSize  :: Word32
+  , format     :: Word32
+  , subchunk1ID :: Word32
+  , subchunk1Size :: Word32
+  , audioFormat  :: Word16
+  , numChannels  :: Word16
+  , sampleRate :: Word32
+  , byteRate   :: Word32
+  , blockAlign :: Word16
+  , bitsPerSample :: Word16
+  , subchunk2ID :: Word32
+  , subchunk2Size :: Word32
+  } deriving (Show, Generic)
 
-parseWavHeader :: ByteString -> WavHeader
+instance ToJSON WavHeader
+
+parseWavHeader :: L.ByteString -> WavHeader
 parseWavHeader = runGet getWavHeader
   where
     getWavHeader :: Get WavHeader
     getWavHeader = do
-      _ <- getByteString 4  -- RIFF
-      _ <- getWord32le      -- ChunkSize
-      _ <- getByteString 4  -- WAVE
-      _ <- getByteString 4  -- fmt
-      _ <- getWord32le      -- Subchunk1Size
-      _ <- getWord16le      -- AudioFormat
-      _ <- getWord16le      -- NumChannels
+      chunkId <- getWord32be
+      chunkSize <- getWord32le
+      format <- getWord32be
+      subchunk1ID <- getWord32be
+      subchunk1Size <- getWord32le
+      audioFormat <- getWord16le
+      numChannels <- getWord16le
       sampleRate <- getWord32le
       byteRate <- getWord32le
-      _ <- getWord16le      -- BlockAlign
-      _ <- getWord16le      -- BitsPerSample
-      _ <- getByteString 4  -- data
-      _ <- getWord32le      -- Subchunk2Size
-      return $ WavHeader (fromIntegral sampleRate) (fromIntegral byteRate)
+      blockAlign <- getWord16le
+      bitsPerSample <- getWord16le
+      subchunk2ID <- getWord32be
+      subchunk2Size <- getWord32le
+      return $ WavHeader {
+        chunkId = chunkId
+      , chunkSize = chunkSize
+      , format    = format
+      , subchunk1ID = subchunk1ID
+      , subchunk1Size = subchunk1Size
+      , audioFormat = audioFormat
+      , numChannels = numChannels
+      , sampleRate = sampleRate
+      , byteRate = byteRate
+      , blockAlign = blockAlign
+      , bitsPerSample = bitsPerSample
+      , subchunk2ID = subchunk2ID
+      , subchunk2Size = subchunk2Size
+      }
 
-
+parseWavHeaderFromHandle :: Handle -> IO WavHeader
+parseWavHeaderFromHandle handle = parseWavHeader <$> L.hGet handle 44

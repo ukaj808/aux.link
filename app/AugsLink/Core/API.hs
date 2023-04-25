@@ -7,6 +7,7 @@ import Data.Text
 import GHC.Generics
 
 import qualified Data.Aeson as Aeson
+import AugsLink.Core.Wav (WavHeader)
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -105,7 +106,6 @@ newtype ServerCommand = UploadSong SongId
 -- Message from server to user
 data ServerMessage = ServerWelcomeMessage RoomUser
   |                  ServerUploadSong SongId
-  |                  ServerSongStarting Int Int Int
 
 type RoomId   = Text
 type UserId   = Int
@@ -160,6 +160,18 @@ instance ToJSON SongInfo where
     , "length"     .= sLength
     ]
 
+instance FromJSON ServerMessage where
+  parseJSON :: Value -> Parser ServerMessage
+  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
+      typ <- obj .: "type"
+      case typ :: Text of
+        "ServerWelcomeMessage" -> do
+          userId     <- obj .: "userId"
+          userName   <- obj .: "userName"
+          return $ ServerWelcomeMessage $ RoomUser userId userName
+        "ServerUploadSong" -> do
+          songId     <- obj .: "songId"
+          return $ ServerUploadSong songId
 
 instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value
@@ -174,16 +186,3 @@ instance ToJSON ServerMessage where
        "type"        .= ("ServerUploadSong" :: Text)
     ,  "songId"      .= sId
     ]
-
-instance FromJSON ServerMessage where
-  parseJSON :: Value -> Parser ServerMessage
-  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
-      typ <- obj .: "type"
-      case typ :: Text of
-        "ServerWelcomeMessage" -> do
-          userId     <- obj .: "userId"
-          userName   <- obj .: "userName"
-          return $ ServerWelcomeMessage $ RoomUser userId userName
-        "ServerUploadSong" -> do
-          songId     <- obj .: "songId"
-          return $ ServerUploadSong songId

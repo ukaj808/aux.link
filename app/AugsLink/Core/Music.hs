@@ -9,14 +9,13 @@ import Control.Monad
 import GHC.IO.Handle
 
 import qualified Data.ByteString    as B
-import qualified Data.ByteString.Lazy    as LB
 import qualified Data.HashMap.Lazy  as Map
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
 import AugsLink.Core.FFMpeg (convertToWav)
 import System.IO
-import AugsLink.Core.Wav (parseWavHeader, WavHeader, byteRate)
+import AugsLink.Core.Wav
 
 type instance Connection IO = WS.PendingConnection
 
@@ -76,7 +75,8 @@ startImpl stateVar room uId = do
                      
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
-          wavHeader <- parseWavHeader <$> LB.hGet handle 44
+          wavHeader <- parseWavHeaderFromHandle handle
+          print  (show $ fromIntegral $ subchunk2Size wavHeader)
           modifyMVar_ stateVar $ \st -> do
             return st{currentlyPlaying=Just sId} 
           liveStream wavHeader handle
@@ -88,9 +88,9 @@ startImpl stateVar room uId = do
               when playing $ do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
-                  chunk <- B.hGet handle (byteRate header)
+                  chunk <- B.hGet handle (fromIntegral $ byteRate header) -- 1 second of audio
                   WS.sendBinaryData (conn session) chunk
-                threadDelay 1000000
+                threadDelay 1000000 -- 1x speed
                 liveStream header handle
 
 
