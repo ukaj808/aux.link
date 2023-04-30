@@ -46,7 +46,16 @@ type API =
         Get '[HTML] StaticHtml -- Home Page
         -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] Text) 
-   :<|> Capture "roomid" Text :> Get '[HTML] ServerHtml
+   :<|> Capture "roomid" Text :> Get '[HTML] 
+     (
+       Headers 
+       '[
+         Header "Cross-Origin-Opener-Policy" Text, 
+         Header "Cross-Origin-Embedder-Policy" Text,
+         Header "Content-Security-Policy" Text
+        ] 
+        ServerHtml
+      )
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
 
    :<|> Capture "roomId" Text :> Capture "userId" UserId 
