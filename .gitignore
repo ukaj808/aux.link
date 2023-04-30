@@ -2,3 +2,4 @@ dist-newstyle
 dist
 scratch.txt
 rooms
+node_modules
