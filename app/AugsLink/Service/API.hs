@@ -75,6 +75,17 @@ type API =
    :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "stop-listening"   :> Put '[PlainText] Text
    :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
 
+
+   :<|> "public" :> "aux-audio.js" :> Get '[PlainText] 
+     (
+       Headers 
+       '[
+         Header "Cross-Origin-Opener-Policy" Text, 
+         Header "Cross-Origin-Embedder-Policy" Text
+        ] 
+        Text
+     )
+ 
    -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw
    -- Need more endpoints for music file download + delete

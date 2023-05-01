@@ -10,7 +10,7 @@ data CLArgs =
   CLArgs
     { staticDirPath :: FilePath
     , homeViewPath :: FilePath
-    , roomViewPath :: FilePath
+    , audioWorkerPath :: FilePath
     }
   deriving (Show)
 
@@ -18,7 +18,7 @@ parseOptions :: Parser CLArgs
 parseOptions = CLArgs 
     <$> parseStaticDirPath 
     <*> parseHomeViewPath
-    <*> parseRoomViewPath
+    <*> parseAudioWorkerPath
 
 parseStaticDirPath :: Parser FilePath
 parseStaticDirPath =
@@ -36,12 +36,12 @@ parseHomeViewPath =
     , help "Path to the home view (html)"
     ]
     
-parseRoomViewPath :: Parser FilePath
-parseRoomViewPath =
+parseAudioWorkerPath :: Parser FilePath
+parseAudioWorkerPath =
   option str $ mconcat 
     [
-      long "room"
-    , help "Path to the room view (html)"
+      long "aw"
+    , help "Path to audio worker script (js)"
     ]
 
 getCLArgs :: IO CLArgs

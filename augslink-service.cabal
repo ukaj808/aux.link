@@ -32,6 +32,7 @@ executable augslink-service
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.DeleteSong
+                      , AugsLink.Service.Handlers.GetAudioWorker 
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.ListenWs 

@@ -5,6 +5,7 @@ import Servant
 import AugsLink.Core.API
 import AugsLink.Service.API
 import AugsLink.Service.Handlers.DeleteSong
+import AugsLink.Service.Handlers.GetAudioWorker
 import AugsLink.Service.Handlers.GetHome
 import AugsLink.Service.Handlers.GetRoom
 import AugsLink.Service.Handlers.ListenWs
@@ -30,6 +31,7 @@ handlers opts rr =
   :<|> listenHandler rr
   :<|> stopListenHandler rr
   :<|> startHandler rr
+  :<|> audioWorkerHandler opts
   :<|> publicHandler
   where 
     publicHandler = serveDirectoryWebApp $ staticDirPath opts

@@ -61,8 +61,7 @@ roomHandler :: Registry IO
        Headers 
        '[
          Header "Cross-Origin-Opener-Policy" Text, 
-         Header "Cross-Origin-Embedder-Policy" Text,
-         Header "Content-Security-Policy" Text
+         Header "Cross-Origin-Embedder-Policy" Text
         ] 
         ServerHtml
       )
@@ -80,6 +79,5 @@ roomHandler registry rId = do
     ( 
       addHeader "same-origin"       $
       addHeader "require-corp"      $
-      addHeader "worker-src 'self';" $
       renderRoomPage roomView
     )
