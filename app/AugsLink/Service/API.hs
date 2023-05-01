@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.API
   ( 
     API
@@ -5,6 +6,7 @@ module AugsLink.Service.API
   , ScrapeSongRequest (..)
   , ServerHtml
   , StaticHtml (..)
+  , StaticJs (..)
   ) where
 
 import Data.Aeson
@@ -15,18 +17,32 @@ import Servant.API.WebSocket
 import Servant.HTML.Blaze
 import Servant.Multipart
 import Text.Blaze.Html5
+import Network.HTTP.Media
 import AugsLink.Core.API
+import qualified Data.ByteString.Lazy as Lazy
 
 type ServerHtml    = Html
 
+data JS = JS
+
 newtype StaticHtml = StaticHtml
   { 
-    unRaw :: Text 
+    unrawHtml :: Text 
   }
+newtype StaticJs  = StaticJs
+  { 
+    unrawJs :: Lazy.ByteString 
+  }
+
+instance MimeRender JS StaticJs where
+  mimeRender _ = unrawJs
+
+instance Servant.Accept JS where
+  contentType _ = "text" // "js" /: ("charset", "utf-8")
 
 instance ToMarkup StaticHtml where
   toMarkup              = preEscapedToMarkup
-  preEscapedToMarkup st = preEscapedText $ unRaw st
+  preEscapedToMarkup st = preEscapedText $ unrawHtml st
 
 type PostSeeOther = Verb 'POST 303 
 
@@ -51,8 +67,7 @@ type API =
        Headers 
        '[
          Header "Cross-Origin-Opener-Policy" Text, 
-         Header "Cross-Origin-Embedder-Policy" Text,
-         Header "Content-Security-Policy" Text
+         Header "Cross-Origin-Embedder-Policy" Text
         ] 
         ServerHtml
       )
@@ -76,15 +91,15 @@ type API =
    :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
 
 
-   :<|> "public" :> "aux-audio.js" :> Get '[PlainText] 
+   :<|> "public" :> "aux-audio-worker-ws-impl.js" :> Get '[JS]
      (
        Headers 
        '[
          Header "Cross-Origin-Opener-Policy" Text, 
          Header "Cross-Origin-Embedder-Policy" Text
         ] 
-        Text
-     )
+        StaticJs
+      )
  
    -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw

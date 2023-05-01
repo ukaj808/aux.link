@@ -57,6 +57,7 @@ executable augslink-service
                       , directory
                       , hashable
                       , heaps
+                      , http-media
                       , mtl
                       , optparse-applicative
                       , process

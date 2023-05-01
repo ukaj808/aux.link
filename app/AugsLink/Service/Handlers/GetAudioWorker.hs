@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.GetAudioWorker 
   ( 
     audioWorkerHandler
@@ -6,23 +7,28 @@ module AugsLink.Service.Handlers.GetAudioWorker
 import Control.Monad.IO.Class
 import Servant
 
-import qualified Data.Text.IO as T
 import CommandLine
 import Data.Text
+import AugsLink.Service.API
+import qualified Data.ByteString.Lazy as Lazy
 
-audioWorkerHandler :: CLArgs -> Handler (
-       Headers 
-       '[
-         Header "Cross-Origin-Opener-Policy" Text, 
-         Header "Cross-Origin-Embedder-Policy" Text
-        ] 
-        Text
-      )
+audioWorkerHandler :: CLArgs 
+  -> Handler 
+       (
+         Headers 
+           '[
+              Header "Cross-Origin-Opener-Policy" Text
+            , Header "Cross-Origin-Embedder-Policy" Text
+            ] 
+         StaticJs
+       )
+
 audioWorkerHandler opts = do
-  audioWorkerFile <- liftIO $ T.readFile $ audioWorkerPath opts 
+  liftIO $ print "auidohanldler"
+  audioWorkerFile <- liftIO $ Lazy.readFile $ audioWorkerPath opts 
   return 
-    ( 
-      addHeader "same-origin"       $
-      addHeader "require-corp"      $
-      audioWorkerFile
+    (
+      addHeader "same-origin"  $
+      addHeader "require-corp" $
+      StaticJs audioWorkerFile
     )

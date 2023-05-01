@@ -14,7 +14,7 @@ export class CurrentlyPlayingElement {
   #currentClickHandler() {
     console.log(this.#listening);
     if (this.#listening == false) {
-        this.#auxAudioPlayer.startListening();
+        this.#auxAudioPlayer.startListening({userId: "0"});
         this.#listening = true;
     } else {
         this.#auxAudioPlayer.stopListening();

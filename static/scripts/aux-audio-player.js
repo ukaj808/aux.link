@@ -1,20 +1,20 @@
 export class AuxAudioPlayer{
 
   #roomId;
+  #userId;
   #audioContext;
-  #audioRelMessageProcessor;
   #listening;
   #worker;
   #processor;
   #processorOpts;
   #sharedBuffer;
 
-  constructor({audioRelMessageProcessor, roomId}) {
-    this.#audioRelMessageProcessor = audioRelMessageProcessor;
+  constructor({roomId}) {
     this.#roomId = roomId;
   }
 
-  async startListening() {
+  async startListening({userId}) {
+    this.#userId = userId;
     this.#sharedBuffer = new SharedArrayBuffer(1024);
     this.#listening    = false;
     this.#worker = new Worker('public/aux-audio-worker-ws-impl.js');
@@ -24,7 +24,7 @@ export class AuxAudioPlayer{
     this.#processorOpts = { channels: 2, sharedBuffer: this.#sharedBuffer };
     this.#processor = new AudioWorkletNode(this.#audioContext, 'aux-audio-worklet', this.#processorOpts);
 
-    this.#worker.postMessage({ type: "init"  })
+    this.#worker.postMessage({ type: "init", roomId: this.#roomId, userId: this.#userId, sharedBuffer: this.#sharedBuffer })
 
     this.#processor.connect(this.#audioContext.destination);
 

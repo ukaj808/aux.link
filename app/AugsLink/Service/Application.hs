@@ -34,7 +34,7 @@ handlers opts rr =
   :<|> audioWorkerHandler opts
   :<|> publicHandler
   where 
-    publicHandler = serveDirectoryWebApp $ staticDirPath opts
+    publicHandler = serveDirectoryWebApp $ publicAssetsPath opts
 
 server :: CLArgs -> Registry IO -> Application
 server opts rr = serve (Proxy @API) (handlers opts rr) 

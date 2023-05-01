@@ -6,6 +6,8 @@
 
 let ws;
 let sharedBuffer;
+let roomId;
+let userId;
 
 const onWsMessage = (event) => {
   console.log(event);
@@ -14,7 +16,9 @@ const onWsMessage = (event) => {
 self.onmessage = (msg) => {
   console.log(msg);
   if (msg.data.type === "init") {
-    ws = new WebSocket(`ws://${roomsUrl}/${roomId}/${userId}/audio/listen`);
+    roomId = msg.data.roomId;
+    userId = msg.data.userId;
+    ws = new WebSocket(`ws://localhost:8080/${roomId}/${userId}/audio/listen`);
     ws.binaryType = 'arraybuffer';
     sharedBuffer = msg.data.sharedBuffer;
     ws.addEventListener("message", onWsMessage); 

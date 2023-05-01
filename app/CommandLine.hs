@@ -8,23 +8,23 @@ import Options.Applicative
 
 data CLArgs =
   CLArgs
-    { staticDirPath :: FilePath
-    , homeViewPath :: FilePath
+    { publicAssetsPath      :: FilePath
+    , homeViewPath    :: FilePath
     , audioWorkerPath :: FilePath
     }
   deriving (Show)
 
 parseOptions :: Parser CLArgs
 parseOptions = CLArgs 
-    <$> parseStaticDirPath 
+    <$> parsePublicAssetsPath 
     <*> parseHomeViewPath
     <*> parseAudioWorkerPath
 
-parseStaticDirPath :: Parser FilePath
-parseStaticDirPath =
+parsePublicAssetsPath :: Parser FilePath
+parsePublicAssetsPath =
   option str $ mconcat 
     [
-      long "static"
+      long "public"
     , help "Directory of the static files"
     ]
 
