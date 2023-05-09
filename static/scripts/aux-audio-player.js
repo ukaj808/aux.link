@@ -18,7 +18,7 @@ export class AuxAudioPlayer{
 
     await this.#audioContext.audioWorklet.addModule('public/aux-audio-worklet.js');
 
-    const ringBufferSize = 132300;
+    const ringBufferSize = 2000000;
     const ringBuffer = new SharedArrayBuffer(ringBufferSize);
     const state = new SharedArrayBuffer(1);
 
@@ -26,7 +26,7 @@ export class AuxAudioPlayer{
       { 
         processorOptions: 
         {  
-          ringBufferSize: 132300, // 3s of audio
+          ringBufferSize: ringBufferSize, // 3s of audio
           ringBuffer: ringBuffer,
           state: state
         } 
@@ -40,7 +40,7 @@ export class AuxAudioPlayer{
         userId: this.#userId, 
         ringBufferSize: ringBufferSize,
         ringBuffer: ringBuffer,
-        chunkSize: 44100 // 1s of audio
+        chunkSize: 200000 // 1s of audio
       });
     console.info("Initializing ws worker...");
 

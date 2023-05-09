@@ -13,11 +13,11 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
     this.#ringBuffer     = new Float32Array(options.processorOptions.ringBuffer);
     this.#state          = new Int8Array(options.processorOptions.state);
     this.#currentFrame   = 0;
-    this.port.postMessage({type: "AUDIO_WORKLET_READY"});
   }
 
   process(_inputs, outputs) {
     if (!this.#isAudioAvailable()) return true;
+    console.log('audio avail to consume in worklet')
 
     const output    = outputs[0];
     const numFrames = output[0].length;
