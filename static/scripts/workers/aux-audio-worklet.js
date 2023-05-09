@@ -1,55 +1,39 @@
 const STATE_INDICES = {
-  // Flag for Atomics.wait() and notify().
-  'REQUEST_RENDER': 0,
+  'LOCK': 0,
+  'HAS_AUDIO': 1,
+}
 
-  // Available frames in Input SAB.
-  'IB_FRAMES_AVAILABLE': 1,
-
-  // Read index of Input SAB.
-  'IB_READ_INDEX': 2,
-
-  // Write index of Input SAB.
-  'IB_WRITE_INDEX': 3,
-
-  // Available frames in Output SAB.
-  'OB_FRAMES_AVAILABLE': 4,
-
-  // Read index of Output SAB.
-  'OB_READ_INDEX': 5,
-
-  // Write index of Output SAB.
-  'OB_WRITE_INDEX': 6,
-
-  // Size of Input and Output SAB.
-  'RING_BUFFER_LENGTH': 7,
-
-  // Size of user-supplied processing callback.
-  'KERNEL_LENGTH': 8,
-};
+const STATE_VALUES = {
+  'LOCK': {'LOCKED': 1, 'UNLOCKED': 0},
+  'HAS_AUDIO': { 'YES': 1, 'NO': 0 }
+}
 
 class AuxAudioWorklet extends AudioWorkletProcessor {
 
   #channels;
-  #states;
-  #ringBuffer
-  #ringBufferLength;
-  #kernelLength;
+  #chunkStates;
+  #ringBuffer;
+  #index = 0;
 
   constructor(options) {
-    console.log(options);
     super();
     // Create views on states shared buffer
-    this.#states = new Int32Array(options.workletOptions.sharedBuffers.states); 
-    this.#ringBuffer = [new Float32Array(options.workletOptions.sharedBuffers.ringBuffer)];
-
-    this.#ringBufferLength = this.#states[STATE_INDICES.RING_BUFFER_LENGTH];
-    this.#kernelLength = this.#states[STATE_INDICES.KERNEL_LENGTH];
+    for (let i = 0; i < chunkCount; i++) {
+      this.#chunkStates.push(new Int32Array(options.processorOptions.sharedBuffers.chunkStates[i]));
+      this.#ringBuffer.push(new Float32Array(options.processorOptions.sharedBuffers.ringBuffer[i]));
+    }
 
     this.port.postMessage({type: "AUDIO_WORKLET_READY"});
-
   }
 
   process(_inputs, outputs) {
+
+    if (Atomics.load(
+      this.#chunkStates[this.#index], 
+      STATE_INDICES.HAS_AUDIO) == STATE_VALUES.HAS_AUDIO.YES
+    ) {
+      Atomics.load(this.#ringBuffer[this.#index],
+    }
 
     return true;
 

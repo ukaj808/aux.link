@@ -1,67 +1,33 @@
-const STATE_INDICES = {
-  // Flag for Atomics.wait() and notify().
-  'REQUEST_RENDER': 0,
-
-  // Available frames in Input SAB.
-  'IB_FRAMES_AVAILABLE': 1,
-
-  // Read index of Input SAB.
-  'IB_READ_INDEX': 2,
-
-  // Write index of Input SAB.
-  'IB_WRITE_INDEX': 3,
-
-  // Available frames in Output SAB.
-  'OB_FRAMES_AVAILABLE': 4,
-
-  // Read index of Output SAB.
-  'OB_READ_INDEX': 5,
-
-  // Write index of Output SAB.
-  'OB_WRITE_INDEX': 6,
-
-  // Size of Input and Output SAB.
-  'RING_BUFFER_LENGTH': 7,
-
-  // Size of user-supplied processing callback.
-  'KERNEL_LENGTH': 8,
-};
-
 let roomId;
 let userId;
 let ws;
-let states;
 let ringBuffer;
-let ringBufferLength;
-let kernelLength;
+let ringBufferSize
+let chunkSize;
+let offset = 0;
 
 const onWsMessage = (event) => {
-  console.log(event);
+  const chunk = new Float32Array(event.data);
+  ringBuffer.set(chunk, offset);
+  offset = offset + chunkSize;
+  if (chunkSize == ringBufferSize) {
+    index = 0;
+  }
 };
 
 self.onmessage = ({data}) => {
   if (data.type === "init") {
     // Create views on shared buffers
-    states = new Int32Array(data.sharedBuffers.states);
-    ringBuffer = [new Float32Array(data.sharedBuffers.ringBuffer)];
-
-    ringBufferLength = states[STATE_INDICES.RING_BUFFER_LENGTH];
-    kernelLength = states[STATE_INDICES.KERNEL_LENGTH];
-
+    ringBuffer = new Float32Array(data.ringBuffer);
+    ringBufferSize = data.ringBufferSize;
+    chunkSize = data.chunkSize;
     // Init websocket connection
     roomId = data.roomId;
     userId = data.userId;
 
-    ws = new WebSocket(`ws://localhost:8080/${roomId}/${userId}/audio/listen`);
+    ws = new WebSocket(`ws://localhost:8080/${roomId}/${userId}/music/listen`);
     ws.binaryType = 'arraybuffer';
     ws.addEventListener("message", onWsMessage); 
-
     postMessage({ type: 'WS_WORKER_READY' });
-
-  } else if (msg.data.type === 'destroy') {
-    ws.removeEventListener(onWsMessage);
-    ws.close();
-    ws = null;
-    sharedBuffer = null;
-  }
+  } 
 };

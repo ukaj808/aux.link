@@ -28,13 +28,8 @@ const STATE_INDICES = {
 };
 
 const CONFIG = {
-  bytesPerState: Int32Array.BYTES_PER_ELEMENT,
-  bytesPerSample: Float32Array.BYTES_PER_ELEMENT,
-  stateBufferLength: 16,
-  ringBufferLength: 4096,
-  kernelLength: 1024,
-  channelCount: 1,
-  waitTimeOut: 25000,
+  chunkCount: 5
+, chunkSize: 44100
 };
 
 export class AuxAudioPlayer{
@@ -52,21 +47,16 @@ export class AuxAudioPlayer{
   async startListening({userId}) {
     this.#userId = userId;
 
-    // Allocate SABs
     const sharedBuffers = {
-      states:
-        new SharedArrayBuffer(CONFIG.stateBufferLength * CONFIG.bytesPerState),
-      ringBuffer:
-        new SharedArrayBuffer(CONFIG.ringBufferLength * CONFIG.channelCount * CONFIG.bytesPerSample)
+      chunkStates: [],
+      ringBuffer: []
     }
 
     console.info("Allocated shared array buffers...");
-
-    // Init State
-    const stateView = new Int32Array(sharedBuffers.states);
-    Atomics.store(stateView, STATE_INDICES.RING_BUFFER_LENGTH, CONFIG.ringBufferLength);
-    Atomics.store(stateView, STATE_INDICES.KERNEL_LENGTH, CONFIG.kernelLength);
-    console.info("Initialized states buffer...");
+    for (let i = 0; i <=  CONFIG.chunkCount; i++) {
+      sharedBuffers.chunkStates.push(new SharedArrayBuffer(2));
+      sharedBuffers.ringBuffer.push(new SharedArrayBuffer(CONFIG.chunkSize))
+    }
 
     this.#audioContext = new AudioContext();
     this.#audioContext.suspend();
@@ -74,31 +64,38 @@ export class AuxAudioPlayer{
 
     await this.#audioContext.audioWorklet.addModule('public/aux-audio-worklet.js');
 
-    console.info("Initializing audio worklet...");
-    this.#audioWorklet = new AudioWorkletNode(this.#audioContext, 'aux-audio-worklet', { workletOptions: { sharedBuffers: sharedBuffers  } });
+    this.#audioWorklet = new AudioWorkletNode(this.#audioContext, 'aux-audio-worklet', 
+      { 
+        processorOptions: 
+        {  
+          chunkCount: CONFIG.chunkCount, 
+          sharedBuffers: sharedBuffers 
+        } 
+      });
+    // Create Worker; pass sharedBuffers
+    this.#wsWorker = new Worker('public/aux-audio-worker-ws-impl.js');
+    this.#wsWorker.postMessage(
+      { 
+        type: "init", 
+        roomId: this.#roomId, 
+        userId: this.#userId, 
+        chunkCount: CONFIG.chunkCount, 
+        sharedBuffers: sharedBuffers 
+      });
+    console.info("Initializing ws worker...");
 
-    this.#audioWorklet.onmessage = ({type}) => {
-      if (type === 'AUDIO_WORKLET_READY') {
-        console.info("Audio worklet initialiazed...");
-        // Create Worker; pass sharedBuffers
-        this.#wsWorker = new Worker('public/aux-audio-worker-ws-impl.js');
-        this.#wsWorker.postMessage({ type: "init", roomId: this.#roomId, userId: this.#userId, sharedBuffers: sharedBuffers })
-        console.info("Initializing ws worker...");
+    this.#wsWorker.onmessage = async ({data}) => {
+      if (data.type === 'WS_WORKER_READY') {
+        console.info("Ws worker intialized...");
 
-        this.#wsWorker.onmessage = async ({type}) => {
-          if (type === 'WS_WORKER_READY') {
-            console.info("Ws worker intialized...");
+        this.#audioWorklet.connect(this.#audioContext.destination);
+        console.info("Worklet connected to speakers...");
 
-            this.#audioWorklet.connect(this.#audioContext.destination);
-            console.info("Worklet connected to speakers...");
-
-            this.#audioContext.resume();
-            this.#listening = true;
-            console.info("Audio resumed...");
-          }
-
-        }
+        this.#audioContext.resume();
+        this.#listening = true;
+        console.info("Audio resumed...");
       }
+
     }
 
   }
