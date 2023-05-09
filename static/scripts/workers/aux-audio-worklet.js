@@ -1,42 +1,44 @@
-const STATE_INDICES = {
-  'LOCK': 0,
-  'HAS_AUDIO': 1,
-}
-
-const STATE_VALUES = {
-  'LOCK': {'LOCKED': 1, 'UNLOCKED': 0},
-  'HAS_AUDIO': { 'YES': 1, 'NO': 0 }
-}
-
 class AuxAudioWorklet extends AudioWorkletProcessor {
 
-  #channels;
-  #chunkStates;
+  #numChannels;
   #ringBuffer;
-  #index = 0;
+  #ringBufferSize
+  #currentFrame;
+  #state;
 
   constructor(options) {
     super();
     // Create views on states shared buffer
-    for (let i = 0; i < chunkCount; i++) {
-      this.#chunkStates.push(new Int32Array(options.processorOptions.sharedBuffers.chunkStates[i]));
-      this.#ringBuffer.push(new Float32Array(options.processorOptions.sharedBuffers.ringBuffer[i]));
-    }
-
+    this.#ringBufferSize = options.processorOptions.ringBufferSize;
+    this.#ringBuffer     = new Float32Array(options.processorOptions.ringBuffer);
+    this.#state          = new Int8Array(options.processorOptions.state);
+    this.#currentFrame   = 0;
     this.port.postMessage({type: "AUDIO_WORKLET_READY"});
   }
 
   process(_inputs, outputs) {
+    if (!this.#isAudioAvailable()) return true;
 
-    if (Atomics.load(
-      this.#chunkStates[this.#index], 
-      STATE_INDICES.HAS_AUDIO) == STATE_VALUES.HAS_AUDIO.YES
-    ) {
-      Atomics.load(this.#ringBuffer[this.#index],
+    const output    = outputs[0];
+    const numFrames = output[0].length;
+
+    for (let channel = 0; channel < this.#numChannels; channel++) {
+      const outputChannel = output[channel];
+
+      for (let i = 0; i < numFrames; i++) {
+        const sampleIndex  = this.#currentFrame * this.#numChannels + channel;
+        const sample       = this.#ringBuffer[sampleIndex];
+        outputChannel[i]   = sample;
+        this.#currentFrame = (this.#currentFrame + 1) % this.#ringBufferSize;
+      }
     }
 
     return true;
 
+  }
+
+  #isAudioAvailable(){
+    return Atomics.load(this.#state, 0) == 1;
   }
 }
 

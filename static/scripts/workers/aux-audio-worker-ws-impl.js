@@ -6,13 +6,11 @@ let ringBufferSize
 let chunkSize;
 let offset = 0;
 
+// Audios coming in every 1s; 1 second sized chunk
 const onWsMessage = (event) => {
   const chunk = new Float32Array(event.data);
   ringBuffer.set(chunk, offset);
-  offset = offset + chunkSize;
-  if (chunkSize == ringBufferSize) {
-    index = 0;
-  }
+  offset = (offset + chunkSize) % ringBufferSize;
 };
 
 self.onmessage = ({data}) => {
