@@ -17,7 +17,6 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
 
   process(_inputs, outputs) {
     if (!this.#isAudioAvailable()) return true;
-    console.log('audio avail to consume in worklet')
 
     const output    = outputs[0];
     const numFrames = output[0].length;

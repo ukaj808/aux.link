@@ -88,6 +88,7 @@ startImpl stateVar room uId = do
               when playing $ do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
+                  -- possibly convert to big endian first for simplicity in js?
                   chunk <- B.hGet handle (fromIntegral $ byteRate header) -- 1 second of audio
                   WS.sendBinaryData (conn session) chunk
                 threadDelay 1000000 -- 1x speed

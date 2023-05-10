@@ -40,6 +40,7 @@ export class AuxAudioPlayer{
         userId: this.#userId, 
         ringBufferSize: ringBufferSize,
         ringBuffer: ringBuffer,
+        state: state,
         chunkSize: 200000 // 1s of audio
       });
     console.info("Initializing ws worker...");

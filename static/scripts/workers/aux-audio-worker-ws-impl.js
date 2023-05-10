@@ -9,11 +9,26 @@ let offset = 0;
 
 // Audios coming in every 1s; 1 second sized chunk
 const onWsMessage = (event) => {
-  const chunk = new Float32Array(event.data);
+  console.log(event.data, "raw data");
+
+  // Complexity arising from raw data being little_endian format
+  // Determine the number of float values in the ArrayBuffer
+  const floatCount = event.data.byteLength / Float32Array.BYTES_PER_ELEMENT;
+
+  // Create a DataView for the ArrayBuffer
+  const dataView = new DataView(event.data);
+
+  // Read float values using DataView with little-endian endianness
+  const chunk = new Float32Array(floatCount);
+  for (let i = 0; i < floatCount; i++) {
+    chunk[i] = dataView.getFloat32(i * Float32Array.BYTES_PER_ELEMENT, true);
+  }
+
+  console.log(chunk.byteLength);
   ringBuffer.set(chunk, offset);
+  console.log(ringBuffer);
   offset = (offset + chunkSize) % ringBufferSize;
   Atomics.store(state, 0, 1);
-  console.log('music available on ws');
 };
 
 self.onmessage = ({data}) => {
