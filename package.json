@@ -1,11 +1,19 @@
 {
   "name": "augslink-service",
   "version": "1.0.0",
+  "watch": {
+    "dev": {
+      "patterns": ["app", "static", "views", "."],
+      "extensions": "js,css,html,hs"
+    }
+  },
   "scripts": {
+    "watch": "npm-watch",
     "dev": "webpack && cabal run -- augslink-service --public dist --home views/home.html --aw dist/aux-audio-worker-ws-impl.js"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
+    "npm-watch": "^0.11.0",
     "webpack": "^5.81.0",
     "webpack-cli": "^5.0.2"
   }

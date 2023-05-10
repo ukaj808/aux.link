@@ -6,6 +6,7 @@ import AugsLink.Core.Registry
 import AugsLink.Service.Application
 import CommandLine
 
+
 main :: IO ()
 main = do
   clArgs       <- getCLArgs
