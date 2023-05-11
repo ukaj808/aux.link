@@ -76,7 +76,7 @@ startImpl stateVar room uId = do
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
           wavHeader <- parseWavHeaderFromHandle handle
-          print  (show $ fromIntegral $ subchunk2Size wavHeader)
+          print wavHeader
           modifyMVar_ stateVar $ \st -> do
             return st{currentlyPlaying=Just sId} 
           liveStream wavHeader handle
@@ -89,9 +89,10 @@ startImpl stateVar room uId = do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
                   -- possibly convert to big endian first for simplicity in js?
-                  chunk <- B.hGet handle (fromIntegral $ byteRate header) -- 1 second of audio
+                  let numBytes = div (fromIntegral $ byteRate header) 8
+                  chunk <- B.hGet handle numBytes -- 1/8th a second of audio
                   WS.sendBinaryData (conn session) chunk
-                threadDelay 1000000 -- 1x speed
+                threadDelay 125000 -- 1/8th of a second
                 liveStream header handle
 
 
