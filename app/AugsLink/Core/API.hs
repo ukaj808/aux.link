@@ -7,7 +7,6 @@ import Data.Text
 import GHC.Generics
 
 import qualified Data.Aeson as Aeson
-import AugsLink.Core.Wav (WavHeader)
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 

@@ -22,6 +22,7 @@ const onWsMessage = (event) => {
   for (let i = 0; i < floatCount; i++) {
     chunk[i] = dataView.getFloat32(i * Float32Array.BYTES_PER_ELEMENT, true);
   }
+  console.log(chunk);
   ringBuffer.set(chunk, offset);
   offset = (offset + chunkSize / Float32Array.BYTES_PER_ELEMENT) % (ringBufferSize / Float32Array.BYTES_PER_ELEMENT);
   Atomics.store(state, 0, 1);

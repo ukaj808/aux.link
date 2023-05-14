@@ -75,25 +75,24 @@ startImpl stateVar room uId = do
                      
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
-          wavHeader <- parseWavHeaderFromHandle handle
-          print wavHeader
+          (fmtSubChunk, audioSizeInBytes) <- parseWavFile handle
+          print fmtSubChunk
           modifyMVar_ stateVar $ \st -> do
             return st{currentlyPlaying=Just sId} 
-          liveStream wavHeader handle
+          liveStream fmtSubChunk handle
           nextSong
           where
-            liveStream :: WavHeader -> Handle -> IO ()
-            liveStream header handle = do
+            liveStream :: FmtSubChunk -> Handle -> IO ()
+            liveStream fmtSubChunk handle = do
               playing <- not <$> hIsEOF handle
               when playing $ do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
-                  -- possibly convert to big endian first for simplicity in js?
-                  let numBytes = div (fromIntegral $ byteRate header) 8
+                  let numBytes = div (fromIntegral $ byteRate fmtSubChunk) 8
                   chunk <- B.hGet handle numBytes -- 1/8th a second of audio
                   WS.sendBinaryData (conn session) chunk
                 threadDelay 125000 -- 1/8th of a second
-                liveStream header handle
+                liveStream fmtSubChunk handle
 
 
         -- Either they dont have any or something failed on upload

@@ -62,6 +62,7 @@ executable augslink-service
                       , optparse-applicative
                       , process
                       , random 
+                      , regex-posix
                       , servant-blaze
                       , servant-multipart
                       , servant-server
