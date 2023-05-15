@@ -14,6 +14,7 @@ import qualified Data.Text as T
 import GHC.IO.Handle
 import Data.Text.Encoding
 import Data.Binary.Put (runPut,putWord32be, putWord32le)
+import GHC.Conc.IO (threadDelay)
 
 data RiffChunk = RiffChunk
   {
@@ -99,11 +100,13 @@ parseWavFile handle = do
   where
     findDataChunkAndSeek :: Handle -> IO Integer
     findDataChunkAndSeek h = do
-      subchunkHead <- runGet getSubChunk <$> L.hGet h 8
-      let bs = word32ToByteString (subchunkId subchunkHead)
+      threadDelay 125000
+      subchunkId <- runGet getWord32be <$> L.hGet h 4
+      subchunkSize <- runGet getWord32le <$> L.hGet h 4
+      let bs = word32ToByteString subchunkId
       let decodedId = decodeUtf32BE $ B.toStrict bs
-      let numBytesOfSubChunk = fromIntegral $ subchunkSize subchunkHead :: Integer
-      print decodedId
+      let numBytesOfSubChunk = fromIntegral subchunkSize :: Integer
+      putStrLn $ show decodedId
       if decodedId == T.pack "data"
         then return numBytesOfSubChunk
         else do

@@ -76,7 +76,6 @@ startImpl stateVar room uId = do
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
           (fmtSubChunk, audioSizeInBytes) <- parseWavFile handle
-          print fmtSubChunk
           modifyMVar_ stateVar $ \st -> do
             return st{currentlyPlaying=Just sId} 
           liveStream fmtSubChunk handle
