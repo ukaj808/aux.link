@@ -75,23 +75,23 @@ startImpl stateVar room uId = do
                      
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
-          (fmtSubChunk, audioSizeInBytes) <- parseWavFile handle
+          (fmtSubChunk, audioByteLength) <- parseWavFile handle
+          print fmtSubChunk
+          let chunkSize = div (fromIntegral $ byteRate fmtSubChunk) 8
           modifyMVar_ stateVar $ \st -> do
             return st{currentlyPlaying=Just sId} 
-          liveStream fmtSubChunk handle
+          liveStream (audioByteLength, chunkSize) handle
           nextSong
           where
-            liveStream :: FmtSubChunk -> Handle -> IO ()
-            liveStream fmtSubChunk handle = do
-              playing <- not <$> hIsEOF handle
-              when playing $ do
+            liveStream :: (Integer, Int) -> Handle -> IO ()
+            liveStream (bytesLeft, chunkSize) handle = do
+              when (bytesLeft > 0) $ do
                 st <- readMVar stateVar
                 forM_ (listening st) $ \session -> do
-                  let numBytes = div (fromIntegral $ byteRate fmtSubChunk) 8
-                  chunk <- B.hGet handle numBytes -- 1/8th a second of audio
+                  chunk <- B.hGet handle chunkSize
                   WS.sendBinaryData (conn session) chunk
-                threadDelay 125000 -- 1/8th of a second
-                liveStream fmtSubChunk handle
+                threadDelay 125000 -- 1/8th of a second; must by synced with chunkSize
+                liveStream (bytesLeft - toInteger chunkSize, chunkSize) handle
 
 
         -- Either they dont have any or something failed on upload

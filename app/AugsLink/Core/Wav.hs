@@ -4,17 +4,14 @@ module AugsLink.Core.Wav
   , FmtSubChunk (..)
   ) where
 
+import Data.Aeson
 import Data.Binary
 import Data.Binary.Get
-import Data.Aeson
+import GHC.Conc.IO
 import GHC.Generics
-import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString as B
-import qualified Data.Text as T
 import GHC.IO.Handle
-import Data.Text.Encoding
-import Data.Binary.Put (runPut,putWord32be, putWord32le)
-import GHC.Conc.IO (threadDelay)
+
+import qualified Data.ByteString.Lazy as L
 
 data RiffChunk = RiffChunk
   {
@@ -35,25 +32,8 @@ data FmtSubChunk = FmtSubChunk
   , bitsPerSample :: Word16
   } deriving (Show, Generic)
 
-data SubChunk = SubChunk
-  {
-    subchunkId :: Word32
-  , subchunkSize :: Word32
-  } deriving (Show, Generic)
-
 instance ToJSON RiffChunk
 instance ToJSON FmtSubChunk
-instance ToJSON SubChunk
-
-getSubChunk :: Get SubChunk
-getSubChunk = do
-  subchunkId <- getWord32be
-  subchunkSize <- getWord32le
-  return $ SubChunk {
-    subchunkId = subchunkId
-  , subchunkSize = subchunkSize
-  }
-
 
 getRiffChunk :: Get RiffChunk
 getRiffChunk = do
@@ -87,28 +67,27 @@ getFmtSubChunk = do
   , bitsPerSample = bitsPerSample
   }
 
-word32ToByteString :: Word32 -> L.ByteString
-word32ToByteString w = runPut (putWord32be w)
-
+-- Fradgily assumes the audio data is pcm_s16le. Any other format of the audio data
+-- could break the header parsing algorithm here as
+-- the header format generally depends on the audio data. For example, pcm_f32le
+-- will add a few more fields to the fmt sub chunk, which breaks this.
 parseWavFile :: Handle -> IO (FmtSubChunk, Integer)
-parseWavFile handle = do 
-  riffChunk <- runGet getRiffChunk <$> L.hGet handle 12
+parseWavFile handle = do
+  _           <- runGet getRiffChunk   <$> L.hGet handle 12
   fmtSubChunk <- runGet getFmtSubChunk <$> L.hGet handle 24
-  -- Iteratively search for the 'data' chunk and set the file position at the start of the raw audio data
+  -- scrubs the offset in the handle up to the data chunk
+  -- returns the ammount of bytes to pull as to not go over
   audioSizeInBytes <- findDataChunkAndSeek handle
   return (fmtSubChunk, audioSizeInBytes)
   where
     findDataChunkAndSeek :: Handle -> IO Integer
     findDataChunkAndSeek h = do
-      threadDelay 125000
-      subchunkId <- runGet getWord32be <$> L.hGet h 4
-      subchunkSize <- runGet getWord32le <$> L.hGet h 4
-      let bs = word32ToByteString subchunkId
-      let decodedId = decodeUtf32BE $ B.toStrict bs
-      let numBytesOfSubChunk = fromIntegral subchunkSize :: Integer
-      putStrLn $ show decodedId
-      if decodedId == T.pack "data"
-        then return numBytesOfSubChunk
+      threadDelay 100000
+      subchunkId   <-                runGet getWord32be <$> L.hGet h 4
+      subchunkSize <- fromIntegral . runGet getWord32le <$> L.hGet h 4
+      if subchunkId == 0x64617461 -- "data"
+        then do
+          return subchunkSize
         else do
-          hSeek h RelativeSeek numBytesOfSubChunk -- scrub past the subchunk bytes
+          hSeek h RelativeSeek subchunkSize -- scrub past the subchunk bytes
           findDataChunkAndSeek h

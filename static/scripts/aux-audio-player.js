@@ -18,8 +18,8 @@ export class AuxAudioPlayer{
 
     await this.#audioContext.audioWorklet.addModule('public/aux-audio-worklet.js');
 
-    const ringBufferSize = 768000; // 2 Seconds of audio @ 384000 bytes per second
-    const chunkSize = 48000; // 1/8th of a second of audio @ ...
+    const ringBufferSize = 1920000; // 10 Seconds of audio @ 192000 bytes per second
+    const chunkSize = 24000; // 1/8th of a second of audio @ ...
     const ringBuffer = new SharedArrayBuffer(ringBufferSize);
     const state = new SharedArrayBuffer(1);
 
