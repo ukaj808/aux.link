@@ -19,12 +19,12 @@ const onWsMessage = (event) => {
   const dataView = new DataView(event.data);
 
   // Read int16 values using DataView with little-endian endianness
-  const chunk = new Int16Array(int16Count);
   for (let i = 0; i < int16Count; i++) {
-    chunk[i] = dataView.getInt16(i * Int16Array.BYTES_PER_ELEMENT, true);
+    ringBuffer[offset + i] = dataView.getInt16(i * Int16Array.BYTES_PER_ELEMENT, true);
+    offset = (offset + 1) % ringBufferSizeInArrayElements;
   }
-  ringBuffer.set(chunk, offset);
-  offset = (offset + chunkSizeInArrayElements) % ringBufferSizeInArrayElements;
+
+  console.log('ws worker offset', offset);
 
   // Half the buffer is full
   if (offset >= ringBufferSizeInArrayElements / 2) {

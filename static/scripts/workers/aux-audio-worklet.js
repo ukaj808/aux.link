@@ -18,10 +18,8 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
 
   process(_inputs, outputs) {
     if (!this.#isAudioAvailable()) {
-      console.log('Audio unavailable');
       return true;
     } 
-    console.log('Audio available!');
     const output    = outputs[0]; // 1st output source
     const numFrames = output[0].length;
     for (let frame = 0; frame < numFrames; frame = frame + 2) {
@@ -34,7 +32,6 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
       }
     }
     this.#offset = this.#offset + ((numFrames * this.#numChannels) % (this.#ringBufferSize / Int16Array.BYTES_PER_ELEMENT));
-
     return true;
 
   }
