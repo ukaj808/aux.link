@@ -72,14 +72,15 @@ startImpl stateVar room uId = do
         -- Yes they do, lets take it
         Right (Just sId) -> do
           -- Lets put there 'possible' next song in the tape player
-                     
+
           wavFile   <- convertToWav "ffmpeg" "./static" "song" "mp3"
           handle    <- openFile wavFile ReadMode
           (fmtSubChunk, audioByteLength) <- parseWavFile handle
           print fmtSubChunk
-          let chunkSize = div (fromIntegral $ byteRate fmtSubChunk) 8
+          let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
+          let chunkSize = byteRateMs * 200
           modifyMVar_ stateVar $ \st -> do
-            return st{currentlyPlaying=Just sId} 
+            return st{currentlyPlaying=Just sId}
           liveStream (audioByteLength, chunkSize) handle
           nextSong
           where
@@ -90,7 +91,7 @@ startImpl stateVar room uId = do
                 forM_ (listening st) $ \session -> do
                   chunk <- B.hGet handle chunkSize
                   WS.sendBinaryData (conn session) chunk
-                threadDelay 125000 -- 1/8th of a second; must by synced with chunkSize
+                threadDelay 200000
                 liveStream (bytesLeft - toInteger chunkSize, chunkSize) handle
 
 

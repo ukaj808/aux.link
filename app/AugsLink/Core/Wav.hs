@@ -30,6 +30,9 @@ data FmtSubChunk = FmtSubChunk
   , byteRate      :: Word32
   , blockAlign    :: Word16
   , bitsPerSample :: Word16
+  , cbSize        :: Word16
+  , validBitsPerSample :: Word16
+  , channelMask        :: Word32
   } deriving (Show, Generic)
 
 instance ToJSON RiffChunk
@@ -56,6 +59,10 @@ getFmtSubChunk = do
   byteRate      <- getWord32le
   blockAlign    <- getWord16le
   bitsPerSample <- getWord16le
+  cbSize        <- getWord16le --maybe?
+  validBitsPerSample <- getWord16le
+  channelMask        <- getWord32le
+  skip 16 --skip subformat guid (128 bits)
   return $ FmtSubChunk {
     subchunk1ID   = subchunk1ID
   , subchunk1Size = subchunk1Size
@@ -65,6 +72,9 @@ getFmtSubChunk = do
   , byteRate      = byteRate
   , blockAlign    = blockAlign
   , bitsPerSample = bitsPerSample
+  , cbSize        = cbSize
+  , validBitsPerSample  = validBitsPerSample
+  , channelMask         = channelMask
   }
 
 -- Fradgily assumes the audio data is pcm_s16le. Any other format of the audio data
@@ -74,7 +84,7 @@ getFmtSubChunk = do
 parseWavFile :: Handle -> IO (FmtSubChunk, Integer)
 parseWavFile handle = do
   _           <- runGet getRiffChunk   <$> L.hGet handle 12
-  fmtSubChunk <- runGet getFmtSubChunk <$> L.hGet handle 24
+  fmtSubChunk <- runGet getFmtSubChunk <$> L.hGet handle 48 
   -- scrubs the offset in the handle up to the data chunk
   -- returns the ammount of bytes to pull as to not go over
   audioSizeInBytes <- findDataChunkAndSeek handle

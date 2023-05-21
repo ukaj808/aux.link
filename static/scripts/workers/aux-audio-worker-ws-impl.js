@@ -8,13 +8,13 @@ let openState = false;
 let offset = 0;
 
 const onWsMessage = (event) => {
-  const numSamples = event.data.byteLength / Int16Array.BYTES_PER_ELEMENT;
+  const numSamples = event.data.byteLength / Float32Array.BYTES_PER_ELEMENT;
 
   const dataView = new DataView(event.data);
 
   for (let i = 0; i < numSamples; i++) {
     const ringIndex = (offset + i) % ringBufferSize;
-    ringBuffer[ringIndex] = dataView.getInt16(i * Int16Array.BYTES_PER_ELEMENT, true);
+    ringBuffer[ringIndex] = dataView.getFloat32(i * Float32Array.BYTES_PER_ELEMENT, true);
   }
 
   offset = (offset + numSamples) % ringBufferSize;
@@ -35,8 +35,8 @@ const connectToAudioSocket = (roomId, userId) => {
 self.onmessage = ({data}) => {
   if (data.type === "init") {
     // Create views on shared buffers
-    ringBuffer     = new Int16Array(data.ringBuffer);
-    ringBufferSize = ringBuffer.byteLength / Int16Array.BYTES_PER_ELEMENT;
+    ringBuffer     = new Float32Array(data.ringBuffer);
+    ringBufferSize = ringBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT;
     state          = new Int8Array(data.state);
 
     connectToAudioSocket(data.roomId, data.userId)
