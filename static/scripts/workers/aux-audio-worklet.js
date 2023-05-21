@@ -9,8 +9,8 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
   constructor(options) {
     super();
     // Create views on states shared buffer
-    this.#ringBufferSize = options.processorOptions.ringBufferSize;
     this.#ringBuffer     = new Int16Array(options.processorOptions.ringBuffer);
+    this.#ringBufferSize = options.processorOptions.ringBuffer.byteLength / Int16Array.BYTES_PER_ELEMENT;
     this.#state          = new Int8Array(options.processorOptions.state);
     this.#numChannels    = options.processorOptions.numChannels;
     this.#offset         = 0;
@@ -22,15 +22,18 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
     } 
     const output    = outputs[0]; // 1st output source
     const numFrames = output[0].length;
+    let i = 0;
     for (let frame = 0; frame < numFrames; frame = frame + 2) {
       for (let channel = 0; channel < this.#numChannels; channel++) {
-        const sampleIndex = (this.#offset + frame + channel) % (this.#ringBufferSize / Int16Array.BYTES_PER_ELEMENT);
+        const sampleIndex = (this.#offset + frame + channel) % this.#ringBufferSize;
         const sampleI16 = this.#ringBuffer[sampleIndex];
         const sampleF32 = sampleI16 / 32767;
-        output[channel][frame] = sampleF32;
+        output[channel][i] = sampleF32;
+        i++;
       }
     }
-    this.#offset = this.#offset + ((numFrames * this.#numChannels) % (this.#ringBufferSize / Int16Array.BYTES_PER_ELEMENT));
+
+    this.#offset = this.#offset + ((numFrames * this.#numChannels) % this.#ringBufferSize);
     return true;
 
   }

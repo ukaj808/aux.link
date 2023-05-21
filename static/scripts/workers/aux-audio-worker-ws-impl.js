@@ -2,51 +2,47 @@ let roomId;
 let userId;
 let ws;
 let ringBuffer;
-let ringBufferSizeInBytes;
-let ringBufferSizeInArrayElements;
-let chunkSizeInBytes;
-let chunkSizeInArrayElements;
+let ringBufferSize;
 let state;
+let openState = false;
 let offset = 0;
 
 const onWsMessage = (event) => {
+  const numSamples = event.data.byteLength / Int16Array.BYTES_PER_ELEMENT;
 
-  // Complexity arising from raw data being little_endian format
-  // Determine the number of int16 values in the ArrayBuffer
-  const int16Count = event.data.byteLength / Int16Array.BYTES_PER_ELEMENT;
-
-  // Create a DataView for the ArrayBuffer
   const dataView = new DataView(event.data);
 
-  // Read int16 values using DataView with little-endian endianness
-  for (let i = 0; i < int16Count; i++) {
-    const ringIndex = (offset + i) % ringBufferSizeInArrayElements;
+  for (let i = 0; i < numSamples; i++) {
+    const ringIndex = (offset + i) % ringBufferSize;
     ringBuffer[ringIndex] = dataView.getInt16(i * Int16Array.BYTES_PER_ELEMENT, true);
   }
-  offset = (offset + int16Count) % ringBufferSizeInArrayElements;
 
-  // Half the buffer is full
-  if (offset >= ringBufferSizeInArrayElements / 2) {
+  offset = (offset + numSamples) % ringBufferSize;
+
+  // Ring buffer is half full; allow worklet to start reading,
+  if (!openState && offset >= ringBufferSize / 2) {
+    openState = true;
     Atomics.store(state, 0, 1);
   }
 };
 
-self.onmessage = ({data}) => {
-  if (data.type === "init") {
-    // Create views on shared buffers
-    ringBuffer = new Int16Array(data.ringBuffer);
-    ringBufferSizeInBytes = data.ringBufferSize;
-    ringBufferSizeInArrayElements = ringBufferSizeInBytes / Int16Array.BYTES_PER_ELEMENT;
-    chunkSize = data.chunkSize;
-    chunkSizeInArrayElements = data.chunkSize / Int16Array.BYTES_PER_ELEMENT;
-    state = new Int8Array(data.state);
-    // Init websocket connection
-    roomId = data.roomId;
-    userId = data.userId;
-
+const connectToAudioSocket = (roomId, userId) => {
     ws = new WebSocket(`ws://localhost:8080/${roomId}/${userId}/music/listen`);
     ws.binaryType = 'arraybuffer';
     ws.addEventListener("message", onWsMessage); 
+}
+
+self.onmessage = ({data}) => {
+  if (data.type === "init") {
+    // Create views on shared buffers
+    ringBuffer     = new Int16Array(data.ringBuffer);
+    ringBufferSize = ringBuffer.byteLength / Int16Array.BYTES_PER_ELEMENT;
+    state          = new Int8Array(data.state);
+
+    connectToAudioSocket(data.roomId, data.userId)
+
     postMessage({ type: 'WS_WORKER_READY' });
   } 
+
 };
+
