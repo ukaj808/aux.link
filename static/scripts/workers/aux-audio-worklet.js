@@ -24,10 +24,9 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
     const numFrames = output[0].length;
     for (let frame = 0; frame < numFrames; frame = frame + 2) {
       for (let channel = 0; channel < this.#numChannels; channel++) {
-        const sampleIndex = this.#offset + frame + channel; // the offset in the ringbuffer + the current frame out of the num frames (iterates in 2s) + the channel in the frame
+        const sampleIndex = (this.#offset + frame + channel) % (this.#ringBufferSize / Int16Array.BYTES_PER_ELEMENT);
         const sampleI16 = this.#ringBuffer[sampleIndex];
         const sampleF32 = sampleI16 / 32767;
-        if (sampleIndex % 100 == 0) console.log('sample', sampleF32);
         output[channel][frame] = sampleF32;
       }
     }
