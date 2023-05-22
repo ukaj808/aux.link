@@ -12,7 +12,12 @@ export class AuxAudioPlayer{
   async startListening({userId}) {
     this.#userId = userId;
 
-    this.#audioContext = new AudioContext();
+    this.#audioContext = new AudioContext(
+      {
+        latencyHint: "playback", 
+        sampleRate: 48000,
+      }
+    );
     this.#audioContext.suspend();
     console.info("Audio suspended...");
 
