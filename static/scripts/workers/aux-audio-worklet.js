@@ -1,6 +1,5 @@
 class AuxAudioWorklet extends AudioWorkletProcessor {
 
-  #numChannels;
   #ringBuffer;
   #ringBufferSize
   #offset;
@@ -10,9 +9,8 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
     super();
     // Create views on states shared buffer
     this.#ringBuffer     = new DataView(options.processorOptions.ringBuffer);
-    this.#ringBufferSize = options.processorOptions.ringBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT;
+    this.#ringBufferSize = options.processorOptions.ringBuffer.byteLength;
     this.#state          = new Int8Array(options.processorOptions.state);
-    this.#numChannels    = options.processorOptions.numChannels;
     this.#offset         = 0;
   }
 
@@ -32,7 +30,6 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
       for (let sample = 0, pcmSample = channel; sample < numSamples; sample++, pcmSample += numChannels) {
         const calcPcmSampleIndex = ((this.#offset + pcmSample) * Float32Array.BYTES_PER_ELEMENT) % this.#ringBufferSize;
         outputChannel[sample] = this.#ringBuffer.getFloat32(calcPcmSampleIndex, true);
-        if (this.#offset == 0) console.log(outputChannel[sample]);
       }
     }
 

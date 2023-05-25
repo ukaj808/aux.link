@@ -33,8 +33,7 @@ export class AuxAudioPlayer{
         processorOptions: 
         {  
           ringBuffer: ringBuffer,
-          state: state,
-          numChannels: 2
+          state: state
         } 
       });
     // Create Worker; pass sharedBuffers
