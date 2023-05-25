@@ -2,25 +2,20 @@ let roomId;
 let userId;
 let ws;
 let ringBuffer;
-let ringBufferSize;
 let state;
 let openState = false;
 let offset = 0;
 
 const onWsMessage = (event) => {
-  const numSamples = event.data.byteLength / Float32Array.BYTES_PER_ELEMENT;
 
-  const dataView = new DataView(event.data);
+  const data = new Float32Array(event.data);
 
-  for (let i = 0; i < numSamples; i++) {
-    const ringIndex = (offset + i) % ringBufferSize;
-    ringBuffer[ringIndex] = dataView.getFloat32(i * Float32Array.BYTES_PER_ELEMENT, true);
-  }
+  ringBuffer.set(data, offset);
 
-  offset = (offset + numSamples) % ringBufferSize;
+  offset = (offset + data.length) % ringBuffer.length;
 
   // Ring buffer is half full; allow worklet to start reading,
-  if (!openState && offset >= ringBufferSize / 2) {
+  if (!openState && offset >= ringBuffer.length / 2) {
     openState = true;
     Atomics.store(state, 0, 1);
   }
@@ -36,7 +31,6 @@ self.onmessage = ({data}) => {
   if (data.type === "init") {
     // Create views on shared buffers
     ringBuffer     = new Float32Array(data.ringBuffer);
-    ringBufferSize = ringBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT;
     state          = new Int8Array(data.state);
 
     connectToAudioSocket(data.roomId, data.userId)
