@@ -18,13 +18,13 @@ export class RoomMessageListener {
     const data = JSON.parse(event.data);
     switch (data?.type) {
         case "ServerWelcomeMessage":
-            this.#orderElement.addNewUserToOrderList(data.userId, data.userName);
+            this.#orderElement.addNewUserToOrderCarousel(data.userId, data.userName);
             break;
         case "UserEnterEvent":
-            this.#orderElement.addNewUserToOrderList(data.userId, data.userName);
+            this.#orderElement.addNewUserToOrderCarousel(data.userId, data.userName);
             break;
         case "UserLeftEvent":
-            this.#orderElement.removeUserFromOrderList(data.userId, data.userName);
+            this.#orderElement.removeUserFromOrderCarousel(data.userId, data.userName);
             break;
         default:
             console.error("Unrecognized Event!");

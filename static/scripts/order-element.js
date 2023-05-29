@@ -12,16 +12,16 @@ export class OrderElement {
     });
   }
   
-  addNewUserToOrderList(userId, userName) {
+  addNewUserToOrderCarousel(userId, userName) {
       const userCellEl = document.createElement('div');
       userCellEl.id = userId;
       userCellEl.className = 'user-carousel-cell';
       this.#flkty.append(userCellEl);
   }
 
-  removeUserFromOrderList(userId) {
+  removeUserFromOrderCarousel(userId) {
     const userCellEl = document.getElementById(userId);
-    userCellEl.remove();
+    this.#flkty.remove(userCellEl);
   }
 
 }

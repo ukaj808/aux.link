@@ -52,6 +52,7 @@ executable augslink-service
                       , base ^>=4.16.0.0
                       , binary
                       , blaze-html
+                      , blaze-svg
                       , bytestring
                       , containers
                       , directory

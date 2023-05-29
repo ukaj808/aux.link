@@ -14,11 +14,19 @@ html, body {
     background-color: var(--primary-bg-color);
 }
 
+h4 {
+  color: var(--primary-fnt-color);
+}
+
 .full-flex {
     height: 100%;
     display: flex;
     padding: 10px;
     box-sizing: border-box;
+}
+
+.draggable {
+  border: 2px dashed white;
 }
 
 .column {
@@ -43,16 +51,22 @@ html, body {
   background-color: var(--tertiary-bg-color)
 }
 
+.centered-icon {
+  width: 25%;
+  height: 25%;
+  fill: var(--primary-fnt-color);
+}
+
 
 .user-carousel {
-  background: #EEE;
+  background-color: var(--secondary-bg-color)
 }
 
 .user-carousel-cell {
   width: 50%; /* half-width */
-  height: 160px;
+  height: auto;
   margin-right: 10px;
-  background: #8C8;
+  background: var(--tertiary-bg-color);
   border-radius: 5px;
   counter-increment: gallery-cell;
 }
@@ -65,10 +79,6 @@ html, body {
   line-height: 200px;
   font-size: 80px;
   color: white;
-}
-
-.user-carousel-cell.is-selected {
-  background-color: #ED2;
 }
 
 /* position dots in gallery */

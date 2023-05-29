@@ -3,6 +3,7 @@
 import { AuxAudioPlayer } from "./aux-audio-player.js";
 import { RoomMessageListener } from "./room-message-listener.js";
 import { OrderElement } from "./order-element.js";
+import { DropElement } from "./drop-element.js"; 
 import { CurrentlyPlayingElement } from "./currently-playing-element.js";
 
 let roomId    = location.pathname.substr(1);
@@ -14,6 +15,7 @@ const auxAudioPlayer          = new AuxAudioPlayer({roomId: roomId});
 
 const orderElement            = new OrderElement();
 const currentlyPlayingElement = new CurrentlyPlayingElement({auxAudioPlayer});
+const dropElement             = new DropElement();
 
 const roomMessageListener     = new RoomMessageListener(
     roomId,
