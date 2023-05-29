@@ -21,14 +21,14 @@ renderUser user =
   let uid = toValue $ userId user
       uname = toMarkup $ userName user
   in
-  H.li ! A.id uid ! A.class_ "full-flex section centered tertiary-theme" $ do
+  H.div ! A.id uid ! A.class_ "user-carousel-cell" $ do
     H.span ! A.class_ "user-order-list__username-lbl" $ uname
 
 
 renderOrderSection :: [RoomUser] -> H.Html 
 renderOrderSection users = 
-  H.section ! A.id "order" ! A.class_ "full-flex section centered" $ do
-    H.ol ! A.id "user-order-list" ! A.class_ "full-flex section centered secondary-theme" $ do
+  H.section ! A.id "order" $ do
+    H.div ! A.class_"user-carousel" $ do
       forM_ users renderUser 
 
 renderCurrentlyPlayingSection :: H.Html
@@ -48,12 +48,15 @@ renderRoomPage users = H.docTypeHtml $ do
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
     H.script ! A.type_ "module"   ! A.src     "/public/room_bundle.js" $ ""
     H.link   ! A.rel "stylesheet" ! A.href    "/public/room.css"
+    H.link   ! A.rel "stylesheet" ! A.href    "https://unpkg.com/flickity@2/dist/flickity.min.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex column" $ do
       renderOrderSection users
       renderCurrentlyPlayingSection
       renderDropSection
+      H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
+
 
 roomHandler :: Registry IO 
   -> RoomId 
@@ -78,6 +81,6 @@ roomHandler registry rId = do
   return 
     ( 
       addHeader "same-origin"       $
-      addHeader "require-corp"      $
+      addHeader "credentialless"      $
       renderRoomPage roomView
     )

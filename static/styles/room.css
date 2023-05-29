@@ -42,3 +42,48 @@ html, body {
 .tertiary-theme {
   background-color: var(--tertiary-bg-color)
 }
+
+
+.user-carousel {
+  background: #EEE;
+}
+
+.user-carousel-cell {
+  width: 50%; /* half-width */
+  height: 160px;
+  margin-right: 10px;
+  background: #8C8;
+  border-radius: 5px;
+  counter-increment: gallery-cell;
+}
+
+/* cell number */
+.user-carousel-cell:before {
+  display: block;
+  text-align: center;
+  content: counter(gallery-cell);
+  line-height: 200px;
+  font-size: 80px;
+  color: white;
+}
+
+.user-carousel-cell.is-selected {
+  background-color: #ED2;
+}
+
+/* position dots in gallery */
+.flickity-page-dots {
+  bottom: 0px;
+}
+/* white circles */
+.flickity-page-dots .dot {
+  width: 12px;
+  height: 12px;
+  opacity: 1;
+  background: transparent;
+  border: 2px solid white;
+}
+/* fill-in selected dot */
+.flickity-page-dots .dot.is-selected {
+  background: white;
+}

@@ -2,45 +2,33 @@ export class RoomMessageListener {
 
   #roomId;
   #ws;
-  #userMessageProcessor;
-  #audioMessageProcessor;
+  #orderElement;
 
-  constructor({roomId, userMessageProcessor, audioMessageProcessor}) {
+  constructor(roomId, orderElement) {
     this.#roomId = roomId;
-    this.#userMessageProcessor = userMessageProcessor;
-    this.#audioMessageProcessor = audioMessageProcessor;
+    this.#orderElement = orderElement;
   }
 
   start() {
     this.#ws = new WebSocket(`ws://localhost:8080/${this.#roomId}/ws`);
-    this.#ws.addEventListener("message", this.#distribute);
+    this.#ws.addEventListener("message", this.#process);
   }
 
-  #distribute = ({data}) => {
-    console.log(data);
-    let parsedData = JSON.parse(data, this.#reviver);
-
-    switch (parsedData?.topic) {
-        case "user":
-            this.#userMessageProcessor.procces(parsedData);
-            createAndPublishServerWelcomeMessage(parsedData);
+  #process = (event) => {
+    const data = JSON.parse(event.data);
+    switch (data?.type) {
+        case "ServerWelcomeMessage":
+            this.#orderElement.addNewUserToOrderList(data.userId, data.userName);
             break;
-        case "audio":
-            this.#audioMessageProcessor.process(parsedData);
+        case "UserEnterEvent":
+            this.#orderElement.addNewUserToOrderList(data.userId, data.userName);
+            break;
+        case "UserLeftEvent":
+            this.#orderElement.removeUserFromOrderList(data.userId, data.userName);
             break;
         default:
             console.error("Unrecognized Event!");
             break;
     }
-}
-
-  #reviver = (key, value) => {
-    if(typeof value === 'object' && value !== null) {
-        if (value.dataType === 'Map') {
-            return new Map(value.value);
-        }
-    }
-    return value;
   }
-
 }

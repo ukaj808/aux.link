@@ -134,21 +134,9 @@ instance ToJSON RoomEvent where
   toJSON (UserLeftEvent uid) = Aeson.object
     [
        "type"        .= ("UserLeftEvent"  :: Text)
+    ,  "channel"     .= ("Room" :: Text)
     ,  "userId"      .= uid
     ]
-
-instance FromJSON RoomEvent where
-  parseJSON :: Value -> Parser RoomEvent
-  parseJSON = Aeson.withObject "RoomEvent" $ \obj -> do
-      typ <- obj .: "type"
-      case typ :: Text of
-        "UserEnterEvent" -> do
-          userId     <- obj .: "userId"
-          userName   <- obj .: "userName"
-          return $ UserEnterEvent $ RoomUser userId userName
-        "UserLeftEvent" -> do
-          uid        <- obj .: "userId"
-          return $ UserLeftEvent uid
 
 instance ToJSON SongInfo where
   toJSON :: SongInfo -> Value
@@ -158,19 +146,6 @@ instance ToJSON SongInfo where
     , "artist"     .= sArtist
     , "length"     .= sLength
     ]
-
-instance FromJSON ServerMessage where
-  parseJSON :: Value -> Parser ServerMessage
-  parseJSON = Aeson.withObject "UserMessage" $ \obj -> do
-      typ <- obj .: "type"
-      case typ :: Text of
-        "ServerWelcomeMessage" -> do
-          userId     <- obj .: "userId"
-          userName   <- obj .: "userName"
-          return $ ServerWelcomeMessage $ RoomUser userId userName
-        "ServerUploadSong" -> do
-          songId     <- obj .: "songId"
-          return $ ServerUploadSong songId
 
 instance ToJSON ServerMessage where
   toJSON :: ServerMessage -> Value

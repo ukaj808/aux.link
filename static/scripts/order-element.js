@@ -1,31 +1,27 @@
 export class OrderElement {
 
-  #el;
-  #orderListEl;
+  #orderCarouselEl;
+  #flkty;
 
   constructor() {
-    this.#el = document.getElementById("order");
-    this.#orderListEl = document.getElementById("user-order-list");
+    this.#orderCarouselEl = document.querySelector(".user-carousel");
+    this.#flkty = new Flickity( this.#orderCarouselEl, {
+      // options
+      cellAlign: 'center',
+      contain: true
+    });
   }
   
-  addNewUserToOrderList({userId, userName}) {
-      const userListItem = document.createElement('li');
-      userListItem.id = userId;
-      userListItem.class
-      userListItem.className = 'full-flex section centered tertiary-theme';
-
-      const uname = document.createElement('span');
-      uname.textContent = userName;
-      uname.classList.add('user-order-list__username-lbl');
-
-      userListItem.appendChild(uname);
-
-      this.#orderListEl.appendChild(li);
+  addNewUserToOrderList(userId, userName) {
+      const userCellEl = document.createElement('div');
+      userCellEl.id = userId;
+      userCellEl.className = 'user-carousel-cell';
+      this.#flkty.append(userCellEl);
   }
 
   removeUserFromOrderList(userId) {
-    const li = document.getElementById(userId);
-    li.remove();
+    const userCellEl = document.getElementById(userId);
+    userCellEl.remove();
   }
 
 }

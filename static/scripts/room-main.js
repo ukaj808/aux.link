@@ -2,8 +2,6 @@
 
 import { AuxAudioPlayer } from "./aux-audio-player.js";
 import { RoomMessageListener } from "./room-message-listener.js";
-import { UserMessageProcessor } from "./user-message-processor.js";
-import { AudioMessageProcessor } from "./audio-message-processor.js";
 import { OrderElement } from "./order-element.js";
 import { CurrentlyPlayingElement } from "./currently-playing-element.js";
 
@@ -17,15 +15,9 @@ const auxAudioPlayer          = new AuxAudioPlayer({roomId: roomId});
 const orderElement            = new OrderElement();
 const currentlyPlayingElement = new CurrentlyPlayingElement({auxAudioPlayer});
 
-const musicMessageProcessor   = new AudioMessageProcessor(currentlyPlayingElement, auxAudioPlayer);
-const userMessageProcessor    = new UserMessageProcessor(orderElement);
-
 const roomMessageListener     = new RoomMessageListener(
-  { 
     roomId,
-    userMessageProcessor,
-    musicMessageProcessor
-  }
+    orderElement
 );
 // Connect to web socket AFTER all the room modules have loaded (e.g. Order Section)
 // Each module adds event listeners to the room page (main)...
