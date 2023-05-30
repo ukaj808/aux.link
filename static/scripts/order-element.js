@@ -8,6 +8,8 @@ export class OrderElement {
     this.#flkty = new Flickity( this.#orderCarouselEl, {
       // options
       cellAlign: 'center',
+      prevNextButtons: false,
+      pageDots: false,
       contain: true
     });
   }
