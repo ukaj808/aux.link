@@ -7,7 +7,7 @@ export class OrderElement {
     this.#orderCarouselEl = document.querySelector(".user-carousel");
     this.#flkty = new Flickity( this.#orderCarouselEl, {
       // options
-      cellAlign: 'center',
+      cellAlign: 'left',
       prevNextButtons: false,
       pageDots: false,
       contain: true
