@@ -4,22 +4,26 @@ export class CurrentlyPlayingElement {
   #auxAudioPlayer;
   #listening;
 
-  constructor({auxAudioPlayer}) {
+  constructor(auxAudioPlayer) {
     this.#el = document.getElementById("currently-playing");
-    this.#el.addEventListener("click", () => this.#currentClickHandler());
     this.#listening = false;
     this.#auxAudioPlayer = auxAudioPlayer;
+    this.#el.addEventListener("click", () => this.#onSectionClick());
   }
 
-  #currentClickHandler() {
-    console.log(this.#listening);
-    if (this.#listening == false) {
+  #onSectionClick() {
+    if (!this.#listening) {
         this.#auxAudioPlayer.startListening({userId: "0"});
         this.#listening = true;
+        this.#toggleDisconnectOverlay();
     } else {
         this.#auxAudioPlayer.stopListening();
         this.#listening = false;
     }
-}
+  }
+
+  #toggleDisconnectOverlay() {
+    this.#el.classList.toggle("overlay");
+  }
 
 }

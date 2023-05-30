@@ -14,7 +14,7 @@ let userName;
 const auxAudioPlayer          = new AuxAudioPlayer({roomId: roomId});
 
 const orderElement            = new OrderElement();
-const currentlyPlayingElement = new CurrentlyPlayingElement({auxAudioPlayer});
+const currentlyPlayingElement = new CurrentlyPlayingElement(auxAudioPlayer);
 const dropElement             = new DropElement();
 
 const roomMessageListener     = new RoomMessageListener(
