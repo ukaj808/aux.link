@@ -1,16 +1,16 @@
 export class DropElement {
 
-    #el;
-    #queue;
+    el: HTMLElement;
+    queue: any[];
 
     constructor() {
-        this.#el = document.getElementById("drop-zone");
-        this.#el.addEventListener("drop", this.#onDrop);
-        this.#el.addEventListener("dragover", this.#onDragOver);
-        this.#queue = [];
+        this.el = document.getElementById("drop-zone");
+        this.el.addEventListener("drop", this.onDrop);
+        this.el.addEventListener("dragover", this.onDragOver);
+        this.queue = [];
     }
 
-    #onDrop(e) {
+    private onDrop(e: any) {
         if (e.dataTransfer.items) {
             // Use DataTransferItemList interface to access the file(s)
             [...e.dataTransfer.items].forEach((item, i) => {
@@ -28,7 +28,7 @@ export class DropElement {
         }
     }
 
-    #onDragOver(e) {
+    private onDragOver(e: Event) {
         // Prevent default behavior (Prevent file from being opened)
         e.preventDefault();
     }

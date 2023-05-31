@@ -16,10 +16,9 @@ module.exports = {
     ],
   },
   entry: {
-    room: ['./static/scripts/room-main.js'],
-    home: ['./static/scripts/home-main.js'],
-    audio_socket_worker: ['./static/scripts/aux-audio-socket-worker.js'],
-    audio_worklet_processor: ['./static/scripts/aux-worklet-processor.js'],
+    room: ['./static/scripts/room-main.ts'],
+    audio_socket_worker: ['./static/scripts/aux-audio-socket-worker.ts'],
+    audio_worklet_processor: ['./static/scripts/aux-worklet-processor.ts'],
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

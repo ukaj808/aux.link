@@ -1,12 +1,12 @@
-let roomId;
-let userId;
-let ws;
-let ringBuffer;
-let state;
-let openState = false;
-let offset = 0;
+let roomId: string;
+let userId: string;
+let ws: WebSocket;
+let ringBuffer: Float32Array;
+let state: Int8Array;
+let openState: boolean = false;
+let offset: number = 0;
 
-const onWsMessage = (event) => {
+const onWsMessage = (event: MessageEvent<any>) => {
 
   const data = new Float32Array(event.data);
 

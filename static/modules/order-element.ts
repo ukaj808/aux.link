@@ -1,11 +1,13 @@
+import * as Flickity from 'flickity';
+
 export class OrderElement {
 
-  #orderCarouselEl;
-  #flkty;
+  private orderCarouselEl: HTMLElement;
+  private flkty: Flickity;
 
   constructor() {
-    this.#orderCarouselEl = document.querySelector(".user-carousel");
-    this.#flkty = new Flickity( this.#orderCarouselEl, {
+    this.orderCarouselEl = document.querySelector(".user-carousel");
+    this.flkty = new Flickity( this.orderCarouselEl, {
       // options
       cellAlign: 'left',
       prevNextButtons: false,
@@ -18,12 +20,12 @@ export class OrderElement {
       const userCellEl = document.createElement('div');
       userCellEl.id = userId;
       userCellEl.className = 'user-carousel-cell';
-      this.#flkty.append(userCellEl);
+      this.flkty.append(userCellEl);
   }
 
   removeUserFromOrderCarousel(userId) {
     const userCellEl = document.getElementById(userId);
-    this.#flkty.remove(userCellEl);
+    this.flkty.remove(userCellEl);
   }
 
 }

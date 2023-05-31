@@ -91,7 +91,7 @@ type API =
    :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
 
 
-   :<|> "public" :> "aux-audio-worker-ws-impl.js" :> Get '[JS]
+   :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 
        '[
