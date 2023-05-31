@@ -1,4 +1,4 @@
-import * as Flickity from 'flickity';
+import Flickity from 'flickity';
 
 export class OrderElement {
 

@@ -3,12 +3,13 @@ import { OrderElement } from "./order-element";
 export class RoomMessageListener {
 
   private roomId: string;
-  private ws: WebSocket;
+  private ws: WebSocket | null;
   private orderEl: OrderElement;
 
   constructor(roomId: string, orderEl: OrderElement) {
     this.roomId = roomId;
     this.orderEl = orderEl;
+    this.ws = null;
   }
 
   public start() {
