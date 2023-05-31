@@ -21,13 +21,13 @@ export class AuxAudioPlayer{
     this.#audioContext.suspend();
     console.info("Audio suspended...");
 
-    await this.#audioContext.audioWorklet.addModule('public/aux-audio-worklet.js');
+    await this.#audioContext.audioWorklet.addModule('public/audio_worklet_processor_bundle.js');
 
     const ringBufferSize = 1920000; // 5 Seconds of audio @ 384000 bytes per second
     const ringBuffer = new SharedArrayBuffer(ringBufferSize);
     const state = new SharedArrayBuffer(1);
 
-    this.#audioWorklet = new AudioWorkletNode(this.#audioContext, 'aux-audio-worklet', 
+    this.#audioWorklet = new AudioWorkletNode(this.#audioContext, 'audio-worklet-processor', 
       { 
         outputChannelCount: [2],
         processorOptions: 
@@ -37,7 +37,7 @@ export class AuxAudioPlayer{
         } 
       });
     // Create Worker; pass sharedBuffers
-    this.#wsWorker = new Worker('public/aux-audio-worker-ws-impl.js');
+    this.#wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.#wsWorker.postMessage(
       { 
         type: "init", 

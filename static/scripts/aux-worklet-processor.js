@@ -1,4 +1,4 @@
-class AuxAudioWorklet extends AudioWorkletProcessor {
+class AuxWorkletProcessor extends AudioWorkletProcessor {
 
   #ringBuffer;
   #ringBufferSize
@@ -44,4 +44,4 @@ class AuxAudioWorklet extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("aux-audio-worklet", AuxAudioWorklet);
+registerProcessor("audio-worklet-processor", AuxWorkletProcessor);

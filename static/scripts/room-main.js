@@ -1,10 +1,8 @@
-// Global
-
-import { AuxAudioPlayer } from "./aux-audio-player.js";
-import { RoomMessageListener } from "./room-message-listener.js";
-import { OrderElement } from "./order-element.js";
-import { DropElement } from "./drop-element.js"; 
-import { CurrentlyPlayingElement } from "./currently-playing-element.js";
+import { AuxAudioPlayer } from "../modules/aux-audio-player.js";
+import { RoomMessageListener } from "../modules/room-message-listener.js";
+import { OrderElement } from "../modules/order-element.js";
+import { DropElement } from "../modules/drop-element.js"; 
+import { CurrentlyPlayingElement } from "../modules/currently-playing-element.js";
 
 let roomId    = location.pathname.substr(1);
 let listening = false;

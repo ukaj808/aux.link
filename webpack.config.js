@@ -3,14 +3,23 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   mode: 'production',
+  devtool: 'source-map',
+  resolve: {
+    extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
+  },
+  module: {
+    rules: [
+      // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
+      { test: /\.tsx?$/, loader: "ts-loader" },
+      // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
+      { test: /\.js$/, loader: "source-map-loader" },
+    ],
+  },
   entry: {
-    room: ['./static/scripts/aux-audio-player.js', 
-	    './static/scripts/room-main.js',
-	    './static/scripts/order-element.js',
-	    './static/scripts/room-message-listener.js',
-	    './static/scripts/currently-playing-element.js'
-        ],
-    home: ['./static/scripts/home-main.js']
+    room: ['./static/scripts/room-main.js'],
+    home: ['./static/scripts/home-main.js'],
+    audio_socket_worker: ['./static/scripts/aux-audio-socket-worker.js'],
+    audio_worklet_processor: ['./static/scripts/aux-worklet-processor.js'],
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -20,10 +29,6 @@ module.exports = {
     // ...
     new CopyWebpackPlugin({
       patterns: [
-        {
-          from: 'static/scripts/workers/*.js',
-          to: '[name][ext]',
-        },
         {
           from: 'static/styles/*.css',
           to: '[name][ext]',
