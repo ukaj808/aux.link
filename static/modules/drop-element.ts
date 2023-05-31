@@ -4,7 +4,9 @@ export class DropElement {
     queue: any[];
 
     constructor() {
-        this.el = document.getElementById("drop-zone");
+        const optEl = document.getElementById("drop-zone");
+        if (!optEl) throw new Error('No drop element found');
+        this.el = optEl
         this.el.addEventListener("drop", this.onDrop);
         this.el.addEventListener("dragover", this.onDragOver);
         this.queue = [];

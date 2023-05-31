@@ -21,7 +21,7 @@ const onWsMessage = (event: MessageEvent<any>) => {
   }
 };
 
-const connectToAudioSocket = (roomId, userId) => {
+const connectToAudioSocket = (roomId: string, userId: string) => {
     ws = new WebSocket(`ws://localhost:8080/${roomId}/${userId}/music/listen`);
     ws.binaryType = 'arraybuffer';
     ws.addEventListener("message", onWsMessage); 

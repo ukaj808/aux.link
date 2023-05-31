@@ -14,7 +14,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.offset         = 0;
   }
 
-  process(_inputs, outputs) {
+  process(_inputs: Float32Array[][], outputs: Float32Array[][]) {
     if (!this.isAudioAvailable()) {
       return true;
     } 

@@ -7,7 +7,9 @@ export class CurrentlyPlayingElement {
   private listening: boolean;
 
   constructor(auxAudioPlayer: AuxAudioPlayer) {
-    this.el = document.getElementById("currently-playing");
+    const optEl = document.getElementById("currently-playing");
+    if (!optEl) throw new Error('No currently playing element found');
+    this.el = optEl;
     this.listening = false;
     this.auxAudioPlayer = auxAudioPlayer;
     this.el.addEventListener("click", () => this.onSectionClick());
