@@ -13,21 +13,23 @@ export class RoomMessageListener {
   }
 
   public start() {
-    console.log(this.roomId);
     this.ws = new WebSocket(`ws://localhost:8080/${this.roomId}/ws`);
-    this.ws.addEventListener("message", this.process);
+    this.ws.onmessage = this.process;
   }
 
-  private process = (event: MessageEvent<any>) => {
-    const data = JSON.parse(event.data);
-    switch (data?.type) {
+  private process = (event: MessageEvent<string>) => {
+    const data = JSON.parse(event.data) as RoomMessage;
+    switch (data.type) {
         case "ServerWelcomeMessage":
-            this.orderEl.addNewUserToOrderCarousel(data.userId, data.userName);
+            const welcomeMessage = data as ServerWelcomeMessage;
+            this.orderEl.addNewUserToOrderCarousel(data.userId, welcomeMessage.userName);
             break;
         case "UserEnterEvent":
-            this.orderEl.addNewUserToOrderCarousel(data.userId, data.userName);
+            const userEnterEvent = data as UserEnterEvent;
+            this.orderEl.addNewUserToOrderCarousel(data.userId, userEnterEvent.userName);
             break;
         case "UserLeftEvent":
+            const userLeftEvent = data as UserLeftEvent;
             this.orderEl.removeUserFromOrderCarousel(data.userId);
             break;
         default:

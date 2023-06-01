@@ -7,12 +7,13 @@ export class DropElement {
         const optEl = document.getElementById("drop-zone");
         if (!optEl) throw new Error('No drop element found');
         this.el = optEl
-        this.el.addEventListener("drop", this.onDrop);
-        this.el.addEventListener("dragover", this.onDragOver);
+        this.el.ondrop = this.onDrop;
+        this.el.ondragover = this.onDragOver;
         this.queue = [];
     }
 
-    private onDrop(e: any) {
+    private onDrop(e: DragEvent) {
+        if (e.dataTransfer == null) throw new Error('No data transfer found');
         if (e.dataTransfer.items) {
             // Use DataTransferItemList interface to access the file(s)
             [...e.dataTransfer.items].forEach((item, i) => {

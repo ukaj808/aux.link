@@ -5,7 +5,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
   private offset: number;
   private state: Int8Array;
 
-  constructor(options: any) {
+  constructor(options: AudioWorkletNodeOptions) {
     super();
     // Create views on states shared buffer
     this.ringBuffer     = new DataView(options.processorOptions.ringBuffer);

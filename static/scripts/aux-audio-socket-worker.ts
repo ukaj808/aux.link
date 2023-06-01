@@ -6,7 +6,7 @@ let state: Int8Array;
 let openState: boolean = false;
 let offset: number = 0;
 
-const onWsMessage = (event: MessageEvent<any>) => {
+const onWsMessage = (event: MessageEvent<AudioChunk>) => {
 
   const data = new Float32Array(event.data);
 
@@ -27,8 +27,9 @@ const connectToAudioSocket = (roomId: string, userId: string) => {
     ws.addEventListener("message", onWsMessage); 
 }
 
-self.onmessage = ({data}) => {
-  if (data.type === "init") {
+self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
+  const data = messageEvent.data;
+  if (data.type === "INIT") {
     // Create views on shared buffers
     ringBuffer     = new Float32Array(data.ringBuffer);
     state          = new Int8Array(data.state);

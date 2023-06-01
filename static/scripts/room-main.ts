@@ -19,10 +19,4 @@ const roomMessageListener: RoomMessageListener = new RoomMessageListener(
     roomId,
     orderElement
 );
-
-// Connect to web socket AFTER all the room modules have loaded (e.g. Order Section)
-// Each module adds event listeners to the room page (main)...
-// If the websocket connection happens before the event listeners are added in each module
-// then those modules won't know that they/or another user joined...
-// Still noticing this bug in prod!!
-window.addEventListener('load', () => roomMessageListener.start())
+roomMessageListener.start();

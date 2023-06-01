@@ -21,17 +21,18 @@ export class AuxAudioPlayer {
         sampleRate: 48000,
       }
     );
+    this.audioContext.suspend();
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
+    this.wsWorker.onmessage = this.onPostMessage;
     this.audioWorklet = null;
   }
 
-  async startListening(userId: string) {
+  public async startListening(userId: string) {
+
     this.userId = userId;
 
-    this.audioContext.suspend();
-
-
     await this.audioContext.audioWorklet.addModule('public/audio_worklet_processor_bundle.js');
+
     this.audioWorklet = new AudioWorkletNode(this.audioContext, 'audio-worklet-processor', 
       { 
         outputChannelCount: [2],
@@ -42,32 +43,29 @@ export class AuxAudioPlayer {
         } 
       });
 
-    // Create Worker; pass sharedBuffers
-    this.wsWorker.postMessage(
-      { 
-        type: "init", 
+      const wsWorkerOpts: WsWorkerOpts = {
+        type: "INIT", 
         roomId: this.roomId, 
         userId: this.userId, 
         ringBuffer: this.ringBuffer,
         state: this.state,
-      });
+      }
 
-    this.wsWorker.onmessage = async ({data}) => {
-      if (data.type === 'WS_WORKER_READY') {
+    this.wsWorker.postMessage(wsWorkerOpts);
+  }
+
+  public stopListening() {
+    this.wsWorker.terminate();
+  }
+
+  private onPostMessage = async (messageEvent: MessageEvent<WsWorkerMessage>) => {
+      if (messageEvent.data.type === 'WS_WORKER_READY') {
         console.info("Ws worker intialized...");
 
         this.audioWorklet?.connect(this.audioContext.destination);
-        console.info("Worklet connected to speakers...");
 
         this.audioContext.resume();
       }
-
     }
-
-  }
-
-  stopListening() {
-    this.wsWorker.terminate();
-  }
 
 }
