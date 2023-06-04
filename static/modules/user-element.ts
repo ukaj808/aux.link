@@ -22,7 +22,7 @@ export class UserElement {
       const userEl = document.createElement('div');
       userEl.id = userId;
       userEl.className = 'user-carousel-cell';
-      //if (isCreator) this.addCreatorOverlay(userEl);
+      if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }
   }

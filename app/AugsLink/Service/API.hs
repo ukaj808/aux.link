@@ -71,24 +71,24 @@ type API =
         ] 
         ServerHtml
       )
-   :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
+   :<|> "rooms" :> Capture "roomid" Text :> "ws" :> WebSocketPending
 
-   :<|> Capture "roomId" Text :> Capture "userId" UserId 
+   :<|> "rooms" :> Capture "roomId" Text :> "users" :> Capture "userId" UserId 
      :> "songs" :> ReqBody '[JSON] EnqueueSongRequest :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> Capture "userId" UserId 
+   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId 
      :> "songs" :> Capture "songId" Text :> Capture "priority" Int :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> Capture "userId" UserId
+   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId
      :> "songs" :> Capture "songId" Text :> "upload" 
        :> MultipartForm Mem (MultipartData Mem) :> Put '[PlainText] Text
 
-   :<|> Capture "roomId" Text :> Capture "userId" UserId
+   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId
      :> "songs" :> Capture "songId" Text :> Delete '[PlainText] Text
 
-   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
-   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "stop-listening"   :> Put '[PlainText] Text
-   :<|> Capture "roomid" Text :> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
+   :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
+   :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "stop-listening"   :> Put '[PlainText] Text
+   :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
 
 
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]

@@ -10,7 +10,7 @@ export class RestClient {
 
   public setUserId(userId: string) {
     this.userId = userId;
-    this.basePath = `/api/rooms/${this.roomId}/users/${this.userId}`;
+    this.basePath = `/rooms/${this.roomId}/users/${this.userId}`;
   }
 
   public startMusic(): Promise<Response> {

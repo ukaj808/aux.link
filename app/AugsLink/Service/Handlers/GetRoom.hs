@@ -89,6 +89,8 @@ renderRoomPage users = H.docTypeHtml $ do
       renderOrderSection users
       renderCurrentlyPlayingSection
       renderDropSection
+      H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
+
 
 
 roomHandler :: Registry IO 
