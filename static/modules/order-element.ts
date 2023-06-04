@@ -1,6 +1,7 @@
 import Flickity from "flickity";
 import { UserElement, UserElementFactory } from "./user-element";
 import { RestClient } from "./rest-client";
+import { SvgFactory } from "./svg";
 
 export class OrderElement {
 
@@ -8,11 +9,11 @@ export class OrderElement {
   private userElementFactory: UserElementFactory;
   private flkty: Flickity;
 
-  constructor(restClient: RestClient) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory) {
     const optOrderCarouselEl = document.querySelector(".user-carousel");
     if (!optOrderCarouselEl) throw new Error('No order carousel element found');
     this.orderCarouselEl = optOrderCarouselEl;
-    this.userElementFactory = new UserElementFactory(restClient, this.orderCarouselEl);
+    this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.orderCarouselEl);
     this.flkty = new Flickity( this.orderCarouselEl, {
       // options
       cellAlign: 'left',

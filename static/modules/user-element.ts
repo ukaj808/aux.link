@@ -1,4 +1,5 @@
 import { RestClient } from "./rest-client";
+import { SvgFactory } from "./svg";
 
 
 export class UserElement {
@@ -6,12 +7,14 @@ export class UserElement {
   private userId: string;
   private isCreator: boolean;
   private restClient: RestClient;
+  private svgFactory: SvgFactory;
   private serverGenerated: boolean;
 
-  constructor(restClient: RestClient, userId: string, isCreator: boolean, serverGenerated: boolean) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory, userId: string, isCreator: boolean, serverGenerated: boolean) {
     this.userId = userId;
     this.isCreator = isCreator;
     this.restClient = restClient;
+    this.svgFactory = svgFactory;
     this.serverGenerated = serverGenerated;
 
     if (serverGenerated) {
@@ -41,6 +44,8 @@ export class UserElement {
     const overlayEl = document.createElement('div');
     overlayEl.classList.add('overlay', 'full-flex', 'centered');
 
+    overlayEl.appendChild(this.svgFactory.generatePlayIcon());
+
     overlayEl.onclick = () => {
       this.restClient.startMusic().then(() => {
         userCellEl.classList.toggle('overlay');
@@ -56,17 +61,19 @@ export class UserElement {
 export class UserElementFactory {
   private userElements: UserElement[];
   private restClient: RestClient;
+  private svgFactory: SvgFactory;
 
-  constructor(restClient: RestClient, userCarouselEl: Element) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory, userCarouselEl: Element) {
     this.userElements = [];
+    this.svgFactory = svgFactory;
     this.restClient = restClient;
     Array.from(userCarouselEl.children).forEach((user) => {
-      this.userElements.push(new UserElement(restClient, user.id, false, true));
+      this.userElements.push(new UserElement(restClient, svgFactory, user.id, false, true));
     });
   }
 
   public createNewUser(userId: string, username: string, isCreator: boolean): UserElement {
-    const newUser = new UserElement(this.restClient, userId, isCreator, false);
+    const newUser = new UserElement(this.restClient, this.svgFactory, userId, isCreator, false);
     this.userElements.push(newUser);
     return newUser;
   }
