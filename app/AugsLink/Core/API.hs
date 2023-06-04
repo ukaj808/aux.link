@@ -74,6 +74,7 @@ data RoomUser = RoomUser
    {
      userId         :: UserId
    , userName       :: UserName
+   , isCreator      :: Bool
    }
 
 data Song = Song
@@ -154,6 +155,7 @@ instance ToJSON ServerMessage where
        "type"        .= ("ServerWelcomeMessage" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
+    ,  "isCreator"   .= isCreator u
     ]
   toJSON (ServerUploadSong sId) = Aeson.object
     [

@@ -77,7 +77,7 @@ enterRoomImpl stateVar pend = do
   uId  <-
     modifyMVar stateVar $ \st -> do
       let uId  =      userCount st
-      u        <-     newUser (roomId st) uId
+      u        <-     newUser (roomId st) uId (uId == 0)
       rUser    <-     getRoomUser u
       let st'  =      addUserToRoom st (userId rUser) (USession conn u)
       let c = case creator st of 

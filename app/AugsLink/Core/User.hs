@@ -27,10 +27,10 @@ data UserState = UserState
   , userQueue       :: SongQueue
   }
 
-newUser :: RoomId -> UserId -> IO (User IO)
-newUser rId uId = do
+newUser :: RoomId -> UserId -> Bool -> IO (User IO)
+newUser rId uId isCreator = do
   let uName = pack $ show uId
-  stateVar <- newMVar $ UserState (RoomUser uId uName) Heap.empty
+  stateVar <- newMVar $ UserState (RoomUser uId uName isCreator) Heap.empty
   return $ User {
     enqueueSong = enqueueSongImpl stateVar
   , getRoomUser = userData <$> readMVar stateVar
