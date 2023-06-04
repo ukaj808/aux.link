@@ -15,6 +15,7 @@ type RoomMessageType = "ServerWelcomeMessage" | "UserEnterEvent" | "UserLeftEven
 type ServerWelcomeMessage = {
     userId: string,
     userName: string,
+    isCreator: boolean,
 }
 
 type UserEnterEvent = {
@@ -29,3 +30,7 @@ type UserLeftEvent = {
 type RoomMessage = (ServerWelcomeMessage | UserEnterEvent | UserLeftEvent) & { type: RoomMessageType };
 
 type AudioChunk = ArrayBuffer;
+
+type EnqueueSongRequest = {
+    priority: number,
+}

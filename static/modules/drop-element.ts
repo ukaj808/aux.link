@@ -1,7 +1,7 @@
 export class DropElement {
 
     el: HTMLElement;
-    queue: any[];
+    queue: File[];
 
     constructor() {
         const optEl = document.getElementById("drop-zone");
@@ -20,7 +20,8 @@ export class DropElement {
                 // If dropped items aren't files, reject them
                 if (item.kind === "file") {
                     const file = item.getAsFile();
-
+                    if (file == null) throw new Error('No file found');
+                    this.queue.push(file);
                 }
             });
         } else {

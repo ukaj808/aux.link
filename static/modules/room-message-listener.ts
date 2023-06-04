@@ -1,15 +1,18 @@
 import { OrderElement } from "./order-element";
+import { RestClient } from "./rest-client";
 
 export class RoomMessageListener {
 
   private roomId: string;
   private ws: WebSocket | null;
   private orderEl: OrderElement;
+  private restClient: RestClient;
 
-  constructor(roomId: string, orderEl: OrderElement) {
+  constructor(roomId: string, orderEl: OrderElement, restClient: RestClient) {
     this.roomId = roomId;
     this.orderEl = orderEl;
     this.ws = null;
+    this.restClient = restClient;
   }
 
   public start() {
@@ -22,7 +25,8 @@ export class RoomMessageListener {
     switch (data.type) {
         case "ServerWelcomeMessage":
             const welcomeMessage = data as ServerWelcomeMessage;
-            this.orderEl.addNewUserToOrderCarousel(data.userId, welcomeMessage.userName);
+            this.restClient.setUserId(welcomeMessage.userId);
+            this.orderEl.addNewUserToOrderCarousel(data.userId, welcomeMessage.userName, welcomeMessage.isCreator);
             break;
         case "UserEnterEvent":
             const userEnterEvent = data as UserEnterEvent;

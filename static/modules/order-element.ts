@@ -1,14 +1,18 @@
-import Flickity from 'flickity';
+import Flickity from "flickity";
+import { UserElement, UserElementFactory } from "./user-element";
+import { RestClient } from "./rest-client";
 
 export class OrderElement {
 
   private orderCarouselEl: Element;
+  private userElementFactory: UserElementFactory;
   private flkty: Flickity;
 
-  constructor() {
+  constructor(restClient: RestClient) {
     const optOrderCarouselEl = document.querySelector(".user-carousel");
     if (!optOrderCarouselEl) throw new Error('No order carousel element found');
-    this.orderCarouselEl = optOrderCarouselEl;;
+    this.orderCarouselEl = optOrderCarouselEl;
+    this.userElementFactory = new UserElementFactory(restClient, this.orderCarouselEl);
     this.flkty = new Flickity( this.orderCarouselEl, {
       // options
       cellAlign: 'left',
@@ -18,30 +22,20 @@ export class OrderElement {
     });
   }
 
-  addThisUserToOrderCarousel(userId: string, userName: string) {
-    this.addNewUserToOrderCarousel(userId, userName);
+  public addThisUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
+    this.addNewUserToOrderCarousel(userId, userName, isCreator);
   }
   
-  addNewUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
-      const userCellEl = document.createElement('div');
-      userCellEl.id = userId;
-      userCellEl.className = 'user-carousel-cell';
-      if (isCreator) this.addCreatorOverlay(userCellEl);
-      this.flkty.append(userCellEl);
+  public addNewUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
+    const userEl = this.userElementFactory.createNewUser(userId, userName, isCreator);
+    this.flkty.append(userEl.getEl());
   }
 
-  removeUserFromOrderCarousel(userId: string) {
+  public removeUserFromOrderCarousel(userId: string) {
     const optUserCellEl = document.getElementById(userId);
     if (!optUserCellEl) throw new Error('No user cell element found');
+    this.userElementFactory.removeUser(userId);
     this.flkty.remove(optUserCellEl);
-  }
-
-  private addCreatorOverlay(userCell: HTMLDivElement) {
-
-  }
-
-  private removeCreatorOverlay(userCell: HTMLDivElement) {
-
   }
 
 }

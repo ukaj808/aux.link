@@ -51,8 +51,7 @@ renderUser user =
   let uid = toValue $ userId user
       uname = toMarkup $ userName user
   in
-  H.div ! A.id uid ! A.class_ "user-carousel-cell" $ do
-    H.span ! A.class_ "user-order-list__username-lbl" $ uname
+  H.div ! A.id uid ! A.class_ "user-carousel-cell" $ ""
 
 
 renderOrderSection :: [RoomUser] -> H.Html 

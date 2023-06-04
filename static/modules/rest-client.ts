@@ -1,51 +1,55 @@
-import { AuxAudioPlayer } from "./aux-audio-player";
-
 export class RestClient {
 
   private roomId: string;
-  private userId: string;
+  private basePath?: string;
+  private userId?: string;
 
-  private basePath: string;
-
-  constructor(roomId: string, userId: string) {
+  constructor(roomId: string) {
     this.roomId = roomId;
+  }
+
+  public setUserId(userId: string) {
     this.userId = userId;
-    this.basePath = `/${roomId}/${userId}`;
+    this.basePath = `/api/rooms/${this.roomId}/users/${this.userId}`;
   }
 
   public startMusic(): Promise<Response> {
+    if (!this.basePath) throw new Error('No base path set');
     return fetch(this.basePath + '/music/start', {
         method: 'PUT'
     });
   }
 
-  public uploadSong(): Promise<Response> {
-    return fetch(this.basePath + '/music/start', {
-        method: 'PUT'
-    });
-  }
-
-  public enqueueSong(): Promise<Response> {
-
-    return fetch(this.basePath + '/music/start', {
-            method: 'PUT'
+  public uploadSong(songId: string, file: File): Promise<Response> {
+    if (!this.basePath) throw new Error('No base path set');
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetch(this.basePath + `/songs/${songId}/upload`, {
+            method: 'POST',
+            body: formData
         });
   }
 
-  public removeSong(): Promise<Response> {
-
+  public enqueueSong(req: EnqueueSongRequest): Promise<Response> {
+    if (!this.basePath) throw new Error('No base path set');
     return fetch(this.basePath + '/music/start', {
-            method: 'PUT'
+            method: 'PUT',
+            body: JSON.stringify(req)
+        });
+  }
+
+  public removeSong(songId: string): Promise<Response> {
+    if (!this.basePath) throw new Error('No base path set');
+    return fetch(this.basePath + `/songs/${songId}`, {
+            method: 'DELETE'
         });
   }
 
   
-  public reprioritizeSong(): Promise<void> {
-
+  public reprioritizeSong(songId: string, priority: number): Promise<Response> {
+    if (!this.basePath) throw new Error('No base path set');
+    return fetch(this.basePath + `/songs/${songId}?priority=${priority}`, {
+            method: 'PUT'
+        });
   }
-
-  private toggleDisconnectOverlay() {
-    this.el.classList.toggle("overlay");
-  }
-
 }
