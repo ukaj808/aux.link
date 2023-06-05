@@ -70,7 +70,7 @@ renderDropSection =
     H.label ! A.id "drop-zone" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column draggable" $ do
       musicIconSvg
       H.h4 "Upload an audio file or paste a link to get your queue ready in time for your turn!"
-      H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none"
+      H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
 
 renderRoomPage :: [RoomUser] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do
