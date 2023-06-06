@@ -89,7 +89,6 @@ export class DropElement {
         if (this.sortableList == null) throw new Error('No sortable list found');
         const songEl = document.createElement('li');
         songEl.classList.add('song-list-item');
-        songEl.classList.add('song-list-item');
         songEl.innerText = file.name;
         this.sortableList.el.appendChild(songEl);
     }
