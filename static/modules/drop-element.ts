@@ -1,13 +1,16 @@
 import Sortable from "sortablejs";
 
 export class DropElement {
-
+    el: HTMLDivElement;
     dropZoneEl: HTMLLabelElement;
     dropZoneInputEl: HTMLInputElement;
     sortableList: Sortable | undefined;
     queue: File[];
 
     constructor() {
+        const el = document.getElementById("drop");
+        if (!el) throw new Error('No drop element found');
+        this.el = el as HTMLDivElement;
 
         const dropZoneEl = document.getElementById("drop-zone");
         if (!dropZoneEl) throw new Error('No drop element found');
@@ -61,8 +64,14 @@ export class DropElement {
         this.queue.push(file);
     }
 
+    private shiftToListContain() {
+        this.dropZoneEl.classList.add('list-contain');
+    }
+
     private initSortableList(file: File) {
-        const songQueueEl = document.createElement('ul');
+        this.shiftToListContain();
+        const songQueueEl = document.createElement('ol');
+        songQueueEl.classList.add('song-queue-list');
         this.sortableList = new Sortable(songQueueEl, {});
         this.clearDropZoneChildrenEls();
         this.dropZoneEl.appendChild(songQueueEl);
@@ -79,6 +88,7 @@ export class DropElement {
     private addSongToSortableList(file: File) {
         if (this.sortableList == null) throw new Error('No sortable list found');
         const songEl = document.createElement('li');
+        songEl.classList.add('song-list-item');
         songEl.innerText = file.name;
         this.sortableList.el.appendChild(songEl);
     }

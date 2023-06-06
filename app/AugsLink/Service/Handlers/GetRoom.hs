@@ -54,22 +54,21 @@ renderUser user =
 
 renderOrderSection :: [RoomUser] -> H.Html 
 renderOrderSection users = 
-  H.section ! A.id "order" ! A.class_ "default-margin" $ do
+  H.section ! A.id "order" ! A.class_ "default-margin flex-cell-sm" $ do
     H.div ! A.class_"user-carousel" $ do
       forM_ users renderUser 
 
 renderCurrentlyPlayingSection :: H.Html
 renderCurrentlyPlayingSection = 
-  H.section ! A.id "currently-playing"   ! A.class_ "full-flex centered default-margin secondary-theme overlay-sect overlay" $ do
+  H.section ! A.id "currently-playing"   ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
     H.div ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg
 
 renderDropSection :: H.Html
 renderDropSection = 
-  H.section ! A.id "drop"      ! A.class_ "full-flex centered default-margin secondary-theme"  $ do
-    H.label ! A.id "drop-zone" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column draggable" $ do
+  H.section ! A.id "drop"      ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme"  $ do
+    H.label ! A.id "drop-zone" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column" $ do
       musicIconSvg
-      H.h4 "Upload an audio file or paste a link to get your queue ready in time for your turn!"
       H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
 
 renderRoomPage :: [RoomUser] -> H.Html
