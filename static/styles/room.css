@@ -64,9 +64,9 @@ h4 {
 
 .list-contain {
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   justify-content: flex-start;
-  background-color: lightgray;
   padding: 20px;
 }
 
@@ -110,10 +110,14 @@ h4 {
   margin: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  counter-reset: item;
+
 }
 
 .song-list-item {
-  background-color: white;
+  background-color: var(--tertiary-bg-color);
+  color: var(--primary-fnt-color);
   padding: 10px;
   margin-bottom: 5px;
   display: flex;
@@ -124,9 +128,7 @@ h4 {
   content: counter(item);
   counter-increment: item;
   font-weight: bold;
-  background-color: lightblue;
   color: white;
-  border-radius: 50%;
   padding: 5px;
   margin-right: 10px;
 }
