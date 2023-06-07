@@ -1,6 +1,7 @@
 import Sortable from "sortablejs";
 import { RestClient } from "./rest-client";
 import { SongQueue } from "./song-queue";
+import { AuxAudioPlayer } from "./aux-audio-player";
 
 export class DropElement {
     el: HTMLDivElement;
@@ -9,8 +10,9 @@ export class DropElement {
     sortableList: Sortable | undefined;
     queue: SongQueue;
     restClient: RestClient;
+    auxAudioPlayer: AuxAudioPlayer;
 
-    constructor(restClient: RestClient) {
+    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -28,11 +30,27 @@ export class DropElement {
         this.dropZoneInputEl.addEventListener('change', this.onInputChange.bind(this));
         this.queue = new SongQueue();
         this.restClient = restClient;
+        this.auxAudioPlayer = auxAudioPlayer;
+        this.auxAudioPlayer.sucscribeToAudioEvents(this.onAudioEvent.bind(this));    
     }
     
-    public dequeueAndUploadSong(): File | undefined {
+    public async dequeueAndUploadSong() {
+        const song = this.queue.peekSong();
+        if (song == null) throw new Error('No song found');
+        await this.restClient.uploadSong(song);
         this.dequeueSong();
         return this.queue.dequeueSong();
+    }
+
+    private onAudioEvent(event: AudioEvent) {
+        if (event.type === 'SONG_STARTING') {
+            if (event.timeLeftInSeconds != 0) {
+                console.log(`Song starting in ${event.timeLeftInSeconds} seconds`);
+                return;
+            }
+            const song = this.dequeueAndUploadSong();
+
+        }   
     }
 
     private onDrop(e: DragEvent) {
@@ -74,7 +92,8 @@ export class DropElement {
     }
 
     private dequeueSong() {
-        //
+        // ui changes
+        return this.queue.dequeueSong();
     }
 
     private shiftToListContain() {

@@ -31,17 +31,12 @@ executable augslink-service
                       , AugsLink.Core.Wav 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
-                      , AugsLink.Service.Handlers.DeleteSong
                       , AugsLink.Service.Handlers.GetAudioWorker 
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.ListenWs 
                       , AugsLink.Service.Handlers.PostHome
-                      , AugsLink.Service.Handlers.PutEnqueueSong
-                      , AugsLink.Service.Handlers.PutMoveSong
-                      , AugsLink.Service.Handlers.PutScrapeSong
                       , AugsLink.Service.Handlers.PutStartMusic
-                      , AugsLink.Service.Handlers.PutStopListen
                       , AugsLink.Service.Handlers.PutUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 

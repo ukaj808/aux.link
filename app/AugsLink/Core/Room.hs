@@ -22,8 +22,8 @@ import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
 
-type instance Connection IO = WS.PendingConnection
-type instance SongFile IO       = MultipartData Mem
+type instance Connection IO             = WS.PendingConnection
+type instance SongFile IO     = MultipartData AudioFile
 
 data RoomState = RoomState
   {
@@ -34,6 +34,7 @@ data RoomState = RoomState
   , creator                      :: Maybe UserId
   , nextPos                      :: Int
   , userCount                    :: Int
+  , turn                         :: Int
   }
 
 
@@ -53,11 +54,12 @@ initialRoomState rId rsm music = RoomState
   , creator        = Nothing
   , nextPos     = 0
   , userCount      = 0
+  , turn          = 0
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
 newRoom rId registryManage = do
-  music    <- newMusic
+  music    <- newMusic rId
   stateVar <- newMVar $ initialRoomState rId registryManage music
   return $ Room {
       enterRoom         = enterRoomImpl        stateVar
@@ -66,10 +68,27 @@ newRoom rId registryManage = do
     , viewRoom          = viewRoomImpl         stateVar
     , getMusic          = getMusicImpl         stateVar
     , nextUp            =  nextUpImpl       stateVar
-    , getCreatorId        = creator <$> readMVar stateVar
+    , getCreatorId      = creator <$> readMVar stateVar
+    , startMusic        = startMusicImpl       stateVar
+    , uploadSong        = uploadSongImpl       stateVar
     }
 
 -- Room API Impls
+
+startMusicImpl :: MVar RoomState -> UserId -> IO ()
+startMusicImpl stateVar uId = do
+  st <- readMVar stateVar
+  case creator st of
+    Just cId | cId == uId -> start (music st) (roomId st)
+    _                     -> error "Only the creator can start the music" 
+--Only allows uploads when its your turn
+uploadSongImpl :: MVar RoomState -> UserId -> SongFile IO -> IO ()
+uploadSongImpl stateVar uId song = do
+  st <- readMVar stateVar
+  if uId == turn st then do
+    putSongInPlayer (music st) (roomId st) song 
+  else
+    error "Not your turn"
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
@@ -165,9 +184,9 @@ messageToUser rmSt uid msg = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users}

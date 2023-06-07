@@ -8,7 +8,12 @@ type WsWorkerOpts = {
 
 type WsWorkerMessage = {
     type: "WS_WORKER_READY";
-}
+} | SongStartingEvent;
+
+type SongStartingEvent = {
+    type: "SONG_STARTING",
+    timeLeftInSeconds: number,
+};
 
 type RoomMessageType = "ServerWelcomeMessage" | "UploadSongMessage" | "UserEnterEvent" | "UserLeftEvent";
 
@@ -36,3 +41,5 @@ type AudioChunk = ArrayBuffer;
 type EnqueueSongRequest = {
     priority: number,
 }
+
+type AudioEvent = SongStartingEvent;

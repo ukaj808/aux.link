@@ -1,3 +1,18 @@
+class AudioEventBus {
+    private subscriptions: ((event: AudioEvent) => void)[];
+    constructor() {
+        this.subscriptions = [];
+    }
+    subscribe(subscription: (event: AudioEvent) => void) {
+        this.subscriptions.push(subscription);
+    }
+    publish(event: AudioEvent) {
+        this.subscriptions.forEach((subscription) => {
+            subscription(event);
+        });
+    }
+}
+
 export class AuxAudioPlayer {
   private roomId: string;
   private userId: string | null;
@@ -6,6 +21,7 @@ export class AuxAudioPlayer {
   private audioWorklet: AudioWorkletNode | null;
   private ringBuffer: SharedArrayBuffer;
   private state: SharedArrayBuffer;
+  private audioEventBus: AudioEventBus;
 
 
   constructor(roomId: string) {
@@ -25,6 +41,7 @@ export class AuxAudioPlayer {
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.wsWorker.onmessage = this.onPostMessage;
     this.audioWorklet = null;
+    this.audioEventBus = new AudioEventBus();
   }
 
   public async startListening(userId: string) {
@@ -58,6 +75,10 @@ export class AuxAudioPlayer {
     this.wsWorker.terminate();
   }
 
+  public sucscribeToAudioEvents(callback: (event: AudioEvent) => void) {
+    this.audioEventBus.subscribe(callback);
+  }
+
   private onPostMessage = async (messageEvent: MessageEvent<WsWorkerMessage>) => {
       if (messageEvent.data.type === 'WS_WORKER_READY') {
         console.info("Ws worker intialized...");
@@ -65,6 +86,8 @@ export class AuxAudioPlayer {
         this.audioWorklet?.connect(this.audioContext.destination);
 
         this.audioContext.resume();
+      } else if (messageEvent.data.type === 'SONG_STARTING') {
+        this.audioEventBus.publish({ type: 'SONG_STARTING', timeLeftInSeconds: messageEvent.data.timeLeftInSeconds });
       }
     }
 

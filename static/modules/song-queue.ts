@@ -13,6 +13,10 @@ export class SongQueue {
         return this.queue.shift();
     }
 
+    public peekSong(): File | undefined {
+        return this.queue[0];
+    }
+
     public reindexSong(index: number, newIndex: number) {
         const song = this.queue[index];
         this.queue.splice(index, 1);

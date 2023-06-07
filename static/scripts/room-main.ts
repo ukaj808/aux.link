@@ -16,10 +16,11 @@ const restClient: RestClient = new RestClient(roomId);
 const orderElement: OrderElement = new OrderElement(restClient, svgFactory);
 const currentlyPlayingElement: CurrentlyPlayingElement 
     = new CurrentlyPlayingElement(auxAudioPlayer);
-const dropElement: DropElement = new DropElement();
+const dropElement: DropElement = new DropElement(restClient, auxAudioPlayer);
 const roomMessageListener: RoomMessageListener = new RoomMessageListener(
     roomId,
     orderElement,
+    dropElement,
     restClient
 );
 roomMessageListener.start();

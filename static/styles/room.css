@@ -67,7 +67,6 @@ h4 {
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 20px;
 }
 
 .overlay-sect {
@@ -139,8 +138,8 @@ h4 {
 }
 
 .user-carousel-cell {
-  width: 150px; /* half-width */
-  height: 150px;
+  width: 200px; /* half-width */
+  height: 200px;
   margin-right: 10px;
   background: var(--tertiary-bg-color);
   border-radius: 5px;

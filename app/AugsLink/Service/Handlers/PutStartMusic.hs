@@ -17,7 +17,6 @@ startHandler rr rId uId = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-  m <- getMusic room
-  start m room uId
+  startMusic room uId
     
   return "start"

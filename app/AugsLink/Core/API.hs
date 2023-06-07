@@ -7,6 +7,7 @@ import Data.Text
 import GHC.Generics
 
 import qualified Data.Aeson as Aeson
+import Servant.Multipart (FromMultipart, Tmp, fromMultipart, lookupInput, FileData (fdPayload), lookupFile)
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -38,10 +39,12 @@ data Room m = Room
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  viewRoom              ::                                           m [RoomUser]
-  ,  getUser               ::   UserId                              ->  m (Maybe (User m))
+  ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (Music m)
   ,  nextUp                ::                                           m (User m)
   ,  getCreatorId          ::                                           m (Maybe UserId)
+  ,  startMusic            ::  UserId                                -> m ()
+  ,  uploadSong            ::  UserId -> SongFile m                  -> m () 
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -53,21 +56,13 @@ data Room m = Room
  for what a user can do in a room. You can modify your song queue, you expose the next
  song in your queue for consumption by the room song player, you can vote on skipping a song.
  -}
-data User m = User
-  {
-    enqueueSong       :: Priority ->               m SongId
-  , uploadSong        :: SongId   -> SongFile m -> m ()
-  , getRoomUser       ::                           m RoomUser
-  , removeSong        :: SongId                 -> m ()
-  , moveSong          :: SongId   -> Priority   -> m ()
-  , dequeueSong       ::                           m (Either String (Maybe SongId)) -- Either failed to upload or user hasnt queued anything...
-  }
+newtype User m = User {getRoomUser :: m RoomUser}
 
 data Music m = Music
   {
-    start         :: Room m -> UserId       -> m ()
-  , listen        :: UserId -> Connection m -> m ()
-  , stopListening :: UserId                 -> m ()
+    start              :: RoomId ->                 m ()
+  , listen             :: UserId -> Connection m -> m ()
+  , putSongInPlayer    :: RoomId -> SongFile m  -> m ()
   }
 
 data RoomUser = RoomUser
@@ -89,6 +84,12 @@ data SongInfo = SongInfo
   ,  songArtist :: Text
   ,  songLength :: Int
   } deriving (Generic, FromJSON, Show)
+
+data AudioFile = AudioFile
+  {
+     fileName        :: Text
+  ,  tmpPath         :: FilePath
+  } deriving (Show)
 
 -- Event published from room to users but also published from the users browser solely to the Room
 data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
@@ -116,6 +117,11 @@ type Vote     = Bool
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 type family RawMusicConverterExec (m :: Type -> Type) :: Type
+
+instance FromMultipart Tmp AudioFile where
+  fromMultipart multipartData =
+    AudioFile <$> lookupInput "fileName" multipartData
+              <*> fmap fdPayload (lookupFile "file" multipartData)
 
 instance Eq RoomUser where
   u1 == u2 = userId u1 == userId u2

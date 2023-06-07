@@ -11,18 +11,14 @@ import Servant.Multipart
 
 import AugsLink.Core.API
 
-type instance SongFile IO = MultipartData Mem
+type instance SongFile IO = MultipartData Tmp
 
-uploadHandler :: Registry IO -> RoomId -> UserId ->SongId -> MultipartData Mem -> Handler Text
-uploadHandler rr rId uId sId file = liftIO $ do
+uploadHandler :: Registry IO -> RoomId -> UserId -> MultipartData Tmp -> Handler Text
+uploadHandler rr rId uId file = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-  u <- getUser room uId
-  let user = case u of
-               Just us -> us
-               Nothing -> error "User does not exist"
-  uploadSong user sId file
+  uploadSong room uId file
   return "success"
