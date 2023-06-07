@@ -55,7 +55,7 @@ putSongInPlayerImpl stateVar rId sFile = do
 
 storeSongInDisk :: RoomId -> SongFile IO -> IO ()
 storeSongInDisk rId sFile = do
-  let sourcePath = tmpPath sFile
+  let sourcePath = tmpPath (files sFile)
       targetPath = "./" ++ T.unpack rId ++ "/" ++ T.unpack "songname"
   renameFile sourcePath targetPath
 
