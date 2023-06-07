@@ -112,7 +112,8 @@ h4 {
   flex-direction: column;
   width: 100%;
   counter-reset: item;
-
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 .song-list-item {

@@ -1,16 +1,20 @@
+import { DropElement } from "./drop-element";
 import { OrderElement } from "./order-element";
 import { RestClient } from "./rest-client";
+import { SongQueue } from "./song-queue";
 
 export class RoomMessageListener {
 
   private roomId: string;
   private ws: WebSocket | null;
   private orderEl: OrderElement;
+  private dropEl: DropElement;
   private restClient: RestClient;
 
-  constructor(roomId: string, orderEl: OrderElement, restClient: RestClient) {
+  constructor(roomId: string, orderEl: OrderElement, dropEl: DropElement, restClient: RestClient) {
     this.roomId = roomId;
     this.orderEl = orderEl;
+    this.dropEl = dropEl;
     this.ws = null;
     this.restClient = restClient;
   }
@@ -28,6 +32,9 @@ export class RoomMessageListener {
             this.restClient.setUserId(welcomeMessage.userId);
             this.orderEl.addNewUserToOrderCarousel(data.userId, welcomeMessage.userName, welcomeMessage.isCreator);
             break;
+        case "UploadSongMessage":
+            const uploadSongMessage = data as UploadSongMessage;
+            this.dropEl.dequeueAndUploadSong();
         case "UserEnterEvent":
             const userEnterEvent = data as UserEnterEvent;
             this.orderEl.addNewUserToOrderCarousel(data.userId, userEnterEvent.userName);

@@ -10,7 +10,7 @@ type WsWorkerMessage = {
     type: "WS_WORKER_READY";
 }
 
-type RoomMessageType = "ServerWelcomeMessage" | "UserEnterEvent" | "UserLeftEvent";
+type RoomMessageType = "ServerWelcomeMessage" | "UploadSongMessage" | "UserEnterEvent" | "UserLeftEvent";
 
 type ServerWelcomeMessage = {
     userId: string,
@@ -22,6 +22,8 @@ type UserEnterEvent = {
     userId: string,
     userName: string,
 }
+
+type UploadSongMessage = {}
 
 type UserLeftEvent = {
     userId: string

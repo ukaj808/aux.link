@@ -5,6 +5,7 @@ import { DropElement } from "../modules/drop-element";
 import { CurrentlyPlayingElement } from "../modules/currently-playing-element";
 import { RestClient } from "../modules/rest-client";
 import { SvgFactory } from "../modules/svg";
+import { SongQueue } from "../modules/song-queue";
 
 let roomId: string    = location.pathname.substr(1);
 let listening: boolean = false;

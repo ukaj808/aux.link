@@ -1,13 +1,16 @@
 import Sortable from "sortablejs";
+import { RestClient } from "./rest-client";
+import { SongQueue } from "./song-queue";
 
 export class DropElement {
     el: HTMLDivElement;
     dropZoneEl: HTMLLabelElement;
     dropZoneInputEl: HTMLInputElement;
     sortableList: Sortable | undefined;
-    queue: File[];
+    queue: SongQueue;
+    restClient: RestClient;
 
-    constructor() {
+    constructor(restClient: RestClient) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -23,7 +26,13 @@ export class DropElement {
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));
         this.dropZoneInputEl.addEventListener('change', this.onInputChange.bind(this));
-        this.queue = [];
+        this.queue = new SongQueue();
+        this.restClient = restClient;
+    }
+    
+    public dequeueAndUploadSong(): File | undefined {
+        this.dequeueSong();
+        return this.queue.dequeueSong();
     }
 
     private onDrop(e: DragEvent) {
@@ -61,7 +70,11 @@ export class DropElement {
         } else {
             this.addSongToSortableList(file);
         }
-        this.queue.push(file);
+        this.queue.addSongToQueue(file);
+    }
+
+    private dequeueSong() {
+        //
     }
 
     private shiftToListContain() {
