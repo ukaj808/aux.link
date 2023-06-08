@@ -118,11 +118,6 @@ type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 type family RawMusicConverterExec (m :: Type -> Type) :: Type
 
-instance FromMultipart Tmp AudioFile where
-  fromMultipart multipartData =
-    AudioFile <$> lookupInput "fileName" multipartData
-              <*> fmap fdPayload (lookupFile "file" multipartData)
-
 instance Eq RoomUser where
   u1 == u2 = userId u1 == userId u2
 

@@ -20,11 +20,11 @@ export class RestClient {
     });
   }
 
-  public uploadSong(songId: string, file: File): Promise<Response> {
+  public uploadSong(file: File): Promise<Response> {
     if (!this.basePath) throw new Error('No base path set');
     const formData = new FormData();
     formData.append('file', file);
-    return fetch(this.basePath + `/songs/${songId}/upload`, {
+    return fetch(this.basePath + `/music/upload`, {
             method: 'POST',
             body: formData
         });

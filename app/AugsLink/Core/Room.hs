@@ -23,7 +23,7 @@ import AugsLink.Core.Shared
 import AugsLink.Core.User
 
 type instance Connection IO             = WS.PendingConnection
-type instance SongFile IO     = MultipartData AudioFile
+type instance SongFile IO     = MultipartData Tmp
 
 data RoomState = RoomState
   {

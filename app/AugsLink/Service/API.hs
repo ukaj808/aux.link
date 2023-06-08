@@ -75,7 +75,7 @@ type API =
 
    :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
    :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
-   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp AudioFile :> Put '[PlainText] Text
+   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
 
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (

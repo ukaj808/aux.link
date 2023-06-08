@@ -51,6 +51,7 @@ executable augslink-service
                       , bytestring
                       , containers
                       , directory
+                      , filepath
                       , hashable
                       , heaps
                       , http-media

@@ -19,7 +19,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Servant.Multipart
 
 type instance Connection IO = WS.PendingConnection
-type instance SongFile IO       = MultipartData AudioFile
+type instance SongFile IO       = MultipartData Tmp
 type SongQueue = Heap.Heap (Heap.Entry Int SongId)
 data UserState = UserState
   {

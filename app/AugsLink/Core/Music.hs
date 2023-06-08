@@ -21,25 +21,28 @@ import Servant.Multipart
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as LBS
 import System.Directory
+import System.FilePath
+import Commons.State (modify)
 
 type instance Connection IO = WS.PendingConnection
-type instance SongFile IO   = MultipartData AudioFile
+type instance SongFile IO   = MultipartData Tmp
 
 newtype UserListenSession = ULSession
   {
     conn :: WS.Connection
   }
 
+
 data MusicState = MusicState
   {
-    songInPlayer     :: Bool
+    songInPlayer     :: Maybe T.Text
   , listening        :: Map.HashMap UserId UserListenSession
   , currentlyPlaying :: Maybe String
   }
 
 newMusic :: RoomId -> IO (Music IO)
 newMusic rId = do
-  stateVar <- newMVar $ MusicState False Map.empty Nothing
+  stateVar <- newMVar $ MusicState Nothing Map.empty Nothing
   createDirectoryIfMissing True ("./rooms/" ++ T.unpack rId)
   return $ Music {
       listen             = listenImpl        stateVar
@@ -49,14 +52,20 @@ newMusic rId = do
 
 putSongInPlayerImpl :: MVar MusicState -> RoomId -> SongFile IO -> IO ()
 putSongInPlayerImpl stateVar rId sFile = do
-  storeSongInDisk rId sFile
-  modifyMVar_ stateVar $ \st -> do
-    return st{songInPlayer=True}
+  let parse = lookupFile "song" sFile
+  either (error "Could not find song in file upload") 
+    (\s -> do 
+      storeSongInDisk rId s
+      let fileName = fdFileName s
+      modifyMVar_ stateVar $ \st -> do
+        return st{songInPlayer=Just fileName}
+      ) parse
 
-storeSongInDisk :: RoomId -> SongFile IO -> IO ()
+storeSongInDisk :: RoomId -> FileData Tmp -> IO ()
 storeSongInDisk rId sFile = do
-  let sourcePath = tmpPath (files sFile)
-      targetPath = "./" ++ T.unpack rId ++ "/" ++ T.unpack "songname"
+  let fileName = fdFileName sFile
+      sourcePath = fdPayload sFile
+      targetPath = "./" ++ T.unpack rId ++ "/" ++ T.unpack fileName
   renameFile sourcePath targetPath
 
 listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
@@ -78,39 +87,45 @@ startImpl stateVar rId = do
     nextSong  :: IO ()
     nextSong  = do
       countdownToSongStart stateVar
-      _ <- pollSongInPlayer stateVar 5
-      wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack rId) "songname" "mp3"
-      handle    <- openFile wavFile ReadMode
-      (fmtSubChunk, audioByteLength) <- parseWavFile handle
-      print fmtSubChunk
-      let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
-      let chunkSize = byteRateMs * 200
-      modifyMVar_ stateVar $ \st -> do
-        return st{currentlyPlaying=Just "songName etc..."}
-      liveStream (audioByteLength, chunkSize) handle
-      nextSong
-      where
+      polled <- pollSongInPlayer stateVar 5
+      case polled of
+        Nothing -> do
+          putStrLn "No song in player"
+          nextSong
+        Just file -> do
+          let fileName = takeBaseName $ T.unpack file
+          let fileExt = takeExtension $ T.unpack file
+          wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack rId) fileName fileExt
+          handle    <- openFile wavFile ReadMode
+          (fmtSubChunk, audioByteLength) <- parseWavFile handle
+          print fmtSubChunk
+          let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
+          let chunkSize = byteRateMs * 200
+          modifyMVar_ stateVar $ \st -> do
+            return st{currentlyPlaying=Just "songName etc..."}
+          liveStream (audioByteLength, chunkSize) handle
+          nextSong
+          where
 
-        liveStream :: (Integer, Int) -> Handle -> IO ()
-        liveStream (bytesLeft, chunkSize) handle = do
-          when (bytesLeft > 0) $ do
-            st <- readMVar stateVar
-            forM_ (listening st) $ \session -> do
-              chunk <- B.hGet handle chunkSize
-              WS.sendBinaryData (conn session) chunk
-            threadDelay 200000
-            liveStream (bytesLeft - toInteger chunkSize, chunkSize) handle
+            liveStream :: (Integer, Int) -> Handle -> IO ()
+            liveStream (bytesLeft, chunkSize) handle = do
+              when (bytesLeft > 0) $ do
+                st <- readMVar stateVar
+                forM_ (listening st) $ \session -> do
+                  chunk <- B.hGet handle chunkSize
+                  WS.sendBinaryData (conn session) chunk
+                threadDelay 200000
+                liveStream (bytesLeft - toInteger chunkSize, chunkSize) handle
 
-pollSongInPlayer :: MVar MusicState -> Int -> IO Bool
-pollSongInPlayer _ 0 = return False
+pollSongInPlayer :: MVar MusicState -> Int -> IO (Maybe T.Text)
+pollSongInPlayer _ 0 = return Nothing
 pollSongInPlayer stateVar retryAttempts = do
   st <- readMVar stateVar
-  if songInPlayer st
-  then do
-    return True
-  else do
-    threadDelay 1000000
-    pollSongInPlayer stateVar (retryAttempts - 1)
+  case songInPlayer st of
+    Nothing -> do
+      threadDelay 1000000            
+      pollSongInPlayer stateVar (retryAttempts - 1)
+    Just fileName  -> return $ Just fileName
 
 
 countdownToSongStart :: MVar MusicState -> IO ()
