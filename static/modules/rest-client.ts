@@ -25,7 +25,7 @@ export class RestClient {
     const formData = new FormData();
     formData.append('file', file);
     return fetch(this.basePath + `/music/upload`, {
-            method: 'POST',
+            method: 'PUT',
             body: formData
         });
   }

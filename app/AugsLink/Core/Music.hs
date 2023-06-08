@@ -52,7 +52,7 @@ newMusic rId = do
 
 putSongInPlayerImpl :: MVar MusicState -> RoomId -> SongFile IO -> IO ()
 putSongInPlayerImpl stateVar rId sFile = do
-  let parse = lookupFile "song" sFile
+  let parse = lookupFile "file" sFile
   either (error "Could not find song in file upload") 
     (\s -> do 
       storeSongInDisk rId s
@@ -66,7 +66,9 @@ storeSongInDisk rId sFile = do
   let fileName = fdFileName sFile
       sourcePath = fdPayload sFile
       targetPath = "./" ++ T.unpack rId ++ "/" ++ T.unpack fileName
-  renameFile sourcePath targetPath
+  putStrLn $ "Source path: " ++ show sourcePath
+  putStrLn $ "Target path: " ++ show targetPath
+  copyFile sourcePath targetPath
 
 listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
 listenImpl stateVar uId pend = do
