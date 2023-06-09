@@ -12,7 +12,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
       postMessage({ type: 'SONG_STARTING', timeLeftInSeconds: second });
       return;
   }
-  console.log(event);
 
   const data = new Float32Array(event.data);
 

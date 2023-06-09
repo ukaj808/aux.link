@@ -7,7 +7,7 @@ import Data.Text
 import GHC.Generics
 
 import qualified Data.Aeson as Aeson
-import Servant.Multipart (FromMultipart, Tmp, fromMultipart, lookupInput, FileData (fdPayload), lookupFile)
+import GHC.IO.Handle
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -40,11 +40,10 @@ data Room m = Room
   ,  leaveRoom             ::   UserId                               -> m ()
   ,  viewRoom              ::                                           m [RoomUser]
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
-  ,  getMusic              ::                                           m (Music m)
-  ,  nextUp                ::                                           m (User m)
+  ,  getMusic              ::                                           m (MusicStreamer m)
   ,  getCreatorId          ::                                           m (Maybe UserId)
   ,  startMusic            ::  UserId                                -> m ()
-  ,  uploadSong            ::  UserId -> SongFile m                  -> m () 
+  ,  uploadSong            ::  UserId -> SongFile m                  -> m ()
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -58,11 +57,10 @@ data Room m = Room
  -}
 newtype User m = User {getRoomUser :: m RoomUser}
 
-data Music m = Music
+data MusicStreamer m = Music
   {
-    start              :: RoomId ->                 m ()
-  , listen             :: UserId -> Connection m -> m ()
-  , putSongInPlayer    :: RoomId -> SongFile m  -> m ()
+    stream             :: (Integer, Int) -> Handle       -> IO ()
+  , listen             :: UserId         -> Connection m -> m  ()
   }
 
 data RoomUser = RoomUser
@@ -94,6 +92,7 @@ data AudioFile = AudioFile
 -- Event published from room to users but also published from the users browser solely to the Room
 data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
   |              UserLeftEvent  UserId
+  |              SongStartingEvent   Int
 
 type Priority = Int
 
@@ -106,7 +105,7 @@ newtype ServerCommand = UploadSong SongId
 
 -- Message from server to user
 data ServerMessage = ServerWelcomeMessage RoomUser
-  |                  ServerUploadSong SongId
+  |                  ServerUploadSong
 
 type RoomId   = Text
 type UserId   = Int
@@ -139,6 +138,11 @@ instance ToJSON RoomEvent where
     ,  "channel"     .= ("Room" :: Text)
     ,  "userId"      .= uid
     ]
+  toJSON (SongStartingEvent s) = Aeson.object
+    [
+       "type"        .= ("SongStartingEvent"  :: Text)
+    ,  "s"      .= s
+    ]
 
 instance ToJSON SongInfo where
   toJSON :: SongInfo -> Value
@@ -158,8 +162,7 @@ instance ToJSON ServerMessage where
     ,  "userName"    .= userName u
     ,  "isCreator"   .= isCreator u
     ]
-  toJSON (ServerUploadSong sId) = Aeson.object
+  toJSON ServerUploadSong = Aeson.object
     [
        "type"        .= ("ServerUploadSong" :: Text)
-    ,  "songId"      .= sId
     ]
