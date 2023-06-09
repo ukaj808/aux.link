@@ -19,10 +19,8 @@ import System.IO
 import Servant.Multipart
 
 import qualified Data.Text as T
-import qualified Data.ByteString.Lazy as LBS
 import System.Directory
 import System.FilePath
-import Commons.State (modify)
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO   = MultipartData Tmp
@@ -65,11 +63,9 @@ storeSongInDisk :: RoomId -> FileData Tmp -> IO ()
 storeSongInDisk rId sFile = do
   let fileName = fdFileName sFile
       sourcePath = fdPayload sFile
-      targetPath = "./" ++ T.unpack rId ++ "/" ++ T.unpack fileName
-  putStrLn $ "Source path: " ++ show sourcePath
-  putStrLn $ "Target path: " ++ show targetPath
+      targetPath = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName
   copyFile sourcePath targetPath
-
+      
 listenImpl :: MVar MusicState -> UserId -> Connection IO -> IO ()
 listenImpl stateVar uId pend = do
   conn  <-     WS.acceptRequest pend
@@ -97,6 +93,8 @@ startImpl stateVar rId = do
         Just file -> do
           let fileName = takeBaseName $ T.unpack file
           let fileExt = takeExtension $ T.unpack file
+          putStrLn $ "Playing song: " ++ fileName
+          putStrLn $ "File extension: " ++ fileExt
           wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack rId) fileName fileExt
           handle    <- openFile wavFile ReadMode
           (fmtSubChunk, audioByteLength) <- parseWavFile handle
