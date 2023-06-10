@@ -14,12 +14,23 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
       return;
   }
   */
+
+  console.log(event);
   const data = new Float32Array(event.data);
 
-  ringBuffer.set(data, offset);
+  if (data.length <= ringBuffer.length - offset) {
+    // If there's enough space for the data, simply copy it to the ring buffer
+    ringBuffer.set(data, offset);
+  } else {
+    // If the data exceeds the space left in the ring buffer, wrap it around
+    const remainingSpace = ringBuffer.length - offset;
+    ringBuffer.set(data.subarray(0, remainingSpace), offset);
+    ringBuffer.set(data.subarray(remainingSpace), 0);
+  }
 
-  offset = (offset + data.length) % ringBuffer.length;
-
+  offset = (offset + data.length) % ringBuffer.length;  
+  console.log(offset);
+  
   // Ring buffer is half full; allow worklet to start reading,
   if (!openState && offset >= ringBuffer.length / 2) {
     openState = true;
