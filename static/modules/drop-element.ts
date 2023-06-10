@@ -34,23 +34,15 @@ export class DropElement {
         this.auxAudioPlayer.sucscribeToAudioEvents(this.onAudioEvent.bind(this));    
     }
     
-    public async dequeueAndUploadSong() {
+    public async uploadAndDequeueSong() {
         const song = this.queue.peekSong();
         if (song == null) throw new Error('No song found');
         await this.restClient.uploadSong(song);
-        this.dequeueSong();
-        return this.queue.dequeueSong();
+        return this.dequeueSong();
     }
 
     private onAudioEvent(event: AudioEvent) {
-        if (event.type === 'SONG_STARTING') {
-            if (event.timeLeftInSeconds != 0) {
-                console.log(`Song starting in ${event.timeLeftInSeconds} seconds`);
-                return;
-            }
-            const song = this.dequeueAndUploadSong();
-
-        }   
+       // possibly needed??
     }
 
     private onDrop(e: DragEvent) {

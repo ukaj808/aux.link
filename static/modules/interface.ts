@@ -8,14 +8,13 @@ type WsWorkerOpts = {
 
 type WsWorkerMessage = {
     type: "WS_WORKER_READY";
-} | SongStartingEvent;
+}
+
+type RoomMessageType = "ServerWelcomeMessage" | "ServerUploadSongMessage" | "SongStartingEvent" | "UserEnterEvent" | "UserLeftEvent";
 
 type SongStartingEvent = {
-    type: "SONG_STARTING",
-    timeLeftInSeconds: number,
-};
-
-type RoomMessageType = "ServerWelcomeMessage" | "UploadSongMessage" | "UserEnterEvent" | "UserLeftEvent";
+    s: number,
+}
 
 type ServerWelcomeMessage = {
     userId: string,
@@ -28,13 +27,13 @@ type UserEnterEvent = {
     userName: string,
 }
 
-type UploadSongMessage = {}
+type ServerUploadSongMessage = {}
 
 type UserLeftEvent = {
     userId: string
 }
 
-type RoomMessage = (ServerWelcomeMessage | UserEnterEvent | UserLeftEvent) & { type: RoomMessageType };
+type RoomMessage = (ServerWelcomeMessage | ServerUploadSongMessage | UserEnterEvent | UserLeftEvent | SongStartingEvent) & { type: RoomMessageType };
 
 type AudioChunk = ArrayBuffer;
 

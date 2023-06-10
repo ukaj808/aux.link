@@ -26,23 +26,28 @@ export class RoomMessageListener {
 
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
+    console.log(event);
     switch (data.type) {
         case "ServerWelcomeMessage":
             const welcomeMessage = data as ServerWelcomeMessage;
             this.restClient.setUserId(welcomeMessage.userId);
-            this.orderEl.addNewUserToOrderCarousel(data.userId, welcomeMessage.userName, welcomeMessage.isCreator);
+            this.orderEl.addNewUserToOrderCarousel(welcomeMessage.userId, welcomeMessage.userName, welcomeMessage.isCreator);
             break;
-        case "UploadSongMessage":
-            const uploadSongMessage = data as UploadSongMessage;
-            this.dropEl.dequeueAndUploadSong();
+        case "ServerUploadSongMessage":
+            this.dropEl.uploadAndDequeueSong();
+            break;
         case "UserEnterEvent":
             const userEnterEvent = data as UserEnterEvent;
-            this.orderEl.addNewUserToOrderCarousel(data.userId, userEnterEvent.userName);
+            this.orderEl.addNewUserToOrderCarousel(userEnterEvent.userId, userEnterEvent.userName);
             break;
         case "UserLeftEvent":
             const userLeftEvent = data as UserLeftEvent;
-            this.orderEl.removeUserFromOrderCarousel(data.userId);
+            this.orderEl.removeUserFromOrderCarousel(userLeftEvent.userId);
             break;
+        case "SongStartingEvent":
+          const songStartingEvent = data as SongStartingEvent;
+          console.log(`Song starting in ${songStartingEvent.s} seconds`)
+          break;
         default:
             console.error("Unrecognized Event!");
             break;

@@ -86,8 +86,6 @@ export class AuxAudioPlayer {
         this.audioWorklet?.connect(this.audioContext.destination);
 
         this.audioContext.resume();
-      } else if (messageEvent.data.type === 'SONG_STARTING') {
-        this.audioEventBus.publish({ type: 'SONG_STARTING', timeLeftInSeconds: messageEvent.data.timeLeftInSeconds });
       }
     }
 

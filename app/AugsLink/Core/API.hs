@@ -105,7 +105,7 @@ newtype ServerCommand = UploadSong SongId
 
 -- Message from server to user
 data ServerMessage = ServerWelcomeMessage RoomUser
-  |                  ServerUploadSong
+  |                  ServerUploadSongMessage
 
 type RoomId   = Text
 type UserId   = Int
@@ -162,7 +162,7 @@ instance ToJSON ServerMessage where
     ,  "userName"    .= userName u
     ,  "isCreator"   .= isCreator u
     ]
-  toJSON ServerUploadSong = Aeson.object
+  toJSON ServerUploadSongMessage = Aeson.object
     [
-       "type"        .= ("ServerUploadSong" :: Text)
+       "type"        .= ("ServerUploadSongMessage" :: Text)
     ]

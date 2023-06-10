@@ -24,7 +24,6 @@ audioWorkerHandler :: CLArgs
        )
 
 audioWorkerHandler opts = do
-  liftIO $ print "auidohanldler"
   audioWorkerFile <- liftIO $ Lazy.readFile $ audioWorkerPath opts 
   return 
     (

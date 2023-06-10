@@ -28,7 +28,6 @@ import System.FilePath
 import AugsLink.Core.FFMpeg
 import System.IO
 import AugsLink.Core.Wav
-import System.Random (RandomGen(next))
 
 type instance Connection IO             = WS.PendingConnection
 type instance SongFile IO     = MultipartData Tmp
@@ -40,10 +39,10 @@ data RoomState = RoomState
   , registryManage               :: RegistryManage
   , musicStreamer                :: MusicStreamer IO
   , creator                      :: Maybe UserId
-  , nextPos                      :: Int
   , userCount                    :: Int
-  , turn                         :: Int
   , currentSong                  :: Maybe T.Text
+  , order                        :: [UserId]
+  , turn                         :: Int
   }
 
 data UserSession = USession
@@ -53,17 +52,17 @@ data UserSession = USession
   }
 
 initialRoomState :: RoomId -> RegistryManage -> MusicStreamer IO -> RoomState
-initialRoomState rId rsm music = RoomState
+initialRoomState rId rsm musicStreamer = RoomState
   {
     roomId         = rId
   , roomUsers      = Map.empty
   , registryManage = rsm
-  , musicStreamer          = music
+  , musicStreamer  = musicStreamer
   , creator        = Nothing
-  , nextPos     = 0
   , userCount      = 0
-  , turn          = 0
-  , currentSong   = Nothing
+  , currentSong    = Nothing
+  , order          = []
+  , turn           = -1
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
@@ -93,9 +92,10 @@ startMusicImpl stateVar uId = do
       where
       nextSong  :: IO ()
       nextSong  = do
-        countdownToSongStart stateVar -- Send message to all users; counting down from five; on the Room chhanel
+        countdown stateVar -- Send message to all users; counting down from five; on the Room chhanel
+        st' <- readMVar stateVar
         nextUp <- nextUser stateVar -- Get the next user to play music
-        messageToUser st nextUp ServerUploadSong -- Send message to the user; telling them to start the music
+        messageToUser st' nextUp ServerUploadSongMessage -- Send message to the user; telling them to start the music
         polled <- pollSongIsUploaded stateVar 5 -- Poll the music player to see if the song has been uploaded by the user
         case polled of
           Nothing -> do
@@ -105,20 +105,23 @@ startMusicImpl stateVar uId = do
             let fileName = takeBaseName $ T.unpack file
             let fileExt = takeExtension $ T.unpack file
             wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack (roomId st)) fileName fileExt
-
             handle    <- openFile wavFile ReadMode
             (fmtSubChunk, audioByteLength) <- parseWavFile handle
             print fmtSubChunk
             let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
             let chunkSize = byteRateMs * 200
             -- send another message to all users; telling them the song specifidcs so they can init there audioplayers
-
             stream (musicStreamer st) (audioByteLength, chunkSize) handle
+            modifyMVar_ stateVar $ \st'' -> do
+              return st''{currentSong=Nothing}
             nextSong
-    _                     -> error "Only the creator can start the music" 
+    _                     -> error "Only the creator can start the music"
 
 nextUser :: MVar RoomState -> IO UserId
-nextUser stateVar = undefined
+nextUser stateVar = do
+  modifyMVar stateVar $ \st -> do
+    let turn' = (turn st + 1) `mod` length (order st)
+    return (st{turn=turn'}, order st !! turn')
 
 pollSongIsUploaded :: MVar RoomState -> Int -> IO (Maybe T.Text)
 pollSongIsUploaded _ 0 = return Nothing
@@ -126,12 +129,12 @@ pollSongIsUploaded stateVar retryAttempts = do
   st <- readMVar stateVar
   case currentSong st of
     Nothing -> do
-      threadDelay 1000000            
+      threadDelay 1000000
       pollSongIsUploaded stateVar (retryAttempts - 1)
     Just fileName  -> return $ Just fileName
 
-countdownToSongStart :: MVar RoomState -> IO ()
-countdownToSongStart stateVar = do
+countdown :: MVar RoomState -> IO ()
+countdown stateVar = do
   forM_ [5,4,3,2,1,0] $ \i -> do
     st <- readMVar stateVar
     publishToRoom st (SongStartingEvent i)
@@ -141,16 +144,18 @@ countdownToSongStart stateVar = do
 uploadSongImpl :: MVar RoomState -> UserId -> SongFile IO -> IO ()
 uploadSongImpl stateVar uId song = do
   st <- readMVar stateVar
-  if uId == turn st then do
+  if uId == getTurnUser st then do
     let parse = lookupFile "file" song
-    either (error "Could not find song in file upload") 
-      (\s -> do 
-        
+    either (error "Could not find song in file upload")
+      (\s -> do
+
         let fileName = fdFileName s
             sourcePath = fdPayload s
             targetPath = "./rooms/" ++ T.unpack (roomId st) ++ "/" ++ T.unpack fileName
         copyFile sourcePath targetPath
-        ) parse 
+        modifyMVar_ stateVar $ \st' -> do
+          return st'{currentSong=Just fileName}
+        ) parse
   else
     error "Not your turn"
 
@@ -163,7 +168,7 @@ enterRoomImpl stateVar pend = do
       u        <-     newUser (roomId st) uId (uId == 0)
       rUser    <-     getRoomUser u
       let st'  =      addUserToRoom st (userId rUser) (USession conn u)
-      let c = case creator st of 
+      let c = case creator st of
                Just existing -> Just existing
 
                Nothing       -> Just uId
@@ -238,9 +243,12 @@ messageToUser rmSt uid msg = do
 -- Pure functions
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ _ _) uId uSession =
-  st{roomUsers = Map.insert uId uSession users}
+addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
+  st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
 removeUser st@(RoomState _ users _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users}
+
+getTurnUser :: RoomState -> UserId
+getTurnUser st = order st !! turn st
