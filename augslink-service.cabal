@@ -21,14 +21,12 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
-                      , AugsLink.Core.FFMpeg 
                       , AugsLink.Core.Model 
                       , AugsLink.Core.Music 
                       , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
                       , AugsLink.Core.Shared 
                       , AugsLink.Core.User 
-                      , AugsLink.Core.Wav 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
                       , AugsLink.Service.Handlers.GetAudioWorker 
@@ -40,7 +38,9 @@ executable augslink-service
                       , AugsLink.Service.Handlers.PutUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
+                      , Commons.FFMpeg
                       , Commons.State
+                      , Commons.Wav 
     -- other-extensions:
     build-depends:      aeson
                       , async

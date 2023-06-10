@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Core.FFMpeg
+module Commons.FFMpeg
   (
     convertToWav
   , ffprobe

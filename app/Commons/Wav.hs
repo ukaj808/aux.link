@@ -1,4 +1,4 @@
-module AugsLink.Core.Wav
+module Commons.Wav
   (
     parseWavFile
   , FmtSubChunk (..)

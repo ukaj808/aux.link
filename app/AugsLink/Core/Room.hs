@@ -25,8 +25,8 @@ import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
-import AugsLink.Core.FFMpeg
-import AugsLink.Core.Wav
+import Commons.FFMpeg
+import Commons.Wav
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile   IO = MultipartData Tmp
