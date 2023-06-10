@@ -1,22 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.Music
   (
-    newMusic
+    newMusicStreamer
   ) where
 
 import Control.Concurrent
 import Control.Monad
 import GHC.IO.Handle
+import Servant.Multipart
+import System.Directory
 
 import qualified Data.ByteString    as B
 import qualified Data.HashMap.Lazy  as Map
+import qualified Data.Text as T
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
-import Servant.Multipart
-
-import qualified Data.Text as T
-import System.Directory
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO   = MultipartData Tmp
@@ -32,8 +31,8 @@ newtype MusicStreamerState = MusicState
     listening        :: Map.HashMap UserId UserListenSession
   }
 
-newMusic :: RoomId -> IO (MusicStreamer IO)
-newMusic rId = do
+newMusicStreamer :: RoomId -> IO (MusicStreamer IO)
+newMusicStreamer rId = do
   stateVar <- newMVar $ MusicState Map.empty
   createDirectoryIfMissing True ("./rooms/" ++ T.unpack rId)
   return $ Music {

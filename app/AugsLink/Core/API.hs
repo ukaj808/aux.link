@@ -4,10 +4,9 @@ module AugsLink.Core.API where
 import Data.Aeson.Types
 import Data.Kind
 import Data.Text
-import GHC.Generics
+import GHC.IO.Handle
 
 import qualified Data.Aeson as Aeson
-import GHC.IO.Handle
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -41,7 +40,6 @@ data Room m = Room
   ,  viewRoom              ::                                           m [RoomUser]
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (MusicStreamer m)
-  ,  getCreatorId          ::                                           m (Maybe UserId)
   ,  startMusic            ::  UserId                                -> m ()
   ,  uploadSong            ::  UserId -> SongFile m                  -> m ()
   -- maybe package everyting into "Current RoomState" and return that?
@@ -70,19 +68,6 @@ data RoomUser = RoomUser
    , isCreator      :: Bool
    }
 
-data Song = Song
-   {
-     songId       :: SongId
-   , songInfo     :: SongInfo
-   } deriving (Show)
-
-data SongInfo = SongInfo
-  {
-     songTitle  :: Text
-  ,  songArtist :: Text
-  ,  songLength :: Int
-  } deriving (Generic, FromJSON, Show)
-
 data AudioFile = AudioFile
   {
      fileName        :: Text
@@ -94,18 +79,9 @@ data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeft
   |              UserLeftEvent  UserId
   |              SongStartingEvent   Int
 
-type Priority = Int
-
--- Command from User to Server
-data UserCommand = RemoveSong  SongId
-  |                EnqueueSong SongInfo Priority
-
--- Command from Server to user
-newtype ServerCommand = UploadSong SongId
-
 -- Message from server to user
-data ServerMessage = ServerWelcomeMessage RoomUser
-  |                  ServerUploadSongMessage
+data ServerCommand = ServerWelcomeCommand RoomUser
+  |                  ServerUploadSongCommand
 
 type RoomId   = Text
 type UserId   = Int
@@ -115,7 +91,6 @@ type Vote     = Bool
 
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
-type family RawMusicConverterExec (m :: Type -> Type) :: Type
 
 instance Eq RoomUser where
   u1 == u2 = userId u1 == userId u2
@@ -144,25 +119,16 @@ instance ToJSON RoomEvent where
     ,  "s"      .= s
     ]
 
-instance ToJSON SongInfo where
-  toJSON :: SongInfo -> Value
-  toJSON (SongInfo sTitle sArtist sLength) = Aeson.object
-    [
-      "title"      .= sTitle
-    , "artist"     .= sArtist
-    , "length"     .= sLength
-    ]
-
-instance ToJSON ServerMessage where
-  toJSON :: ServerMessage -> Value
-  toJSON (ServerWelcomeMessage u) = Aeson.object
+instance ToJSON ServerCommand where
+  toJSON :: ServerCommand -> Value
+  toJSON (ServerWelcomeCommand u) = Aeson.object
     [
        "type"        .= ("ServerWelcomeMessage" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "isCreator"   .= isCreator u
     ]
-  toJSON ServerUploadSongMessage = Aeson.object
+  toJSON ServerUploadSongCommand = Aeson.object
     [
        "type"        .= ("ServerUploadSongMessage" :: Text)
     ]

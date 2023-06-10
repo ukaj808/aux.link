@@ -3,9 +3,9 @@ module AugsLink.Service.Handlers.PostHome
     createHandler
   ) where
 
-import Servant
-import Control.Monad.IO.Class
 import Data.Text
+import Control.Monad.IO.Class
+import Servant
 
 import AugsLink.Core.API
 

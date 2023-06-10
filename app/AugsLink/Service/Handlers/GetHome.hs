@@ -6,9 +6,10 @@ module AugsLink.Service.Handlers.GetHome
 import Control.Monad.IO.Class
 import Servant
 
+import Data.Text.IO as T
+
 import AugsLink.Service.API
 import CommandLine
-import Data.Text.IO as T
 
 homeHandler :: CLArgs -> Handler StaticHtml
 homeHandler opts = do

@@ -8,29 +8,29 @@ module AugsLink.Core.Room
   )
   where
 
+import Control.Concurrent
 import Control.Concurrent.MVar
 import Control.Monad
 import Data.List
 import Servant.Multipart
+import System.Directory
+import System.FilePath
+import System.IO
 
 import qualified Data.Aeson           as Aeson
-import qualified Data.Map    as Map
+import qualified Data.Text            as T
+import qualified Data.Map             as Map
 import qualified Network.WebSockets   as WS
 
 import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
-import qualified Data.Text as T
-import System.Directory
-import Control.Concurrent
-import System.FilePath
 import AugsLink.Core.FFMpeg
-import System.IO
 import AugsLink.Core.Wav
 
-type instance Connection IO             = WS.PendingConnection
-type instance SongFile IO     = MultipartData Tmp
+type instance Connection IO = WS.PendingConnection
+type instance SongFile   IO = MultipartData Tmp
 
 data RoomState = RoomState
   {
@@ -67,7 +67,7 @@ initialRoomState rId rsm musicStreamer = RoomState
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
 newRoom rId registryManage = do
-  music    <- newMusic rId
+  music    <- newMusicStreamer rId
   stateVar <- newMVar $ initialRoomState rId registryManage music
   return $ Room {
       enterRoom         = enterRoomImpl        stateVar
@@ -75,7 +75,6 @@ newRoom rId registryManage = do
     , leaveRoom         = leaveRoomImpl        stateVar
     , viewRoom          = viewRoomImpl         stateVar
     , getMusic          = getMusicImpl         stateVar
-    , getCreatorId      = creator <$> readMVar stateVar
     , startMusic        = startMusicImpl       stateVar
     , uploadSong        = uploadSongImpl       stateVar
     }
@@ -95,7 +94,7 @@ startMusicImpl stateVar uId = do
         countdown stateVar -- Send message to all users; counting down from five; on the Room chhanel
         st' <- readMVar stateVar
         nextUp <- nextUser stateVar -- Get the next user to play music
-        messageToUser st' nextUp ServerUploadSongMessage -- Send message to the user; telling them to start the music
+        messageToUser st' nextUp ServerUploadSongCommand -- Send message to the user; telling them to start the music
         polled <- pollSongIsUploaded stateVar 5 -- Poll the music player to see if the song has been uploaded by the user
         case polled of
           Nothing -> do
@@ -172,7 +171,7 @@ enterRoomImpl stateVar pend = do
                Just existing -> Just existing
 
                Nothing       -> Just uId
-      messageToUser   st' (userId rUser) (ServerWelcomeMessage rUser)
+      messageToUser   st' (userId rUser) (ServerWelcomeCommand rUser)
       publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
       return  (st'{userCount=uId + 1, creator=c}, uId)
   WS.withPingThread conn 30 (return ()) $
@@ -235,7 +234,7 @@ publishToRoom rmSt e = do
     WS.sendTextData (conn uSession) (Aeson.encode e)
 
 
-messageToUser :: RoomState -> UserId  -> ServerMessage -> IO ()
+messageToUser :: RoomState -> UserId  -> ServerCommand -> IO ()
 messageToUser rmSt uid msg = do
   let uSession = roomUsers rmSt Map.! uid
   WS.sendTextData (conn uSession) (Aeson.encode msg)

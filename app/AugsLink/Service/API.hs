@@ -18,8 +18,10 @@ import Servant.HTML.Blaze
 import Servant.Multipart
 import Text.Blaze.Html5
 import Network.HTTP.Media
-import AugsLink.Core.API
+
 import qualified Data.ByteString.Lazy as Lazy
+
+import AugsLink.Core.API
 
 type ServerHtml    = Html
 
@@ -71,11 +73,11 @@ type API =
         ] 
         ServerHtml
       )
-   :<|> "rooms" :> Capture "roomid" Text :> "ws" :> WebSocketPending
+   :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
 
-   :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
-   :<|> "rooms" :> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
-   :<|> "rooms" :> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
+   :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
 
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (

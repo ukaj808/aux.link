@@ -4,13 +4,14 @@ module AugsLink.Service.Handlers.GetAudioWorker
     audioWorkerHandler
   ) where
 
+import CommandLine
 import Control.Monad.IO.Class
+import Data.Text
 import Servant
 
-import CommandLine
-import Data.Text
+import qualified Data.ByteString.Lazy as LBS
+
 import AugsLink.Service.API
-import qualified Data.ByteString.Lazy as Lazy
 
 audioWorkerHandler :: CLArgs 
   -> Handler 
@@ -24,7 +25,7 @@ audioWorkerHandler :: CLArgs
        )
 
 audioWorkerHandler opts = do
-  audioWorkerFile <- liftIO $ Lazy.readFile $ audioWorkerPath opts 
+  audioWorkerFile <- liftIO $ LBS.readFile $ audioWorkerPath opts 
   return 
     (
       addHeader "same-origin"  $

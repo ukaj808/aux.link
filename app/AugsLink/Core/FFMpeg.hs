@@ -1,38 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.FFMpeg
   (
-    convertToRaw
-  , convertToWav
+    convertToWav
   , ffprobe
-  , FFProbeData (..)
+  , FFProbeData   (..)
   , FFProbeFormat (..)
   ) where
 
-import System.Process
 import Data.Aeson
-    ( eitherDecode,
-      (.!=),
-      (.:),
-      (.:?),
-      withObject,
-      FromJSON(parseJSON) )
-import Data.Text
 import Data.Map
+import Data.Text
+import System.Process
+
 import qualified Data.ByteString.Lazy.Char8 as BLC
 
-convertToWav :: FilePath -> FilePath -> String -> String -> IO FilePath
-convertToWav ffmpeg dir name ext = do
-  let i = dir ++ "/" ++ name ++ ext
-  let o = dir ++ "/" ++ name ++ ".wav"
-  callProcess ffmpeg ["-i", i, "-ac", "2", "-f", "wav", "-acodec", "pcm_f32le" , o]
-  return o
 
-convertToRaw :: FilePath -> FilePath -> String -> String -> IO FilePath
-convertToRaw ffmpeg dir name ext = do
-  let i = dir ++ "/" ++ name ++ "." ++ ext
-  let o = dir ++ "/" ++ name ++ ".raw"
-  callProcess ffmpeg ["-i", i, "-ac", "2", "-f", "f32le", "-acodec", "pcm_f32le" , o]
-  return o
 
 data FFProbeStream = Stream 
   {
@@ -180,3 +162,10 @@ ffprobe exec filePath = do
   case result of
     Left err    -> error $ "Error probing audio with ffprobe: " ++ err
     Right value -> return value
+
+convertToWav :: FilePath -> FilePath -> String -> String -> IO FilePath
+convertToWav ffmpeg dir name ext = do
+  let i = dir ++ "/" ++ name ++ ext
+  let o = dir ++ "/" ++ name ++ ".wav"
+  callProcess ffmpeg ["-i", i, "-ac", "2", "-f", "wav", "-acodec", "pcm_f32le" , o]
+  return o

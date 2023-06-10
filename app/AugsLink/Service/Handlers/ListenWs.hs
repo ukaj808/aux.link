@@ -3,8 +3,8 @@ module AugsLink.Service.Handlers.ListenWs
     listenHandler
   ) where
 
-import Control.Monad.IO.Class
 import Data.Text
+import Control.Monad.IO.Class
 import Servant
 
 import qualified Network.WebSockets as WS

@@ -4,20 +4,19 @@ module AugsLink.Service.Handlers.GetRoom
     roomHandler
   ) where
 
-import Servant
 import Control.Monad
 import Control.Monad.IO.Class
-import Text.Blaze.Html5
 import Data.Text
+import Servant
+import Text.Blaze.Html5
 
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
-
-import qualified Text.Blaze.Svg11 as S
+import qualified Text.Blaze.Svg11            as S
 import qualified Text.Blaze.Svg11.Attributes as SVGA
 
-import AugsLink.Service.API
 import AugsLink.Core.API
+import AugsLink.Service.API
 
 musicIconSvg :: S.Svg
 musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" ! SVGA.id_ "Capa_1" ! SVGA.viewbox "0 0 98.121 98.121" ! SVGA.xmlSpace "preserve" $
