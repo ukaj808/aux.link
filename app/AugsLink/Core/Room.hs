@@ -9,7 +9,6 @@ module AugsLink.Core.Room
   where
 
 import Control.Concurrent
-import Control.Concurrent.MVar
 import Control.Monad
 import Data.List
 import Servant.Multipart
@@ -76,87 +75,64 @@ newRoom rId registryManage = do
     , viewRoom          = viewRoomImpl         stateVar
     , getMusic          = getMusicImpl         stateVar
     , startMusic        = startMusicImpl       stateVar
-    , uploadSong        = uploadSongImpl       stateVar
+    , uploadSong        = uploadSongImpl       stateVar rId
     }
-
--- Room API Impls
 
 startMusicImpl :: MVar RoomState -> UserId -> IO ()
 startMusicImpl stateVar uId = do
   st <- readMVar stateVar
   case creator st of
     Just cId | cId == uId -> do
-      _ <- forkIO nextSong
+      _ <- forkIO $ nextSong stateVar
       return ()
-      where
-      nextSong  :: IO ()
-      nextSong  = do
-        countdown stateVar -- Send message to all users; counting down from five; on the Room chhanel
-        st' <- readMVar stateVar
-        nextUp <- nextUser stateVar -- Get the next user to play music
-        messageToUser st' nextUp ServerUploadSongCommand -- Send message to the user; telling them to start the music
-        polled <- pollSongIsUploaded stateVar 5 -- Poll the music player to see if the song has been uploaded by the user
-        case polled of
-          Nothing -> do
-            putStrLn "No song in player"
-            nextSong
-          Just file -> do
-            let fileName = takeBaseName $ T.unpack file
-            let fileExt = takeExtension $ T.unpack file
-            wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack (roomId st)) fileName fileExt
-            handle    <- openFile wavFile ReadMode
-            (fmtSubChunk, audioByteLength) <- parseWavFile handle
-            print fmtSubChunk
-            let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
-            let chunkSize = byteRateMs * 200
-            -- send another message to all users; telling them the song specifidcs so they can init there audioplayers
-            stream (musicStreamer st) (audioByteLength, chunkSize) handle
-            modifyMVar_ stateVar $ \st'' -> do
-              return st''{currentSong=Nothing}
-            nextSong
-    _                     -> error "Only the creator can start the music"
+    _ -> error "Only the creator can start the music"
 
-nextUser :: MVar RoomState -> IO UserId
-nextUser stateVar = do
-  modifyMVar stateVar $ \st -> do
-    let turn' = (turn st + 1) `mod` length (order st)
-    return (st{turn=turn'}, order st !! turn')
-
-pollSongIsUploaded :: MVar RoomState -> Int -> IO (Maybe T.Text)
-pollSongIsUploaded _ 0 = return Nothing
-pollSongIsUploaded stateVar retryAttempts = do
-  st <- readMVar stateVar
-  case currentSong st of
-    Nothing -> do
-      threadDelay 1000000
-      pollSongIsUploaded stateVar (retryAttempts - 1)
-    Just fileName  -> return $ Just fileName
-
-countdown :: MVar RoomState -> IO ()
-countdown stateVar = do
+nextSong  :: MVar RoomState -> IO ()
+nextSong stateVar = do
   forM_ [5,4,3,2,1,0] $ \i -> do
-    st <- readMVar stateVar
-    publishToRoom st (SongStartingEvent i)
+    st' <- readMVar stateVar
+    publishToRoom st' (SongStartingEvent i)
     threadDelay 1000000
---Only allows uploads when its your turn
+  st    <- readMVar stateVar
+  nextUp <- getNextUser stateVar -- Get the next user to play music
+  messageToUser st nextUp ServerUploadSongCommand -- Send message to the user; telling them to start the music
+  polled <- pollSongIsUploaded stateVar 5 -- Poll the music player to see if the song has been uploaded by the user
+  case polled of
+    Nothing -> do
+      putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
+      nextSong stateVar
+    Just file -> do
+      let fileName = takeBaseName  $ T.unpack file
+      let fileExt  = takeExtension $ T.unpack file
+      wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack (roomId st)) fileName fileExt
+      handle    <- openFile wavFile ReadMode
+      (fmtSubChunk, audioByteLength) <- parseWavFile handle
+      print fmtSubChunk
+      let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
+      let chunkSize = byteRateMs * 200
+      -- send another message to all users; telling them the song specifidcs so they can init there audioplayers
+      stream (musicStreamer st) (audioByteLength, chunkSize) handle
+      modifyMVar_ stateVar $ \st'' -> do
+        return st''{currentSong=Nothing}
+      nextSong stateVar
 
-uploadSongImpl :: MVar RoomState -> UserId -> SongFile IO -> IO ()
-uploadSongImpl stateVar uId song = do
+
+uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> SongFile IO -> IO ()
+uploadSongImpl stateVar rId uId song = do
   st <- readMVar stateVar
   if uId == getTurnUser st then do
     let parse = lookupFile "file" song
-    either (error "Could not find song in file upload")
-      (\s -> do
-
-        let fileName = fdFileName s
-            sourcePath = fdPayload s
-            targetPath = "./rooms/" ++ T.unpack (roomId st) ++ "/" ++ T.unpack fileName
-        copyFile sourcePath targetPath
-        modifyMVar_ stateVar $ \st' -> do
-          return st'{currentSong=Just fileName}
-        ) parse
+    either (error "Could not find song in file upload") store parse
   else
     error "Not your turn"
+  where
+    store s = do
+      copyFile (fdPayload s) (genTargetPath rId $ fdFileName s)
+      modifyMVar_ stateVar $ \st' -> do
+        return st'{currentSong=Just $ fdFileName s}
+
+genTargetPath :: RoomId -> T.Text -> FilePath
+genTargetPath rId fileName = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName   
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
@@ -238,6 +214,22 @@ messageToUser :: RoomState -> UserId  -> ServerCommand -> IO ()
 messageToUser rmSt uid msg = do
   let uSession = roomUsers rmSt Map.! uid
   WS.sendTextData (conn uSession) (Aeson.encode msg)
+
+getNextUser :: MVar RoomState -> IO UserId
+getNextUser stateVar = do
+  modifyMVar stateVar $ \st -> do
+    let turn' = (turn st + 1) `mod` length (order st)
+    return (st{turn=turn'}, order st !! turn')
+
+pollSongIsUploaded :: MVar RoomState -> Int -> IO (Maybe T.Text)
+pollSongIsUploaded _ 0 = return Nothing
+pollSongIsUploaded stateVar retryAttempts = do
+  st <- readMVar stateVar
+  case currentSong st of
+    Nothing -> do
+      threadDelay 1000000
+      pollSongIsUploaded stateVar (retryAttempts - 1)
+    Just fileName  -> return $ Just fileName
 
 -- Pure functions
 
