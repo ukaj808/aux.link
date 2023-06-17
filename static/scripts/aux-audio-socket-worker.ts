@@ -15,7 +15,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
   */
 
-  console.log(event);
   const data = new Float32Array(event.data);
 
   if (data.length <= ringBuffer.length - offset) {

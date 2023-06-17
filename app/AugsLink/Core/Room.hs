@@ -108,11 +108,12 @@ nextSong stateVar = do
       handle    <- openFile wavFile ReadMode
       (fmtSubChunk, audioByteLength) <- parseWavFile handle
       print fmtSubChunk
-      let byteRateMs :: Int = div (fromIntegral (byteRate fmtSubChunk)) 1000
+      let byteRateMs :: Int = div (fromIntegral $ byteRate fmtSubChunk) 1000
       let chunkSize = byteRateMs * 200
       -- send another message to all users; telling them the song specifidcs so they can init there audioplayers
       stream (musicStreamer st) (audioByteLength, chunkSize) handle
       modifyMVar_ stateVar $ \st'' -> do
+        publishToRoom st'' SongFinishedEvent
         return st''{currentSong=Nothing}
       nextSong stateVar
 
@@ -132,7 +133,7 @@ uploadSongImpl stateVar rId uId song = do
         return st'{currentSong=Just $ fdFileName s}
 
 genTargetPath :: RoomId -> T.Text -> FilePath
-genTargetPath rId fileName = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName   
+genTargetPath rId fileName = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do

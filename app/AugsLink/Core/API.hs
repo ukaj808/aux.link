@@ -74,14 +74,16 @@ data AudioFile = AudioFile
   ,  tmpPath         :: FilePath
   } deriving (Show)
 
--- Event published from room to users but also published from the users browser solely to the Room
-data RoomEvent = UserEnterEvent RoomUser -- maybe reuse this instead of UserLeftMessage..
-  |              UserLeftEvent  UserId
+data RoomEvent = UserEnterEvent      RoomUser
+  |              UserLeftEvent       UserId
   |              SongStartingEvent   Int
+  |              SongFinishedEvent   
 
 -- Message from server to user
 data ServerCommand = ServerWelcomeCommand RoomUser
   |                  ServerUploadSongCommand
+
+newtype UserEvent = UserAudioPrepared UserId
 
 type RoomId   = Text
 type UserId   = Int
@@ -118,17 +120,24 @@ instance ToJSON RoomEvent where
        "type"        .= ("SongStartingEvent"  :: Text)
     ,  "s"      .= s
     ]
+  toJSON SongFinishedEvent = Aeson.object
+    [
+       "type"        .= ("SongFinishedEvent"  :: Text)
+    ]
 
 instance ToJSON ServerCommand where
   toJSON :: ServerCommand -> Value
   toJSON (ServerWelcomeCommand u) = Aeson.object
     [
-       "type"        .= ("ServerWelcomeMessage" :: Text)
+       "type"        .= ("ServerWelcomeCommand" :: Text)
     ,  "userId"      .= userId u
     ,  "userName"    .= userName u
     ,  "isCreator"   .= isCreator u
     ]
   toJSON ServerUploadSongCommand = Aeson.object
     [
-       "type"        .= ("ServerUploadSongMessage" :: Text)
+       "type"        .= ("ServerUploadSongCommand" :: Text)
     ]
+
+instance FromJSON UserEvent where
+  fromJSON = undefined
