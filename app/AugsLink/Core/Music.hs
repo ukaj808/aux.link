@@ -74,8 +74,8 @@ streamImpl stateVar file rId = do
       let byteRateMs :: Int = div (fromIntegral $ byteRate fmtSubChunk) 1000
       let chunkSize = byteRateMs * 200
       st <- readMVar stateVar
+      chunk <- B.hGet handle chunkSize
       forM_ (listening st) $ \session -> do
-        chunk <- B.hGet handle chunkSize
         WS.sendBinaryData (conn session) chunk
       threadDelay 200000
       go fmtSubChunk handle (bytesLeft - toInteger chunkSize)
