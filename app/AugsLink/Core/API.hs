@@ -7,6 +7,7 @@ import Data.Text
 import GHC.IO.Handle
 
 import qualified Data.Aeson as Aeson
+import Commons.Wav (FmtSubChunk)
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -77,6 +78,7 @@ data AudioFile = AudioFile
 data RoomEvent = UserEnterEvent      RoomUser
   |              UserLeftEvent       UserId
   |              SongStartingEvent   Int
+  |              WavHeaderParsedEvent FmtSubChunk
   |              SongFinishedEvent   
 
 -- Message from server to user
@@ -120,6 +122,11 @@ instance ToJSON RoomEvent where
        "type"        .= ("SongStartingEvent"  :: Text)
     ,  "s"      .= s
     ]
+  toJSON (WavHeaderParsedEvent fmtSubChunk) = Aeson.object
+    [
+      "type" .= ("WavHeaderParsedEvent" :: Text)
+    , "fmtSubChunk" .= fmtSubChunk
+    ]
   toJSON SongFinishedEvent = Aeson.object
     [
        "type"        .= ("SongFinishedEvent"  :: Text)
@@ -138,6 +145,3 @@ instance ToJSON ServerCommand where
     [
        "type"        .= ("ServerUploadSongCommand" :: Text)
     ]
-
-instance FromJSON UserEvent where
-  fromJSON = undefined

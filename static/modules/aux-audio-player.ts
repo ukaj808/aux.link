@@ -1,18 +1,3 @@
-class AudioEventBus {
-    private subscriptions: ((event: AudioEvent) => void)[];
-    constructor() {
-        this.subscriptions = [];
-    }
-    subscribe(subscription: (event: AudioEvent) => void) {
-        this.subscriptions.push(subscription);
-    }
-    publish(event: AudioEvent) {
-        this.subscriptions.forEach((subscription) => {
-            subscription(event);
-        });
-    }
-}
-
 export class AuxAudioPlayer {
   private roomId: string;
   private userId?: string;

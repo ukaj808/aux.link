@@ -31,7 +31,6 @@ export class DropElement {
         this.queue = new SongQueue();
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
-        this.auxAudioPlayer.sucscribeToAudioEvents(this.onAudioEvent.bind(this));    
     }
     
     public async uploadAndDequeueSong() {
