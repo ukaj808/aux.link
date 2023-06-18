@@ -71,14 +71,17 @@ streamImpl stateVar file rId = do
     go :: FmtSubChunk -> Handle -> Integer -> IO ()
     go _ _ bytesLeft | bytesLeft <= 0 = return () 
     go fmtSubChunk handle bytesLeft = do
-      let byteRateMs :: Int = div (fromIntegral $ byteRate fmtSubChunk) 1000
-      let chunkSize = byteRateMs * 200
+      let chunkSizeFloat :: Float = 1024
+      let chunkSizeInt :: Int = 1024
+      let byteRateFloat :: Float = fromIntegral $ byteRate fmtSubChunk
+      let delay:: Int =  round $ (chunkSizeFloat / byteRateFloat) * 1000000
+      print delay
       st <- readMVar stateVar
-      chunk <- B.hGet handle chunkSize
+      chunk <- B.hGet handle chunkSizeInt
       forM_ (listening st) $ \session -> do
         WS.sendBinaryData (conn session) chunk
-      threadDelay 200000
-      go fmtSubChunk handle (bytesLeft - toInteger chunkSize)
+      threadDelay delay
+      go fmtSubChunk handle (bytesLeft - toInteger chunkSizeInt)
 
 handleIncomingMessages :: MVar MusicStreamerState -> WS.Connection -> UserId -> IO ()
 handleIncomingMessages stateVar conn uId = go

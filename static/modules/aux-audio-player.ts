@@ -10,7 +10,7 @@ export class AuxAudioPlayer {
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.ringBufferSize = 1920000;
+    this.ringBufferSize = 8192;
   }
 
   public setUserId(userId: string) {
@@ -66,8 +66,13 @@ export class AuxAudioPlayer {
   public stopListening() {
     if (this.wsWorker === undefined) throw new Error("Ws worker wasnt initialized");
     if (this.audioContext === undefined) throw new Error("Audio context wasnt initialized");
+    if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
     this.wsWorker.terminate();
+    this.wsWorker = undefined;
+    this.audioWorklet.disconnect(this.audioContext.destination);
+    this.audioWorklet = undefined;
     this.audioContext.close();
+    this.audioContext = undefined;
   }
 
   private onPostMessage = async (messageEvent: MessageEvent<WsWorkerMessage>) => {
