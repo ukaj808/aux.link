@@ -58,7 +58,7 @@ newtype User m = User {getRoomUser :: m RoomUser}
 
 data MusicStreamer m = Music
   {
-    stream             :: (Integer, Int) -> Handle       -> IO ()
+    stream             :: FilePath       -> RoomId       -> m  ()
   , listen             :: UserId         -> Connection m -> m  ()
   }
 
@@ -78,8 +78,7 @@ data AudioFile = AudioFile
 data RoomEvent = UserEnterEvent      RoomUser
   |              UserLeftEvent       UserId
   |              SongStartingEvent   Int
-  |              WavHeaderParsedEvent FmtSubChunk
-  |              SongFinishedEvent   
+  |              SongUploadedEvent
 
 -- Message from server to user
 data ServerCommand = ServerWelcomeCommand RoomUser
@@ -122,14 +121,9 @@ instance ToJSON RoomEvent where
        "type"        .= ("SongStartingEvent"  :: Text)
     ,  "s"      .= s
     ]
-  toJSON (WavHeaderParsedEvent fmtSubChunk) = Aeson.object
+  toJSON SongUploadedEvent = Aeson.object
     [
-      "type" .= ("WavHeaderParsedEvent" :: Text)
-    , "fmtSubChunk" .= fmtSubChunk
-    ]
-  toJSON SongFinishedEvent = Aeson.object
-    [
-       "type"        .= ("SongFinishedEvent"  :: Text)
+       "type"        .= ("SongUploadedEvent"  :: Text)
     ]
 
 instance ToJSON ServerCommand where

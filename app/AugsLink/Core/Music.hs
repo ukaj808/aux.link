@@ -16,6 +16,10 @@ import qualified Data.Text as T
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
+import Commons.Wav (FmtSubChunk (byteRate, FmtSubChunk), parseWavFile)
+import System.FilePath
+import Commons.FFMpeg
+import System.IO
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile IO   = MultipartData Tmp
@@ -36,10 +40,10 @@ newMusicStreamer rId = do
   stateVar <- newMVar $ MusicState Map.empty
   createDirectoryIfMissing True ("./rooms/" ++ T.unpack rId)
   return $ Music {
-      listen             = listenImpl        stateVar
+      listen             = listenImpl         stateVar
     , stream             = streamImpl         stateVar
     }
-      
+
 listenImpl :: MVar MusicStreamerState -> UserId -> Connection IO -> IO ()
 listenImpl stateVar uId pend = do
   conn  <-     WS.acceptRequest pend
@@ -50,15 +54,34 @@ listenImpl stateVar uId pend = do
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
 
-streamImpl :: MVar MusicStreamerState -> (Integer, Int) -> Handle -> IO ()
-streamImpl stateVar (bytesLeft, chunkSize) h = do
-    when (bytesLeft > 0) $ do
-      st <- readMVar stateVar
-      forM_ (listening st) $ \session -> do
-        chunk <- B.hGet h chunkSize
-        WS.sendBinaryData (conn session) chunk
-      threadDelay 200000
-      streamImpl stateVar (bytesLeft - toInteger chunkSize, chunkSize) h
+streamImpl :: MVar MusicStreamerState -> FilePath -> RoomId -> IO ()
+streamImpl stateVar file rId = do
+  let fileName = takeBaseName file
+  let fileExt  = takeExtension file
+  wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack rId) fileName fileExt
+  handle    <- openFile wavFile ReadMode
+  (fmtSubChunk, audioByteLength) <- parseWavFile handle
+  st <- readMVar stateVar
+  forM_ (listening st) $ \session -> do
+    WS.sendBinaryData (conn session) (B.pack [1])
+  go fmtSubChunk handle audioByteLength
+  forM_ (listening st) $ \session -> do
+    WS.sendBinaryData (conn session) (B.pack [0])
+
+  where 
+        go :: FmtSubChunk -> Handle -> Integer -> IO ()
+        go fmtSubChunk handle bytesLeft =
+          if bytesLeft <= 0
+            then return ()
+            else do
+              let byteRateMs :: Int = div (fromIntegral $ byteRate fmtSubChunk) 1000
+              let chunkSize = byteRateMs * 200
+              st <- readMVar stateVar
+              forM_ (listening st) $ \session -> do
+                chunk <- B.hGet handle chunkSize
+                WS.sendBinaryData (conn session) chunk
+                threadDelay 200000
+                go fmtSubChunk handle (bytesLeft - toInteger chunkSize)
 
 handleIncomingMessages :: MVar MusicStreamerState -> WS.Connection -> UserId -> IO ()
 handleIncomingMessages stateVar conn uId = go

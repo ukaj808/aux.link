@@ -17,7 +17,7 @@ export class CurrentlyPlayingElement {
 
   private onSectionClick() {
     if (!this.listening) {
-        this.auxAudioPlayer.startListening("0");
+        this.auxAudioPlayer.startListening();
         this.listening = true;
         this.toggleDisconnectOverlay();
     } else {

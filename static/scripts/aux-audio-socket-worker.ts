@@ -7,13 +7,17 @@ let openState: boolean = false;
 let offset: number = 0;
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
-  /*
   if (event.data.byteLength == 1) {
-    const second = new DataView(event.data).getInt8(0); 
-      postMessage({ type: 'SONG_STARTING', timeLeftInSeconds: second });
+      const signal = new DataView(event.data).getInt8(0); 
+      if (signal == 0) {  // 0 means the song is over 
+        console.log("Song is over"); 
+        // Clear the ring buffer
+        ringBuffer.fill(0);
+      } else if (signal == 1) { // 1 means the song is starting 
+        console.log("Song is starting");
+      }
       return;
   }
-  */
 
   const data = new Float32Array(event.data);
 
@@ -28,7 +32,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
 
   offset = (offset + data.length) % ringBuffer.length;  
-  console.log(offset);
   
   // Ring buffer is half full; allow worklet to start reading,
   if (!openState && offset >= ringBuffer.length / 2) {

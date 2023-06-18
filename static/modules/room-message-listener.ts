@@ -28,25 +28,13 @@ export class RoomMessageListener {
 
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
+    console.log(event);
     switch (data.type) {
         case "ServerWelcomeCommand":
             const welcomeMessage = data as ServerWelcomeCommand;
             this.restClient.setUserId(welcomeMessage.userId);
             this.auxAudioPlayer.setUserId(welcomeMessage.userId);
             this.orderEl.addNewUserToOrderCarousel(welcomeMessage.userId, welcomeMessage.userName, welcomeMessage.isCreator);
-            break;
-        case "ServerUploadSongCommand":
-            this.dropEl.uploadAndDequeueSong();
-            break;
-        case "ServerPrepareAudioCommand":
-            const prepareAudioCommand = data as ServerPrepareAudioCommand;
-            this.auxAudioPlayer.prepAudioForNextSongStream({
-              audioCtxOpts: {
-                sampleRate: 48000,
-                latencyHint: 'playback',
-              },
-              ringBufferSize: 123123,
-            });
             break;
         case "UserEnterEvent":
             const userEnterEvent = data as UserEnterEvent;
@@ -60,9 +48,13 @@ export class RoomMessageListener {
           const songStartingEvent = data as SongStartingEvent;
           console.log(`Song starting in ${songStartingEvent.s} seconds`)
           break;
-        case "SongFinishedEvent":
-          console.log(`Song finished!`);
-          break;
+        case "ServerUploadSongCommand":
+            this.dropEl.uploadAndDequeueSong();
+            break;
+        case "SongUploadedEvent":
+            const uploadedEvent = data as SongUploadedEvent;
+            console.log(`Song uploaded!`);
+            break;
         default:
             console.error("Unrecognized Event!");
             break;

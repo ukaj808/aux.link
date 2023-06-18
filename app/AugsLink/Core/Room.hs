@@ -102,18 +102,9 @@ nextSong stateVar = do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
       nextSong stateVar
     Just file -> do
-      let fileName = takeBaseName  $ T.unpack file
-      let fileExt  = takeExtension $ T.unpack file
-      wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack (roomId st)) fileName fileExt
-      handle    <- openFile wavFile ReadMode
-      (fmtSubChunk, audioByteLength) <- parseWavFile handle
-      print fmtSubChunk
-      let byteRateMs :: Int = div (fromIntegral $ byteRate fmtSubChunk) 1000
-      let chunkSize = byteRateMs * 200
-      -- send another message to all users; telling them the song specifidcs so they can init there audioplayers
-      stream (musicStreamer st) (audioByteLength, chunkSize) handle
+      publishToRoom st SongUploadedEvent
+      stream (musicStreamer st) (T.unpack file) (roomId st)
       modifyMVar_ stateVar $ \st'' -> do
-        publishToRoom st'' SongFinishedEvent
         return st''{currentSong=Nothing}
       nextSong stateVar
 

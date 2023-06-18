@@ -7,16 +7,14 @@ type WsWorkerOpts = {
 }
 
 type AudioStreamPrepOptions = {
-    audioCtxOpts: AudioContextOptions,
-    ringBufferSize: number
+    ringBufferSize: number,
 }
 
 type WsWorkerMessage = {
     type: "WS_WORKER_READY";
 }
 
-type RoomMessageType = "ServerWelcomeCommand" | "ServerPrepareAudioCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongFinishedEvent" | "UserEnterEvent" | "UserLeftEvent";
-type UserMessageType = "UserAudioPreparedEvent"
+type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";
 
 type SongStartingEvent = {
     s: number,
@@ -28,8 +26,8 @@ type ServerWelcomeCommand = {
     isCreator: boolean,
 }
 
-type ServerPrepareAudioCommand = {
-// todo
+type SongUploadedEvent = {
+
 }
 
 type UserEnterEvent = {
@@ -46,8 +44,7 @@ type UserLeftEvent = {
     userId: string
 }
 
-type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongStartingEvent) & { type: RoomMessageType };
-type UserMessage = (UserAudioPreparedEvent) & { type: UserMessageType };
+type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongStartingEvent) & { type: RoomMessageType };
 
 type AudioChunk = ArrayBuffer;
 
