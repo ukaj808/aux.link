@@ -27,7 +27,8 @@ export class DropElement {
 
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));
-        this.dropZoneInputEl.addEventListener('change', this.onInputChange.bind(this));
+        this.dropZoneInputEl.addEventListener('input', this.onInputChange.bind(this));
+        this.dropZoneInputEl.addEventListener('click', this.onInputClick.bind(this));
         this.queue = new SongQueue();
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
@@ -70,10 +71,21 @@ export class DropElement {
         const inputTarget = e.target as HTMLInputElement;
         const files = inputTarget.files;
         if (files == null) throw new Error('No files found');
+        console.log('input change', files);
         [...files].forEach((file) => this.addSongToQueue(file));
     }
 
+    /*
+    * This is a hack to allow the user to upload the same file twice
+    * https://stackoverflow.com/questions/12030686/html-input-file-selection-event-not-firing-upon-selecting-the-same-file
+    */
+    private onInputClick(e: Event) {
+        const inputTarget = e.target as HTMLInputElement;
+        inputTarget.value = ''; // clear input value
+    }
+
     private addSongToQueue(file: File) {
+        console.log('adding song to queue', file);  
         if (this.queue.length === 0) {
             this.initSortableList(file);
         } else {
@@ -83,7 +95,9 @@ export class DropElement {
     }
 
     private dequeueSong() {
-        // ui changes
+        if (this.sortableList == null) throw new Error('No sortable list found');
+        if (this.sortableList.el.firstChild == null) throw new Error('No sortable list first child found');
+        this.sortableList.el.removeChild(this.sortableList.el.firstChild);
         return this.queue.dequeueSong();
     }
 
@@ -110,6 +124,7 @@ export class DropElement {
 
     private addSongToSortableList(file: File) {
         if (this.sortableList == null) throw new Error('No sortable list found');
+        console.log('adding song to sortable list', file);
         const songEl = document.createElement('li');
         songEl.classList.add('song-list-item');
         songEl.innerText = file.name;
