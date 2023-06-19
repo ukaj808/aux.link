@@ -71,7 +71,7 @@ streamImpl stateVar file rId = do
     go :: FmtSubChunk -> Handle -> Integer -> IO ()
     go _ _ bytesLeft | bytesLeft <= 0 = return () 
     go fmtSubChunk handle bytesLeft = do
-      let chunkSizeInt :: Int = 16384
+      let chunkSizeInt :: Int = 1024 --16kb
       let byteRateFloat :: Float = fromIntegral $ byteRate fmtSubChunk
       let delay:: Int =  round $ (fromIntegral chunkSizeInt / byteRateFloat) * 1000000
       st <- readMVar stateVar

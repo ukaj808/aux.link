@@ -3,6 +3,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
   private ringBuffer: DataView;
   private ringBufferSize: number;
   private offset: number;
+  private audioWorkletOffset: Int32Array;
   private state: Int8Array;
 
   constructor(options: AudioWorkletNodeOptions) {
@@ -11,6 +12,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.ringBuffer     = new DataView(options.processorOptions.ringBuffer);
     this.ringBufferSize = options.processorOptions.ringBuffer.byteLength;
     this.state          = new Int8Array(options.processorOptions.state);
+    this.audioWorkletOffset = new Int32Array(options.processorOptions.audioWorkletOffset);
     this.offset         = 0;
   }
 
@@ -34,6 +36,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     }
 
     this.offset = (this.offset + totalSamplesProcessed) % this.ringBufferSize;
+    this.audioWorkletOffset[0] = this.offset;
 
     return true;
 

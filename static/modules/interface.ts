@@ -4,6 +4,7 @@ type WsWorkerOpts = {
     userId: string, 
     ringBuffer: SharedArrayBuffer,
     state: SharedArrayBuffer,
+    audioWorkletOffset: SharedArrayBuffer
 }
 
 type AudioStreamPrepOptions = {

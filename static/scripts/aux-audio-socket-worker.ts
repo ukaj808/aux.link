@@ -3,8 +3,10 @@ let userId: string;
 let ws: WebSocket;
 let ringBuffer: Float32Array;
 let state: Int8Array;
+let audioWorkletOffset: Int32Array;
 let openState: boolean = false;
 let offset: number = 0;
+let bufferOverunCount: number = 0;
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 1) {
@@ -20,7 +22,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
 
   const data = new Float32Array(event.data);
-
   if (data.length <= ringBuffer.length - offset) {
     // If there's enough space for the data, simply copy it to the ring buffer
     ringBuffer.set(data, offset);
@@ -38,6 +39,19 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
     openState = true;
     Atomics.store(state, 0, 1);
   }
+
+  const workletOffset = Atomics.load(audioWorkletOffset, 0);
+  // The worklet offset should start out behind the worker offset since
+  // we give this worker a head start on filling the ring buffer
+  // If the worklet offset passes the worker offset, thats a buffer overrun
+  // and we should log it
+  if (workletOffset > offset) {
+    bufferOverunCount++;
+    console.log(`Buffer overrun count: ${bufferOverunCount}`, `Worklet offset: ${workletOffset}`, `Worker offset: ${offset}`);
+  } else {
+    console.log(`Worklet offset: ${workletOffset}`, `Worker offset: ${offset}`);
+  }
+
 };
 
 const connectToAudioSocket = (roomId: string, userId: string) => {
@@ -52,6 +66,7 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
     // Create views on shared buffers
     ringBuffer     = new Float32Array(data.ringBuffer);
     state          = new Int8Array(data.state);
+    audioWorkletOffset = new Int32Array(data.audioWorkletOffset);
 
     connectToAudioSocket(data.roomId, data.userId)
 
