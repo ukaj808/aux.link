@@ -7,11 +7,14 @@ export class AuxAudioPlayer {
   private ringBufferSize?: number;
   private ringBuffer?: SharedArrayBuffer;
   private state?: SharedArrayBuffer;
-  private audioWorkletOffset?: SharedArrayBuffer
+  private audioWorkletOffset?: SharedArrayBuffer;
+  private audioWorkletLap?: SharedArrayBuffer;
+  private wsWorkerOffset?: SharedArrayBuffer;
+  private wsWorkerLap?: SharedArrayBuffer;
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.ringBufferSize = 131072; //128 kb
+    this.ringBufferSize = 262144; //128 kb
   }
 
   public setUserId(userId: string) {
@@ -38,6 +41,9 @@ export class AuxAudioPlayer {
     this.ringBuffer = new SharedArrayBuffer(this.ringBufferSize);
     this.state = new SharedArrayBuffer(1);
     this.audioWorkletOffset = new SharedArrayBuffer(4);
+    this.audioWorkletLap = new SharedArrayBuffer(4);
+    this.wsWorkerOffset = new SharedArrayBuffer(4);
+    this.wsWorkerLap = new SharedArrayBuffer(4);
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.wsWorker.onmessage = this.onPostMessage;
@@ -51,7 +57,10 @@ export class AuxAudioPlayer {
         {  
           ringBuffer: this.ringBuffer,
           state: this.state,
-          audioWorkletOffset: this.audioWorkletOffset
+          audioWorkletOffset: this.audioWorkletOffset,
+          audioWorkletLap: this.audioWorkletLap,
+          wsWorkerOffset: this.wsWorkerOffset,
+          wsWorkerLap: this.wsWorkerLap
         } 
       });
 
@@ -61,7 +70,10 @@ export class AuxAudioPlayer {
         userId: this.userId, 
         ringBuffer: this.ringBuffer,
         state: this.state,
-        audioWorkletOffset: this.audioWorkletOffset
+        audioWorkletOffset: this.audioWorkletOffset,
+        audioWorkletLap: this.audioWorkletLap,
+        wsWorkerOffset: this.wsWorkerOffset,
+        wsWorkerLap: this.wsWorkerLap
       }
 
     this.wsWorker.postMessage(wsWorkerOpts);

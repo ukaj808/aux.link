@@ -4,9 +4,10 @@ let ws: WebSocket;
 let ringBuffer: Float32Array;
 let state: Int8Array;
 let audioWorkletOffset: Int32Array;
+let audioWorkletLap: Int32Array;
 let openState: boolean = false;
-let offset: number = 0;
-let bufferOverunCount: number = 0;
+let offset: Int32Array;
+let lap: Int32Array;
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 1) {
@@ -22,34 +23,28 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
 
   const data = new Float32Array(event.data);
-  if (data.length <= ringBuffer.length - offset) {
+  if (data.length <= ringBuffer.length - offset[0]) {
     // If there's enough space for the data, simply copy it to the ring buffer
-    ringBuffer.set(data, offset);
+    ringBuffer.set(data, offset[0]);
   } else {
     // If the data exceeds the space left in the ring buffer, wrap it around
-    const remainingSpace = ringBuffer.length - offset;
-    ringBuffer.set(data.subarray(0, remainingSpace), offset);
+    const remainingSpace = ringBuffer.length - offset[0];
+    ringBuffer.set(data.subarray(0, remainingSpace), offset[0]);
     ringBuffer.set(data.subarray(remainingSpace), 0);
   }
 
-  offset = (offset + data.length) % ringBuffer.length;  
-  
-  // Ring buffer is half full; allow worklet to start reading,
-  if (!openState && offset >= ringBuffer.length / 2) {
-    openState = true;
-    Atomics.store(state, 0, 1);
+  const newOffset = (offset[0] + data.length) % ringBuffer.length;
+  if (newOffset == 0) {
+    lap[0] = lap[0] + 1;
+    console.log ("Writer Lap: " + lap[0]);
   }
 
-  const workletOffset = Atomics.load(audioWorkletOffset, 0);
-  // The worklet offset should start out behind the worker offset since
-  // we give this worker a head start on filling the ring buffer
-  // If the worklet offset passes the worker offset, thats a buffer overrun
-  // and we should log it
-  if (workletOffset > offset) {
-    bufferOverunCount++;
-    console.log(`Buffer overrun count: ${bufferOverunCount}`, `Worklet offset: ${workletOffset}`, `Worker offset: ${offset}`);
-  } else {
-    console.log(`Worklet offset: ${workletOffset}`, `Worker offset: ${offset}`);
+  offset[0] = newOffset;
+  
+  // Ring buffer is half full; allow worklet to start reading,
+  if (!openState && offset[0] >= ringBuffer.length / 2) {
+    openState = true;
+    state[0] = 1;
   }
 
 };
@@ -67,6 +62,9 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
     ringBuffer     = new Float32Array(data.ringBuffer);
     state          = new Int8Array(data.state);
     audioWorkletOffset = new Int32Array(data.audioWorkletOffset);
+    audioWorkletLap = new Int32Array(data.audioWorkletLap);
+    offset = new Int32Array(data.wsWorkerOffset);
+    lap = new Int32Array(data.wsWorkerLap);
 
     connectToAudioSocket(data.roomId, data.userId)
 

@@ -2,8 +2,10 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
 
   private ringBuffer: DataView;
   private ringBufferSize: number;
-  private offset: number;
-  private audioWorkletOffset: Int32Array;
+  private offset: Int32Array;
+  private lap: Int32Array;
+  private wsWorkerOffset: Int32Array;
+  private wsWorkerLap: Int32Array;
   private state: Int8Array;
 
   constructor(options: AudioWorkletNodeOptions) {
@@ -12,8 +14,10 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.ringBuffer     = new DataView(options.processorOptions.ringBuffer);
     this.ringBufferSize = options.processorOptions.ringBuffer.byteLength;
     this.state          = new Int8Array(options.processorOptions.state);
-    this.audioWorkletOffset = new Int32Array(options.processorOptions.audioWorkletOffset);
-    this.offset         = 0;
+    this.offset         = new Int32Array(options.processorOptions.audioWorkletOffset);
+    this.lap            = new Int32Array(options.processorOptions.audioWorkletLap);
+    this.wsWorkerOffset = new Int32Array(options.processorOptions.wsWorkerOffset);
+    this.wsWorkerLap    = new Int32Array(options.processorOptions.wsWorkerLap);
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]) {
@@ -30,20 +34,25 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       const numSamples = outputChannel.length;
       totalSamplesProcessed += numSamples;
       for (let sample = 0, pcmSample = channel; sample < numSamples; sample++, pcmSample += numChannels) {
-        const calcPcmSampleIndex = ((this.offset + pcmSample) * Float32Array.BYTES_PER_ELEMENT) % this.ringBufferSize;
+        const calcPcmSampleIndex = ((this.offset[0] + pcmSample) * Float32Array.BYTES_PER_ELEMENT) % this.ringBufferSize;
         outputChannel[sample] = this.ringBuffer.getFloat32(calcPcmSampleIndex, true);
       }
     }
+    
+    const newOffset = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
+    this.offset[0] = newOffset;
 
-    this.offset = (this.offset + totalSamplesProcessed) % this.ringBufferSize;
-    this.audioWorkletOffset[0] = this.offset;
+    if (newOffset == 0) {
+      this.lap[0] = this.lap[0] + 1;
+      console.log ("Reader Lap: " + this.lap[0]);
+    }  
 
     return true;
 
   }
 
   private isAudioAvailable(){
-    return Atomics.load(this.state, 0) == 1;
+    return this.state[0] == 1;
   }
 }
 
