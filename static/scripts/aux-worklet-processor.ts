@@ -39,7 +39,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       }
     }
     
-    const newOffset = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
+    const newOffset = (this.offset[0] + totalSamplesProcessed) % (this.ringBufferSize / Float32Array.BYTES_PER_ELEMENT);
     this.offset[0] = newOffset;
 
     if (newOffset == 0) {
