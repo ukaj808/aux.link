@@ -55,7 +55,6 @@ export class DropElement {
             if (item.kind === "file") {
                 const file = item.getAsFile();
                 if (file == null) throw new Error('No file found');
-                console.log(`… file[${i}].name = ${file.name}`);
                 this.addSongToQueue(file);
             }
         });
@@ -63,7 +62,6 @@ export class DropElement {
 
     private onDragOver(e: Event) {
         // Prevent default behavior (Prevent file from being opened)
-        console.log('drag over');
         e.preventDefault();
     }
 
@@ -71,7 +69,6 @@ export class DropElement {
         const inputTarget = e.target as HTMLInputElement;
         const files = inputTarget.files;
         if (files == null) throw new Error('No files found');
-        console.log('input change', files);
         [...files].forEach((file) => this.addSongToQueue(file));
     }
 
@@ -85,7 +82,6 @@ export class DropElement {
     }
 
     private addSongToQueue(file: File) {
-        console.log('adding song to queue', file);  
         if (this.queue.length === 0) {
             this.initSortableList(file);
         } else {
@@ -124,7 +120,6 @@ export class DropElement {
 
     private addSongToSortableList(file: File) {
         if (this.sortableList == null) throw new Error('No sortable list found');
-        console.log('adding song to sortable list', file);
         const songEl = document.createElement('li');
         songEl.classList.add('song-list-item');
         songEl.innerText = file.name;

@@ -28,7 +28,6 @@ export class RoomMessageListener {
 
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
-    console.log(event);
     switch (data.type) {
         case "ServerWelcomeCommand":
             const welcomeMessage = data as ServerWelcomeCommand;

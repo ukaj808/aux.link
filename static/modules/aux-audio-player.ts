@@ -10,7 +10,7 @@ export class AuxAudioPlayer {
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.ringBufferSize = 8192;
+    this.ringBufferSize = 262144;
   }
 
   public setUserId(userId: string) {
