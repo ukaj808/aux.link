@@ -12,7 +12,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     super();
     // Create views on states shared buffer
     this.ringBuffer     = new DataView(options.processorOptions.ringBuffer);
-    this.ringBufferSize = options.processorOptions.ringBuffer.byteLength;
+    this.ringBufferSize = options.processorOptions.ringBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT;
     this.state          = new Int8Array(options.processorOptions.state);
     this.offset         = new Int32Array(options.processorOptions.audioWorkletOffset);
     this.lap            = new Int32Array(options.processorOptions.audioWorkletLap);
@@ -34,12 +34,13 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       const numSamples = outputChannel.length;
       totalSamplesProcessed += numSamples;
       for (let sample = 0, pcmSample = channel; sample < numSamples; sample++, pcmSample += numChannels) {
-        const calcPcmSampleIndex = ((this.offset[0] + pcmSample) * Float32Array.BYTES_PER_ELEMENT) % this.ringBufferSize;
-        outputChannel[sample] = this.ringBuffer.getFloat32(calcPcmSampleIndex, true);
+        const calcPcmSampleIndex = (this.offset[0] + pcmSample) % this.ringBufferSize;
+        const dataViewIndex = calcPcmSampleIndex * Float32Array.BYTES_PER_ELEMENT;
+        outputChannel[sample] = this.ringBuffer.getFloat32(dataViewIndex, true);
       }
     }
     
-    const newOffset = (this.offset[0] + totalSamplesProcessed) % (this.ringBufferSize / Float32Array.BYTES_PER_ELEMENT);
+    const newOffset = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
     this.offset[0] = newOffset;
 
     if (newOffset == 0) {
