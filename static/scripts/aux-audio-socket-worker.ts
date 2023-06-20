@@ -3,21 +3,16 @@ let userId: string;
 let ws: WebSocket;
 let ringBuffer: Float32Array;
 let state: Int8Array;
-let audioWorkletOffset: Int32Array;
-let audioWorkletLap: Int32Array;
-let openState: boolean = false;
+let readerOffset: Int32Array;
 let offset: Int32Array;
-let lap: Int32Array;
 let samplesRead: Int32Array; // distance
 let samplesWritten: Int32Array; // distance
 let lappedCount: number = 1;
 
 const resetState = () => {
-  ringBuffer.fill(0);
+  ringBuffer.fill(0, offset[0]); // clear the rest of the ring buffer after the last audio chunk
   offset[0] = 0;
   state[0] = 0;
-  lap[0] = 0;
-  openState = false;
   samplesWritten[0] = 0;
 }
 
@@ -25,7 +20,10 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 1) {
       const signal = new DataView(event.data).getInt8(0); 
       if (signal == 0) {  // 0 means the song is over 
-        postMessage({ type: 'SONG_FINISHED' });
+        while (readerOffset[0] < offset[0]) {
+        }
+        postMessage({ type: 'SONG_FINISHED', offset: offset[0] });
+
         resetState();
       } else if (signal == 1) { // 1 means the song started
         postMessage({ type: 'SONG_STARTED' });
@@ -53,8 +51,7 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   offset[0] = (offset[0] + data.length) % ringBuffer.length;
   
   // Ring buffer is half full; allow worklet to start reading,
-  if (!openState) {
-    openState = true;
+  if (state[0] == 0 && (samplesWritten[0] > (ringBuffer.length / 2))) {
     state[0] = 1;
   }
 
@@ -72,10 +69,8 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
     // Create views on shared buffers
     ringBuffer     = new Float32Array(data.ringBuffer);
     state          = new Int8Array(data.state);
-    audioWorkletOffset = new Int32Array(data.audioWorkletOffset);
-    audioWorkletLap = new Int32Array(data.audioWorkletLap);
-    offset = new Int32Array(data.wsWorkerOffset);
-    lap = new Int32Array(data.wsWorkerLap);
+    readerOffset = new Int32Array(data.readerOffset);
+    offset = new Int32Array(data.writerOffset);
     samplesRead = new Int32Array(data.samplesRead);
     samplesWritten = new Int32Array(data.samplesWritten);
 

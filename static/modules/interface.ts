@@ -4,24 +4,28 @@ type WsWorkerOpts = {
     userId: string, 
     ringBuffer: SharedArrayBuffer,
     state: SharedArrayBuffer,
-    audioWorkletOffset: SharedArrayBuffer,
-    audioWorkletLap: SharedArrayBuffer,
+    readerOffset: SharedArrayBuffer,
+    writerOffset: SharedArrayBuffer
     samplesRead: SharedArrayBuffer,
     samplesWritten: SharedArrayBuffer,
-    wsWorkerOffset: SharedArrayBuffer
-    wsWorkerLap: SharedArrayBuffer
 }
 
 type AudioStreamPrepOptions = {
     ringBufferSize: number,
 }
 
-type WsWorkerMessage = {
-    type: "WS_WORKER_READY" | "SONG_STARTED" | "SONG_FINISHED";
+type WsSongFinishedEvent = {
+    type: "SONG_FINISHED";
+    offset: number;
 }
 
+type WsWorkerMessage = {
+    type: "WS_WORKER_READY" | "SONG_STARTED"
+} | WsSongFinishedEvent
+
+
 type AudioWorkletMessage = {
-    type: "SONG_STARTED" | "SONG_FINISHED";
+    type: "SONG_STARTED" | "SONG_FINISHED",
 }
 
 type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";

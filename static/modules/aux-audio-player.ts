@@ -7,16 +7,14 @@ export class AuxAudioPlayer {
   private ringBufferSize?: number;
   private ringBuffer?: SharedArrayBuffer;
   private state?: SharedArrayBuffer;
-  private audioWorkletOffset?: SharedArrayBuffer;
-  private audioWorkletLap?: SharedArrayBuffer;
+  private readerOffset?: SharedArrayBuffer;
   private samplesRead?: SharedArrayBuffer;
-  private wsWorkerOffset?: SharedArrayBuffer;
-  private wsWorkerLap?: SharedArrayBuffer;
+  private writerOffset?: SharedArrayBuffer;
   private samplesWritten?: SharedArrayBuffer;
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.ringBufferSize = 8192; //8 kb
+    this.ringBufferSize = 262144; //8 kb
   }
 
   public setUserId(userId: string) {
@@ -43,11 +41,9 @@ export class AuxAudioPlayer {
     // This also might need to be refactored to be set in reaction/accordance to the song starting event
     this.ringBuffer = new SharedArrayBuffer(this.ringBufferSize);
     this.state = new SharedArrayBuffer(1);
-    this.audioWorkletOffset = new SharedArrayBuffer(4);
-    this.audioWorkletLap = new SharedArrayBuffer(4);
+    this.readerOffset = new SharedArrayBuffer(4);
     this.samplesRead = new SharedArrayBuffer(4);
-    this.wsWorkerOffset = new SharedArrayBuffer(4);
-    this.wsWorkerLap = new SharedArrayBuffer(4);
+    this.writerOffset = new SharedArrayBuffer(4);
     this.samplesWritten = new SharedArrayBuffer(4);
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
@@ -62,10 +58,8 @@ export class AuxAudioPlayer {
         {  
           ringBuffer: this.ringBuffer,
           state: this.state,
-          audioWorkletOffset: this.audioWorkletOffset,
-          audioWorkletLap: this.audioWorkletLap,
-          wsWorkerOffset: this.wsWorkerOffset,
-          wsWorkerLap: this.wsWorkerLap,
+          readerOffset: this.readerOffset,
+          wsWorkerOffset: this.writerOffset,
           samplesRead: this.samplesRead,
           samplesWritten: this.samplesWritten
         } 
@@ -77,11 +71,9 @@ export class AuxAudioPlayer {
         userId: this.userId, 
         ringBuffer: this.ringBuffer,
         state: this.state,
-        audioWorkletOffset: this.audioWorkletOffset,
-        audioWorkletLap: this.audioWorkletLap,
+        readerOffset: this.readerOffset,
         samplesRead: this.samplesRead,
-        wsWorkerOffset: this.wsWorkerOffset,
-        wsWorkerLap: this.wsWorkerLap,
+        writerOffset: this.writerOffset,
         samplesWritten: this.samplesWritten
       }
 
@@ -116,8 +108,7 @@ export class AuxAudioPlayer {
         break;
       }
       case 'SONG_FINISHED': {
-        this.audioContext.suspend();
-        this.audioWorklet.port.postMessage({ type: messageEvent.data.type });
+        this.audioWorklet.port.postMessage({ type: messageEvent.data.type, offset: messageEvent.data.offset });
         break;
       }
     }

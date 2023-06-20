@@ -33,12 +33,16 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
         break;
       }
       case 'SONG_FINISHED': {
-        this.offset[0] = 0;
-        this.lap[0] = 0;
-        this.samplesRead[0] = 0;
+        this.resetState();
         break;
       }
     }
+  }
+
+  private resetState() {
+    this.offset[0] = 0;
+    this.lap[0] = 0;
+    this.samplesRead[0] = 0;
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]) {
