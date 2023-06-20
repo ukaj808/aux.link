@@ -18,6 +18,20 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.lap            = new Int32Array(options.processorOptions.audioWorkletLap);
     this.wsWorkerOffset = new Int32Array(options.processorOptions.wsWorkerOffset);
     this.wsWorkerLap    = new Int32Array(options.processorOptions.wsWorkerLap);
+    this.port.onmessage = this.onPostMessage;
+  }
+
+  private onPostMessage = (messageEvent: MessageEvent<AudioWorkletMessage>) => { 
+    switch (messageEvent.data.type) {
+      case 'SONG_STARTED': {
+        break;
+      }
+      case 'SONG_FINISHED': {
+        this.offset[0] = 0;
+        this.lap[0] = 0;
+        break;
+      }
+    }
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]) {

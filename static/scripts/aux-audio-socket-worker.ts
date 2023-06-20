@@ -9,15 +9,22 @@ let openState: boolean = false;
 let offset: Int32Array;
 let lap: Int32Array;
 
+const resetState = () => {
+  ringBuffer.fill(0);
+  offset[0] = 0;
+  state[0] = 0;
+  lap[0] = 0;
+  openState = false;
+}
+
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 1) {
       const signal = new DataView(event.data).getInt8(0); 
       if (signal == 0) {  // 0 means the song is over 
-        console.log("Song is over"); 
-        // Clear the ring buffer
-        ringBuffer.fill(0);
-      } else if (signal == 1) { // 1 means the song is starting 
-        console.log("Song is starting");
+        postMessage({ type: 'SONG_FINISHED' });
+        resetState();
+      } else if (signal == 1) { // 1 means the song started
+        postMessage({ type: 'SONG_STARTED' });
       }
       return;
   }

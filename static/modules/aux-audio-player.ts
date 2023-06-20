@@ -31,6 +31,7 @@ export class AuxAudioPlayer {
         sampleRate: 48000,
       }
     );
+
     this.audioContext.suspend();
 
     // we might want to refactor the audio context construction to be done in reaction/accordance to the song starting event
@@ -94,12 +95,23 @@ export class AuxAudioPlayer {
   private onPostMessage = async (messageEvent: MessageEvent<WsWorkerMessage>) => {
     if (this.audioContext === undefined) throw new Error("Audio context wasnt initialized");
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
-    if (messageEvent.data.type === 'WS_WORKER_READY') {
-      console.info("Ws worker intialized...");
-
-      this.audioWorklet.connect(this.audioContext.destination);
-
-      this.audioContext.resume();
+    switch (messageEvent.data.type) {
+      case 'WS_WORKER_READY': {
+        console.info("Ws worker intialized...");
+        this.audioWorklet.connect(this.audioContext.destination);
+        this.audioContext.resume();
+        break;
+      }
+      case 'SONG_STARTED': {
+        this.audioWorklet.port.postMessage({ type: messageEvent.data.type });
+        this.audioContext.resume();
+        break;
+      }
+      case 'SONG_FINISHED': {
+        this.audioContext.suspend();
+        this.audioWorklet.port.postMessage({ type: messageEvent.data.type });
+        break;
+      }
     }
   }
 }
