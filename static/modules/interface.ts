@@ -6,6 +6,8 @@ type WsWorkerOpts = {
     state: SharedArrayBuffer,
     audioWorkletOffset: SharedArrayBuffer,
     audioWorkletLap: SharedArrayBuffer,
+    samplesRead: SharedArrayBuffer,
+    samplesWritten: SharedArrayBuffer,
     wsWorkerOffset: SharedArrayBuffer
     wsWorkerLap: SharedArrayBuffer
 }

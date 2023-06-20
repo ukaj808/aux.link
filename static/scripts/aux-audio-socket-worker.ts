@@ -8,6 +8,9 @@ let audioWorkletLap: Int32Array;
 let openState: boolean = false;
 let offset: Int32Array;
 let lap: Int32Array;
+let samplesRead: Int32Array; // distance
+let samplesWritten: Int32Array; // distance
+let lappedCount: number = 1;
 
 const resetState = () => {
   ringBuffer.fill(0);
@@ -15,6 +18,7 @@ const resetState = () => {
   state[0] = 0;
   lap[0] = 0;
   openState = false;
+  samplesWritten[0] = 0;
 }
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
@@ -39,17 +43,17 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
     ringBuffer.set(data.subarray(0, remainingSpace), offset[0]);
     ringBuffer.set(data.subarray(remainingSpace), 0);
   }
+  samplesWritten[0] = samplesWritten[0] + data.length;
 
-  const newOffset = (offset[0] + data.length) % ringBuffer.length;
-  if (newOffset == 0) {
-    lap[0] = lap[0] + 1;
-    console.log ("Writer Lap: " + lap[0]);
+  if ((samplesWritten[0] - samplesRead[0]) > (ringBuffer.length * lappedCount)) {
+    lappedCount += 1;
+    console.log(`Buffer overrun!`);
   }
 
-  offset[0] = newOffset;
+  offset[0] = (offset[0] + data.length) % ringBuffer.length;
   
   // Ring buffer is half full; allow worklet to start reading,
-  if (!openState && offset[0] >= ringBuffer.length / 2) {
+  if (!openState) {
     openState = true;
     state[0] = 1;
   }
@@ -72,6 +76,8 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
     audioWorkletLap = new Int32Array(data.audioWorkletLap);
     offset = new Int32Array(data.wsWorkerOffset);
     lap = new Int32Array(data.wsWorkerLap);
+    samplesRead = new Int32Array(data.samplesRead);
+    samplesWritten = new Int32Array(data.samplesWritten);
 
     connectToAudioSocket(data.roomId, data.userId)
 

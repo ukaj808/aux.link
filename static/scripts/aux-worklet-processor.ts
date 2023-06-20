@@ -7,6 +7,9 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
   private wsWorkerOffset: Int32Array;
   private wsWorkerLap: Int32Array;
   private state: Int8Array;
+  private samplesRead: Int32Array;
+  private samplesWritten: Int32Array;
+  private lappedCount: number;
 
   constructor(options: AudioWorkletNodeOptions) {
     super();
@@ -18,6 +21,9 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.lap            = new Int32Array(options.processorOptions.audioWorkletLap);
     this.wsWorkerOffset = new Int32Array(options.processorOptions.wsWorkerOffset);
     this.wsWorkerLap    = new Int32Array(options.processorOptions.wsWorkerLap);
+    this.samplesRead    = new Int32Array(options.processorOptions.samplesRead);
+    this.samplesWritten = new Int32Array(options.processorOptions.samplesWritten);
+    this.lappedCount    = 1;
     this.port.onmessage = this.onPostMessage;
   }
 
@@ -29,6 +35,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       case 'SONG_FINISHED': {
         this.offset[0] = 0;
         this.lap[0] = 0;
+        this.samplesRead[0] = 0;
         break;
       }
     }
@@ -54,13 +61,13 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       }
     }
     
-    const newOffset = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
-    this.offset[0] = newOffset;
+    this.offset[0] = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
+    this.samplesRead[0] = this.samplesRead[0] + totalSamplesProcessed;
 
-    if (newOffset == 0) {
-      this.lap[0] = this.lap[0] + 1;
-      console.log ("Reader Lap: " + this.lap[0]);
-    }  
+    if ((this.samplesRead[0] - this.samplesWritten[0]) > (this.ringBufferSize * this.lappedCount)) {
+      this.lappedCount += 1;
+      console.log("Buffer under run!");
+    }
 
     return true;
 

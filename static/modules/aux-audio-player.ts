@@ -9,8 +9,10 @@ export class AuxAudioPlayer {
   private state?: SharedArrayBuffer;
   private audioWorkletOffset?: SharedArrayBuffer;
   private audioWorkletLap?: SharedArrayBuffer;
+  private samplesRead?: SharedArrayBuffer;
   private wsWorkerOffset?: SharedArrayBuffer;
   private wsWorkerLap?: SharedArrayBuffer;
+  private samplesWritten?: SharedArrayBuffer;
 
   constructor(roomId: string) {
     this.roomId = roomId;
@@ -43,8 +45,10 @@ export class AuxAudioPlayer {
     this.state = new SharedArrayBuffer(1);
     this.audioWorkletOffset = new SharedArrayBuffer(4);
     this.audioWorkletLap = new SharedArrayBuffer(4);
+    this.samplesRead = new SharedArrayBuffer(4);
     this.wsWorkerOffset = new SharedArrayBuffer(4);
     this.wsWorkerLap = new SharedArrayBuffer(4);
+    this.samplesWritten = new SharedArrayBuffer(4);
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.wsWorker.onmessage = this.onPostMessage;
@@ -61,7 +65,9 @@ export class AuxAudioPlayer {
           audioWorkletOffset: this.audioWorkletOffset,
           audioWorkletLap: this.audioWorkletLap,
           wsWorkerOffset: this.wsWorkerOffset,
-          wsWorkerLap: this.wsWorkerLap
+          wsWorkerLap: this.wsWorkerLap,
+          samplesRead: this.samplesRead,
+          samplesWritten: this.samplesWritten
         } 
       });
 
@@ -73,8 +79,10 @@ export class AuxAudioPlayer {
         state: this.state,
         audioWorkletOffset: this.audioWorkletOffset,
         audioWorkletLap: this.audioWorkletLap,
+        samplesRead: this.samplesRead,
         wsWorkerOffset: this.wsWorkerOffset,
-        wsWorkerLap: this.wsWorkerLap
+        wsWorkerLap: this.wsWorkerLap,
+        samplesWritten: this.samplesWritten
       }
 
     this.wsWorker.postMessage(wsWorkerOpts);
