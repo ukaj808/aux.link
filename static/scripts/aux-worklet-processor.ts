@@ -26,18 +26,18 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
 
   // When a song is finished, this is set to the offset of the last sample of the song (by the ws worker)  
   // Which enables a graceful exit from the song (song won't be cut off)
-  private break: number | null;
+  private break: Int32Array;
 
   constructor(options: AudioWorkletNodeOptions) {
     super();
     this.ringBuffer     = new DataView(options.processorOptions.ringBuffer);
     this.ringBufferSize = options.processorOptions.ringBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT;
     this.state          = new Int8Array(options.processorOptions.state);
-    this.offset         = new Int32Array(options.processorOptions.audioWorkletOffset);
+    this.offset         = new Int32Array(options.processorOptions.readerOffset);
     this.samplesRead    = new Int32Array(options.processorOptions.samplesRead);
     this._samplesWritten = new Int32Array(options.processorOptions.samplesWritten);
     this.lappedCount    = 1;
-    this.break          = null;
+    this.break          = new Int32Array(options.processorOptions.break);
     this.port.onmessage = this.onPostMessage;
   }
 
@@ -47,7 +47,6 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
         break;
       }
       case 'WRITE_SONG_FINISHED': {
-        this.break = message.data.offset;
         break;
       }
     }
@@ -79,13 +78,16 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
         outputChannel[sample] = this.ringBuffer.getFloat32(dataViewIndex, true);
 
         // Graceful exit if the song is over
-        if (this.break !== null) {
+        // -1 signifies a undefined state
+        if (this.break[0] != -1) {
           // consume all samples until the break offset
           this.ringBuffer.setFloat32(dataViewIndex, 0, true);
-          if (calcPcmSampleIndex === this.break) {
+          if (calcPcmSampleIndex == this.break[0]) {
             this.resetState();
-            this.break = null;
-            postMessage({ type: 'READ_SONG_FINISHED' });
+            this.break[0] = -1;
+            // This is cutting off the last sample of the song!
+            this.port.postMessage({ type: 'READ_SONG_FINISHED' });
+            return true;
           }
         }
 

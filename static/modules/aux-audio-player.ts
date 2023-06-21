@@ -11,6 +11,7 @@ export class AuxAudioPlayer {
   private samplesRead?: SharedArrayBuffer;
   private writerOffset?: SharedArrayBuffer;
   private samplesWritten?: SharedArrayBuffer;
+  private break?: SharedArrayBuffer;
 
   constructor(roomId: string) {
     this.roomId = roomId;
@@ -45,6 +46,7 @@ export class AuxAudioPlayer {
     this.samplesRead = new SharedArrayBuffer(4);
     this.writerOffset = new SharedArrayBuffer(4);
     this.samplesWritten = new SharedArrayBuffer(4);
+    this.break = new SharedArrayBuffer(4);
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.wsWorker.onmessage = this.onWsWorkerEvent;
@@ -59,9 +61,10 @@ export class AuxAudioPlayer {
           ringBuffer: this.ringBuffer,
           state: this.state,
           readerOffset: this.readerOffset,
-          wsWorkerOffset: this.writerOffset,
+          writerOffset: this.writerOffset,
           samplesRead: this.samplesRead,
-          samplesWritten: this.samplesWritten
+          samplesWritten: this.samplesWritten,
+          break: this.break,
         } 
       });
 
@@ -76,7 +79,8 @@ export class AuxAudioPlayer {
         readerOffset: this.readerOffset,
         samplesRead: this.samplesRead,
         writerOffset: this.writerOffset,
-        samplesWritten: this.samplesWritten
+        samplesWritten: this.samplesWritten,
+        break: this.break,
       }
 
     this.wsWorker.postMessage(wsWorkerOpts);
@@ -119,7 +123,7 @@ export class AuxAudioPlayer {
   private onAudioWorkletEvent = (event: MessageEvent<AudioWorkletEvent>) => {
     switch (event.data.type) {
       case 'READ_SONG_FINISHED':
-        this.audioContext?.suspend();
+        // this.audioContext?.suspend();
         break;
     }
   }

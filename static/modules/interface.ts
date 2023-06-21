@@ -8,6 +8,7 @@ type WsWorkerOpts = {
     writerOffset: SharedArrayBuffer
     samplesRead: SharedArrayBuffer,
     samplesWritten: SharedArrayBuffer,
+    break: SharedArrayBuffer,
 }
 
 type AudioStreamPrepOptions = {

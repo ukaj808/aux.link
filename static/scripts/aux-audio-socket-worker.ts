@@ -8,11 +8,11 @@ let offset: Int32Array;
 let samplesRead: Int32Array; // distance
 let samplesWritten: Int32Array; // distance
 let lappedCount: number = 1;
+let offsetBreak: Int32Array;
 
 const resetState = () => {
-  ringBuffer.fill(0, offset[0]); // clear the rest of the ring buffer after the last audio chunk
   offset[0] = 0;
-  samplesWritten[0] = 0;
+  lappedCount = 1;
 }
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
@@ -20,8 +20,14 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
       const signal = new DataView(event.data).getInt8(0); 
       if (signal == 0) {  // 0 means the song is over 
         postMessage({ type: 'WRITE_SONG_FINISHED', offset: offset[0] });
+        offsetBreak[0] = offset[0];
+        ringBuffer.fill(0, offset[0]); // clear the rest of the ring buffer after the last audio chunk
         resetState();
       } else if (signal == 1) { // 1 means the song started
+        // Clear samples written on new song start
+        // because the audio worklet still references the old song's samples written to check
+        // for buffer underruns
+        samplesWritten[0] = 0;
         postMessage({ type: 'WRITE_SONG_STARTED' });
       }
       return;
@@ -69,6 +75,8 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
     offset = new Int32Array(data.writerOffset);
     samplesRead = new Int32Array(data.samplesRead);
     samplesWritten = new Int32Array(data.samplesWritten);
+    offsetBreak = new Int32Array(data.break);
+    offsetBreak[0] = -1;
 
     connectToAudioSocket(data.roomId, data.userId)
 
