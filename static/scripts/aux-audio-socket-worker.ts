@@ -12,7 +12,6 @@ let lappedCount: number = 1;
 const resetState = () => {
   ringBuffer.fill(0, offset[0]); // clear the rest of the ring buffer after the last audio chunk
   offset[0] = 0;
-  state[0] = 0;
   samplesWritten[0] = 0;
 }
 
@@ -20,13 +19,10 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 1) {
       const signal = new DataView(event.data).getInt8(0); 
       if (signal == 0) {  // 0 means the song is over 
-        while (readerOffset[0] < offset[0]) {
-        }
-        postMessage({ type: 'SONG_FINISHED', offset: offset[0] });
-
+        postMessage({ type: 'WRITE_SONG_FINISHED', offset: offset[0] });
         resetState();
       } else if (signal == 1) { // 1 means the song started
-        postMessage({ type: 'SONG_STARTED' });
+        postMessage({ type: 'WRITE_SONG_STARTED' });
       }
       return;
   }

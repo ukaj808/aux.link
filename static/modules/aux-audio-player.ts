@@ -47,7 +47,7 @@ export class AuxAudioPlayer {
     this.samplesWritten = new SharedArrayBuffer(4);
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
-    this.wsWorker.onmessage = this.onPostMessage;
+    this.wsWorker.onmessage = this.onWsWorkerEvent;
 
     await this.audioContext.audioWorklet.addModule('public/audio_worklet_processor_bundle.js');
 
@@ -64,6 +64,8 @@ export class AuxAudioPlayer {
           samplesWritten: this.samplesWritten
         } 
       });
+
+    this.audioWorklet.port.onmessage = this.onAudioWorkletEvent;
 
       const wsWorkerOpts: WsWorkerOpts = {
         type: "INIT", 
@@ -92,25 +94,33 @@ export class AuxAudioPlayer {
     this.audioContext = undefined;
   }
 
-  private onPostMessage = async (messageEvent: MessageEvent<WsWorkerMessage>) => {
+  private onWsWorkerEvent = async (event: MessageEvent<WsWorkerEvent>) => {
     if (this.audioContext === undefined) throw new Error("Audio context wasnt initialized");
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
-    switch (messageEvent.data.type) {
+    switch (event.data.type) {
       case 'WS_WORKER_READY': {
         console.info("Ws worker intialized...");
         this.audioWorklet.connect(this.audioContext.destination);
         this.audioContext.resume();
         break;
       }
-      case 'SONG_STARTED': {
-        this.audioWorklet.port.postMessage({ type: messageEvent.data.type });
+      case 'WRITE_SONG_STARTED': {
+        this.audioWorklet.port.postMessage({ type: event.data.type });
         this.audioContext.resume();
         break;
       }
-      case 'SONG_FINISHED': {
-        this.audioWorklet.port.postMessage({ type: messageEvent.data.type, offset: messageEvent.data.offset });
+      case 'WRITE_SONG_FINISHED': {
+        this.audioWorklet.port.postMessage({ type: event.data.type, offset: event.data.offset });
         break;
       }
+    }
+  }
+
+  private onAudioWorkletEvent = (event: MessageEvent<AudioWorkletEvent>) => {
+    switch (event.data.type) {
+      case 'READ_SONG_FINISHED':
+        this.audioContext?.suspend();
+        break;
     }
   }
 }

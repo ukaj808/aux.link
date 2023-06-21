@@ -15,17 +15,21 @@ type AudioStreamPrepOptions = {
 }
 
 type WsSongFinishedEvent = {
-    type: "SONG_FINISHED";
+    type: "WRITE_SONG_FINISHED";
     offset: number;
 }
 
-type WsWorkerMessage = {
-    type: "WS_WORKER_READY" | "SONG_STARTED"
+type WsWorkerEvent = {
+    type: "WS_WORKER_READY" | "WRITE_SONG_STARTED"
 } | WsSongFinishedEvent
 
 
-type AudioWorkletMessage = {
-    type: "SONG_STARTED" | "SONG_FINISHED",
+type AudioWorkletCommand = {
+    type: "WRITE_SONG_STARTED",
+} | WsSongFinishedEvent;
+
+type AudioWorkletEvent = {
+    type: "READ_SONG_FINISHED",
 }
 
 type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";
