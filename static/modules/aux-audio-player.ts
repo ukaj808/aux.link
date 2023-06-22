@@ -5,17 +5,13 @@ export class AuxAudioPlayer {
   private wsWorker?: Worker;
   private audioWorklet?: AudioWorkletNode;
   private ringBufferSize?: number;
-  private ringBuffer?: SharedArrayBuffer;
-  private state?: SharedArrayBuffer;
-  private readerOffset?: SharedArrayBuffer;
-  private samplesRead?: SharedArrayBuffer;
-  private writerOffset?: SharedArrayBuffer;
-  private samplesWritten?: SharedArrayBuffer;
-  private break?: SharedArrayBuffer;
+  private writeSharedBuffers?: WriteSharedBuffers;
+  private wsBuffers?: WsBuffers;
+  private audioWorkletBuffers?: AudioWorkletBuffers;
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.ringBufferSize = 262144; //8 kb
+    this.ringBufferSize = 65536; // kb
   }
 
   public setUserId(userId: string) {
@@ -39,14 +35,21 @@ export class AuxAudioPlayer {
     // Since we might want to support different sample rates for different scenarios 
     // (e.g. the user has low bandwidth and should receive a lower quality stream)
 
-    // This also might need to be refactored to be set in reaction/accordance to the song starting event
-    this.ringBuffer = new SharedArrayBuffer(this.ringBufferSize);
-    this.state = new SharedArrayBuffer(1);
-    this.readerOffset = new SharedArrayBuffer(4);
-    this.samplesRead = new SharedArrayBuffer(4);
-    this.writerOffset = new SharedArrayBuffer(4);
-    this.samplesWritten = new SharedArrayBuffer(4);
-    this.break = new SharedArrayBuffer(4);
+    this.writeSharedBuffers = {
+      ringBuffer: new SharedArrayBuffer(this.ringBufferSize),
+      bufferReady: new SharedArrayBuffer(1),
+      sampleIndexBreak: new SharedArrayBuffer(4),
+    }
+
+    this.wsBuffers = {
+      writerOffset: new SharedArrayBuffer(4),
+      samplesWritten: new SharedArrayBuffer(4),
+    }
+
+    this.audioWorkletBuffers = {
+      readerOffset: new SharedArrayBuffer(4),
+      samplesRead: new SharedArrayBuffer(4),
+    }
 
     this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
     this.wsWorker.onmessage = this.onWsWorkerEvent;
@@ -58,13 +61,9 @@ export class AuxAudioPlayer {
         outputChannelCount: [2],
         processorOptions: 
         {  
-          ringBuffer: this.ringBuffer,
-          state: this.state,
-          readerOffset: this.readerOffset,
-          writerOffset: this.writerOffset,
-          samplesRead: this.samplesRead,
-          samplesWritten: this.samplesWritten,
-          break: this.break,
+          writeSharedBuffers: this.writeSharedBuffers,
+          buffers: this.audioWorkletBuffers,
+          _wsBuffers: this.wsBuffers,
         } 
       });
 
@@ -74,13 +73,9 @@ export class AuxAudioPlayer {
         type: "INIT", 
         roomId: this.roomId, 
         userId: this.userId, 
-        ringBuffer: this.ringBuffer,
-        state: this.state,
-        readerOffset: this.readerOffset,
-        samplesRead: this.samplesRead,
-        writerOffset: this.writerOffset,
-        samplesWritten: this.samplesWritten,
-        break: this.break,
+        writeSharedBuffers: this.writeSharedBuffers,
+        buffers: this.wsBuffers,
+        _audioWorkletOwnedBuffers: this.audioWorkletBuffers,
       }
 
     this.wsWorker.postMessage(wsWorkerOpts);

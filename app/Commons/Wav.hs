@@ -81,14 +81,15 @@ getFmtSubChunk = do
 -- could break the header parsing algorithm here as
 -- the header format generally depends on the audio data. For example, pcm_f32le
 -- will add a few more fields to the fmt sub chunk, which breaks this.
-parseWavFile :: Handle -> IO (FmtSubChunk, Integer)
+parseWavFile :: Handle -> IO (FmtSubChunk, L.ByteString, Integer)
 parseWavFile handle = do
   _           <- runGet getRiffChunk   <$> L.hGet handle 12
-  fmtSubChunk <- runGet getFmtSubChunk <$> L.hGet handle 48 
+  rawFmtSubChunk <- L.hGet handle 48
+  let fmtSubChunk = runGet getFmtSubChunk rawFmtSubChunk
   -- scrubs the offset in the handle up to the data chunk
   -- returns the ammount of bytes to pull as to not go over
   audioSizeInBytes <- findDataChunkAndSeek handle
-  return (fmtSubChunk, audioSizeInBytes)
+  return (fmtSubChunk, rawFmtSubChunk, audioSizeInBytes)
   where
     findDataChunkAndSeek :: Handle -> IO Integer
     findDataChunkAndSeek h = do

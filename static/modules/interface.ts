@@ -1,14 +1,61 @@
+type FmtSubChunk = {
+    subchunk1Id: string,
+    subchunk1Size: number,
+    audioFormat: number,
+    numChannels: number,
+    sampleRate: number,
+    byteRate: number,
+    blockAlign: number,
+    bitsPerSample: number,
+    cbSize: number,
+    validBitsPerSample: number,
+    channelMask: number,
+}
+
 type WsWorkerOpts = {
     type: "INIT", 
     roomId: string, 
     userId: string, 
-    ringBuffer: SharedArrayBuffer,
-    state: SharedArrayBuffer,
-    readerOffset: SharedArrayBuffer,
-    writerOffset: SharedArrayBuffer
-    samplesRead: SharedArrayBuffer,
+
+    writeSharedBuffers: WriteSharedBuffers,
+    buffers: WsBuffers,
+    _audioWorkletOwnedBuffers: AudioWorkletBuffers,
+}
+
+// Only the ws worker has access to write to these buffers
+type WsBuffers = {
+    writerOffset: SharedArrayBuffer,
     samplesWritten: SharedArrayBuffer,
-    break: SharedArrayBuffer,
+}
+
+type WsBuffersView = {
+    writerOffset: Int32Array,
+    samplesWritten: Int32Array,
+}
+
+// Only the audio worklet has access to write from these buffers
+type AudioWorkletBuffers = {
+    readerOffset: SharedArrayBuffer,
+    samplesRead: SharedArrayBuffer,
+}
+
+type AudioWorkletBuffersView = {
+    readerOffset: Int32Array,
+    samplesRead: Int32Array,
+}
+
+// Both the audio worklet and the ws worker have access to write to these buffers
+type WriteSharedBuffers = {
+    ringBuffer: SharedArrayBuffer,
+    bufferReady: SharedArrayBuffer,
+    sampleIndexBreak: SharedArrayBuffer,
+}
+
+type WriteSharedBuffersView = {
+    ringBuffer: Float32Array,
+    ringBufferDataView: DataView,
+    bufferReady: Uint8Array,
+    sampleIndexBreak: Int32Array,
 }
 
 type AudioStreamPrepOptions = {

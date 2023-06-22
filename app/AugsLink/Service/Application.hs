@@ -7,7 +7,7 @@ import AugsLink.Service.API
 import AugsLink.Service.Handlers.GetAudioWorker
 import AugsLink.Service.Handlers.GetHome
 import AugsLink.Service.Handlers.GetRoom
-import AugsLink.Service.Handlers.ListenWs
+import AugsLink.Service.Handlers.MusicWs
 import AugsLink.Service.Handlers.PostHome
 import AugsLink.Service.Handlers.PutStartMusic
 import AugsLink.Service.Handlers.PutUploadSong
@@ -20,7 +20,7 @@ handlers opts rr =
   :<|> createHandler rr
   :<|> roomHandler   rr
   :<|> enterHandler  rr
-  :<|> listenHandler rr
+  :<|> connectHandler rr
   :<|> startHandler rr
   :<|> uploadHandler rr
   :<|> audioWorkerHandler opts

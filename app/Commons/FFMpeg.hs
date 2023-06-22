@@ -132,8 +132,8 @@ instance FromJSON FFProbeFormat where
 
 
 data FFProbeData = FFProbeData {
-  streams :: [FFProbeStream]
-, format  :: FFProbeFormat
+  probedStreams :: [FFProbeStream]
+, probedFormat  :: FFProbeFormat
 } deriving Show
 
 instance FromJSON FFProbeData where
@@ -142,8 +142,8 @@ instance FromJSON FFProbeData where
     format  <- o .: "format"
     return $ FFProbeData
       {
-        streams = streams
-      , format  = format
+        probedStreams = streams
+      , probedFormat  = format
       }
 
 ffprobeJsonOutArgs :: FilePath -> [String]

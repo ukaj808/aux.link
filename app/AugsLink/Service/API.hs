@@ -75,7 +75,7 @@ type API =
       )
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
 
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "listen"           :> WebSocketPending
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music"                       :> WebSocketPending
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
 

@@ -1,68 +1,86 @@
 let roomId: string;
 let userId: string;
 let ws: WebSocket;
-let ringBuffer: Float32Array;
-let state: Int8Array;
-let readerOffset: Int32Array;
-let offset: Int32Array;
-let samplesRead: Int32Array; // distance
-let samplesWritten: Int32Array; // distance
-let lappedCount: number = 1;
-let offsetBreak: Int32Array;
 
-const resetState = () => {
-  offset[0] = 0;
+let buffers: WsBuffersView;
+let writeSharedBuffers: WriteSharedBuffersView;
+let _audioWorkletBuffers: AudioWorkletBuffersView;
+
+let lappedCount: number = 1;
+
+
+const parseFmtSubChunk = (data: ArrayBuffer): FmtSubChunk => {
+  const view = new DataView(data);
+  return {
+    // ascii
+    subchunk1Id: String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3)),
+    subchunk1Size: view.getUint32(4, true),
+    audioFormat: view.getUint16(8, true),
+    numChannels: view.getUint16(10, true),
+    sampleRate: view.getUint32(12, true),
+    byteRate: view.getUint32(16, true),
+    blockAlign: view.getUint16(20, true),
+    bitsPerSample: view.getUint16(22, true),
+    cbSize: view.getUint16(24, true),
+    validBitsPerSample: view.getUint16(26, true),
+    channelMask: view.getUint32(28, true),
+  }
+}
+const resetMyState = () => {
+  buffers.writerOffset[0] = 0;
   lappedCount = 1;
 }
 
 const onWsMessage = (event: MessageEvent<AudioChunk>) => {
-  if (event.data.byteLength == 1) {
-      const signal = new DataView(event.data).getInt8(0); 
-      if (signal == 0) {  // 0 means the song is over 
-        postMessage({ type: 'WRITE_SONG_FINISHED', offset: offset[0] });
-        offsetBreak[0] = offset[0];
-        ringBuffer.fill(0, offset[0]); // clear the rest of the ring buffer after the last audio chunk
-        resetState();
-      } else if (signal == 1) { // 1 means the song started
+  if (event.data.byteLength == 48) {
+
+        const fmtSubChunk = parseFmtSubChunk(event.data);
+        console.log(fmtSubChunk);
         // Clear samples written on new song start
         // because the audio worklet still references the old song's samples written to check
         // for buffer underruns
-        samplesWritten[0] = 0;
-        postMessage({ type: 'WRITE_SONG_STARTED' });
-      }
-      return;
+        buffers.samplesWritten[0] = 0;
+        postMessage({ type: 'WRITE_SONG_STARTED', byteRate: fmtSubChunk.byteRate });
+  }
+  else if (event.data.byteLength == 1) {
+      const signal = new DataView(event.data).getInt8(0); 
+      if (signal == 0) {  // 0 means the song is over 
+        postMessage({ type: 'WRITE_SONG_FINISHED', offset: buffers.writerOffset[0] });
+        writeSharedBuffers.sampleIndexBreak[0] = buffers.writerOffset[0];
+        resetMyState();
+      }       return;
   }
 
   const data = new Float32Array(event.data);
-  if (data.length <= ringBuffer.length - offset[0]) {
+  if (data.length <= writeSharedBuffers.ringBuffer.length - buffers.writerOffset[0]) {
     // If there's enough space for the data, simply copy it to the ring buffer
-    ringBuffer.set(data, offset[0]);
+    writeSharedBuffers.ringBuffer.set(data, buffers.writerOffset[0]);
   } else {
     // If the data exceeds the space left in the ring buffer, wrap it around
-    const remainingSpace = ringBuffer.length - offset[0];
-    ringBuffer.set(data.subarray(0, remainingSpace), offset[0]);
-    ringBuffer.set(data.subarray(remainingSpace), 0);
+    const remainingSpace = writeSharedBuffers.ringBuffer.length - buffers.writerOffset[0];
+    writeSharedBuffers.ringBuffer.set(data.subarray(0, remainingSpace), buffers.writerOffset[0]);
+    writeSharedBuffers.ringBuffer.set(data.subarray(remainingSpace), 0);
   }
 
-  samplesWritten[0] = samplesWritten[0] + data.length;
+  buffers.samplesWritten[0] = buffers.samplesWritten[0] + data.length;
 
   // Lap Detection
-  if ((samplesWritten[0] - samplesRead[0]) > (ringBuffer.length * lappedCount)) {
+  if ((buffers.samplesWritten[0] - _audioWorkletBuffers.samplesRead[0]) > (writeSharedBuffers.ringBuffer.length * lappedCount)) {
     lappedCount += 1;
     console.log(`Buffer overrun!`);
   }
 
-  offset[0] = (offset[0] + data.length) % ringBuffer.length;
+  buffers.writerOffset[0] = (buffers.writerOffset[0] + data.length) % writeSharedBuffers.ringBuffer.length;
   
   // Ring buffer is half full; allow worklet to start reading,
-  if (state[0] == 0 && (samplesWritten[0] > (ringBuffer.length / 2))) {
-    state[0] = 1;
+  if (writeSharedBuffers.bufferReady[0] == 0 && (buffers.samplesWritten[0] > (writeSharedBuffers.ringBuffer.length / 2))) {
+    writeSharedBuffers.bufferReady[0] = 1;
   }
 
 };
 
 const connectToAudioSocket = (roomId: string, userId: string) => {
-    ws = new WebSocket(`ws://localhost:8080/${roomId}/users/${userId}/music/listen`);
+    ws = new WebSocket(`ws://localhost:8080/${roomId}/users/${userId}/music`);
     ws.binaryType = 'arraybuffer';
     ws.addEventListener("message", onWsMessage); 
 }
@@ -70,15 +88,24 @@ const connectToAudioSocket = (roomId: string, userId: string) => {
 self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
   const data = messageEvent.data;
   if (data.type === "INIT") {
-    // Create views on shared buffers
-    ringBuffer     = new Float32Array(data.ringBuffer);
-    state          = new Int8Array(data.state);
-    readerOffset = new Int32Array(data.readerOffset);
-    offset = new Int32Array(data.writerOffset);
-    samplesRead = new Int32Array(data.samplesRead);
-    samplesWritten = new Int32Array(data.samplesWritten);
-    offsetBreak = new Int32Array(data.break);
-    offsetBreak[0] = -1;
+
+    buffers = {
+      writerOffset: new Int32Array(data.buffers.writerOffset),
+      samplesWritten: new Int32Array(data.buffers.samplesWritten),
+    }
+
+    writeSharedBuffers = { 
+      ringBuffer: new Float32Array(data.writeSharedBuffers.ringBuffer),
+      ringBufferDataView: new DataView(data.writeSharedBuffers.ringBuffer),
+      bufferReady: new Uint8Array(data.writeSharedBuffers.bufferReady),
+      sampleIndexBreak: new Int32Array(data.writeSharedBuffers.sampleIndexBreak),
+    };
+    writeSharedBuffers.sampleIndexBreak[0] = -1;
+
+    _audioWorkletBuffers = {
+      readerOffset: new Int32Array(data._audioWorkletOwnedBuffers.readerOffset),
+      samplesRead: new Int32Array(data._audioWorkletOwnedBuffers.samplesRead),
+    }
 
     connectToAudioSocket(data.roomId, data.userId)
 

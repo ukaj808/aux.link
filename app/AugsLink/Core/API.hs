@@ -59,7 +59,7 @@ newtype User m = User {getRoomUser :: m RoomUser}
 data MusicStreamer m = Music
   {
     stream             :: FilePath       -> RoomId       -> m  ()
-  , listen             :: UserId         -> Connection m -> m  ()
+  , connect             :: UserId         -> Connection m -> m  ()
   }
 
 data RoomUser = RoomUser

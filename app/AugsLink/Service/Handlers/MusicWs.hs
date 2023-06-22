@@ -1,6 +1,6 @@
-module AugsLink.Service.Handlers.ListenWs
+module AugsLink.Service.Handlers.MusicWs
   ( 
-    listenHandler
+    connectHandler
   ) where
 
 import Data.Text
@@ -15,8 +15,8 @@ type instance Connection IO = WS.PendingConnection
 
 -- Should not terminate until the room is no longer required; because if it
 -- does then the ws connection will close on the browser
-listenHandler :: Registry IO -> Text ->  Int -> WS.PendingConnection -> Handler ()
-listenHandler rr rId uId pc = liftIO $ do
+connectHandler :: Registry IO -> Text ->  Int -> WS.PendingConnection -> Handler ()
+connectHandler rr rId uId pc = liftIO $ do
 
   r <- getRoom rr rId
 
@@ -26,4 +26,4 @@ listenHandler rr rId uId pc = liftIO $ do
 
   m <- getMusic room
   
-  listen m uId pc
+  connect m uId pc

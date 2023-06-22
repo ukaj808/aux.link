@@ -32,7 +32,7 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetAudioWorker 
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
-                      , AugsLink.Service.Handlers.ListenWs 
+                      , AugsLink.Service.Handlers.MusicWs 
                       , AugsLink.Service.Handlers.PostHome
                       , AugsLink.Service.Handlers.PutStartMusic
                       , AugsLink.Service.Handlers.PutUploadSong
