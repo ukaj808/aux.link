@@ -44,7 +44,7 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
     ringBuffer.set(data.subarray(remainingSpace), 0);
   }
   samplesWritten[0] = samplesWritten[0] + data.length;
-
+  console.log(`Samples written: ${samplesWritten[0]}`, `Samples read: ${samplesRead[0]}`);
   if ((samplesWritten[0] - samplesRead[0]) > (ringBuffer.length * lappedCount)) {
     lappedCount += 1;
     console.log(`Buffer overrun!`);
