@@ -78,7 +78,7 @@ streamImpl stateVar file rId = do
       chunk <- B.hGet handle chunkSizeInt
       forM_ (listening st) $ \session -> do
         WS.sendBinaryData (conn session) chunk
-      threadDelay delay
+      threadDelay (delay - 100)
       go fmtSubChunk handle (bytesLeft - toInteger chunkSizeInt)
 
 handleIncomingMessages :: MVar MusicStreamerState -> WS.Connection -> UserId -> IO ()

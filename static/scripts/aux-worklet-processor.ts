@@ -97,9 +97,8 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.offset[0] = (this.offset[0] + totalSamplesProcessed) % this.ringBufferSize;
     this.samplesRead[0] = this.samplesRead[0] + totalSamplesProcessed;
 
-    if ((this.samplesRead[0] - this._samplesWritten[0]) > (this.ringBufferSize * this.lappedCount)) {
-      this.lappedCount += 1;
-      console.log("Buffer under run!");
+    if (this.samplesRead[0] > this._samplesWritten[0]) {
+      console.log("Buffer underrun!");
     }
 
     return true;
