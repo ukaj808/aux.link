@@ -27,6 +27,9 @@ import AugsLink.Core.Shared
 import AugsLink.Core.User
 import Commons.FFMpeg
 import Commons.Wav
+import Control.Exception
+import Control.Monad.State (MonadState(get))
+import qualified Data.ByteString as B
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile   IO = MultipartData Tmp
@@ -93,10 +96,11 @@ nextSong stateVar = do
     st' <- readMVar stateVar
     publishToRoom st' (SongStartingEvent i)
     threadDelay 1000000
-  st    <- readMVar stateVar
-  nextUp <- getNextUser stateVar -- Get the next user to play music
-  messageToUser st nextUp ServerUploadSongCommand -- Send message to the user; telling them to start the music
-  polled <- pollSongIsUploaded stateVar 5 -- Poll the music player to see if the song has been uploaded by the user
+  st     <- readMVar stateVar
+  nextUp <- modifyMVar stateVar $ \st' -> return $ getNextUser st'
+ -- Get the next user to play music
+  messageToUser st nextUp ServerUploadSongCommand
+  polled <- pollSongIsUploaded stateVar 5
   case polled of
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
@@ -199,20 +203,27 @@ publishToAllBut rmSt p e = do
 
 publishToRoom ::  RoomState -> RoomEvent -> IO ()
 publishToRoom rmSt e = do
-  forM_ (roomUsers rmSt) $ \uSession ->
-    WS.sendTextData (conn uSession) (Aeson.encode e)
+  Map.foldrWithKey
+    (\uId uSession _ -> do
+      safeSendTextData (conn uSession) uId (RoomEventMessage e))
+      (return ())
+      (roomUsers rmSt)
 
 
 messageToUser :: RoomState -> UserId  -> ServerCommand -> IO ()
-messageToUser rmSt uid msg = do
-  let uSession = roomUsers rmSt Map.! uid
-  WS.sendTextData (conn uSession) (Aeson.encode msg)
+messageToUser rmSt uid cmd = do
+  case roomUsers rmSt Map.!? uid of
+    Nothing -> putStrLn $ "User not found: " ++ show uid
+    Just uSession -> safeSendTextData (conn uSession) uid (ServerCommandMessage cmd)
 
-getNextUser :: MVar RoomState -> IO UserId
-getNextUser stateVar = do
-  modifyMVar stateVar $ \st -> do
-    let turn' = (turn st + 1) `mod` length (order st)
-    return (st{turn=turn'}, order st !! turn')
+safeSendTextData :: WS.Connection -> UserId -> Message -> IO ()
+safeSendTextData conn uId d =
+      catch (WS.sendTextData conn (Aeson.encode d))
+            (\e -> do
+              case e of
+                WS.ConnectionClosed ->  putStrLn $ "Connection closed for user: "    ++ show uId
+                _                   ->  putStrLn $ "Error sending message to user: " ++ show uId
+              )
 
 pollSongIsUploaded :: MVar RoomState -> Int -> IO (Maybe T.Text)
 pollSongIsUploaded _ 0 = return Nothing
@@ -225,6 +236,10 @@ pollSongIsUploaded stateVar retryAttempts = do
     Just fileName  -> return $ Just fileName
 
 -- Pure functions
+getNextUser :: RoomState -> (RoomState, UserId)
+getNextUser st = (st{turn=turn'}, order st !! turn')
+    where
+      turn' = (turn st + 1) `mod` length (order st)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
 addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
@@ -232,7 +247,7 @@ addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
 
 removeUser :: RoomState -> UserId -> RoomState
 removeUser st@(RoomState _ users _ _ _ _ _ _ _) uId =
-  st{roomUsers= Map.delete uId users}
+  st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
 
 getTurnUser :: RoomState -> UserId
 getTurnUser st = order st !! turn st

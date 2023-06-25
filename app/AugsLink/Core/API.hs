@@ -75,6 +75,9 @@ data AudioFile = AudioFile
   ,  tmpPath         :: FilePath
   } deriving (Show)
 
+data Message = RoomEventMessage RoomEvent
+  |            ServerCommandMessage ServerCommand
+
 data RoomEvent = UserEnterEvent      RoomUser
   |              UserLeftEvent       UserId
   |              SongStartingEvent   Int
@@ -100,6 +103,11 @@ instance Eq RoomUser where
 
 instance Ord RoomUser where
   u1 <= u2 = userId u1 <= userId u2
+
+instance ToJSON Message where
+  toJSON :: Message -> Value
+  toJSON (RoomEventMessage e) = toJSON e
+  toJSON (ServerCommandMessage c) = toJSON c
 
 
 instance ToJSON RoomEvent where
