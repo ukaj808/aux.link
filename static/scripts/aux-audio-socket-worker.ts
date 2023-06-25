@@ -35,7 +35,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   if (event.data.byteLength == 48) {
 
         const fmtSubChunk = parseFmtSubChunk(event.data);
-        console.log(fmtSubChunk);
         // Clear samples written on new song start
         // because the audio worklet still references the old song's samples written to check
         // for buffer underruns
@@ -53,7 +52,6 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
 
   const data = new Float32Array(event.data);
-  console.log(data);
   if (data.length <= writeSharedBuffers.ringBuffer.length - buffers.writerOffset[0]) {
     // If there's enough space for the data, simply copy it to the ring buffer
     writeSharedBuffers.ringBuffer.set(data, buffers.writerOffset[0]);
