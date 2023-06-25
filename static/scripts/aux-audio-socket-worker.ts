@@ -41,6 +41,7 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
         // for buffer underruns
         buffers.samplesWritten[0] = 0;
         postMessage({ type: 'WRITE_SONG_STARTED', byteRate: fmtSubChunk.byteRate });
+        return;
   }
   else if (event.data.byteLength == 1) {
       const signal = new DataView(event.data).getInt8(0); 
@@ -52,6 +53,7 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   }
 
   const data = new Float32Array(event.data);
+  console.log(data);
   if (data.length <= writeSharedBuffers.ringBuffer.length - buffers.writerOffset[0]) {
     // If there's enough space for the data, simply copy it to the ring buffer
     writeSharedBuffers.ringBuffer.set(data, buffers.writerOffset[0]);
@@ -73,7 +75,7 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
   buffers.writerOffset[0] = (buffers.writerOffset[0] + data.length) % writeSharedBuffers.ringBuffer.length;
   
   // Ring buffer is half full; allow worklet to start reading,
-  if (writeSharedBuffers.bufferReady[0] == 0 && (buffers.samplesWritten[0] > (writeSharedBuffers.ringBuffer.length / 2))) {
+  if (writeSharedBuffers.bufferReady[0] == 0 && (buffers.samplesWritten[0] > (writeSharedBuffers.ringBuffer.length / 8))) {
     writeSharedBuffers.bufferReady[0] = 1;
   }
 

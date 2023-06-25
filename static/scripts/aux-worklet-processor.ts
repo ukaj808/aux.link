@@ -67,10 +67,6 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
         const sampleValue = this.writeSharedBuffersView.ringBufferDataView.getFloat32(dataViewIndex, true);
         outputChannel[sample] = sampleValue;
 
-        if (sampleValue == 0) {
-          console.log(`Zero sample at index: ${calcPcmSampleIndex}`);
-        }
-
         // Graceful exit if the song is over
         // -1 signifies a undefined state
         if (this.writeSharedBuffersView.sampleIndexBreak[0] != -1) {

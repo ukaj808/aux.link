@@ -30,7 +30,7 @@ data UserStreamState = Consuming | Waiting
 data UserStreamSession = UserStreamSession
   {
     conn :: WS.Connection
-  , streamState :: UserStreamState 
+  , streamState :: UserStreamState
   }
 
 
@@ -77,19 +77,18 @@ streamImpl stateVar file rId = do
       WS.sendBinaryData (conn session) (B.pack [0])
     return st
   waitUntilAllHaveConsumed stateVar
-  where 
+  where
     go :: FmtSubChunk -> Handle -> Integer -> IO ()
-    go _ _ bytesLeft | bytesLeft <= 0 = return () 
+    go _ _ bytesLeft | bytesLeft <= 0 = return ()
     go fmtSubChunk handle bytesLeft = do
-      let chunkSizeInt :: Int = 1024 --1kb
-      let byteRateFloat :: Double = fromIntegral $ byteRate fmtSubChunk
-      let delay:: Int =  round $ (fromIntegral chunkSizeInt / byteRateFloat) * 1000000
+      let chunkSize = fromIntegral $ byteRate fmtSubChunk `div` 8
+      let delay =  1000000 `div` 8
       st <- readMVar stateVar
-      chunk <- B.hGet handle chunkSizeInt
+      chunk <- B.hGet handle chunkSize
       forM_ (streams st) $ \session -> do
         WS.sendBinaryData (conn session) chunk
-      threadDelay (delay - 100)
-      go fmtSubChunk handle (bytesLeft - toInteger chunkSizeInt)
+      threadDelay delay
+      go fmtSubChunk handle (bytesLeft - toInteger chunkSize)
 
 waitUntilAllHaveConsumed :: MVar MusicStreamerState -> IO ()
 waitUntilAllHaveConsumed st = do
