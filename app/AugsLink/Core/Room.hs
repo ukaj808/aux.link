@@ -188,6 +188,7 @@ handleIncomingMessages stateVar conn uid = do
           go
         WS.ControlMessage WS.Close {} -> do
           leaveRoomImpl stateVar uid
+          go
         WS.ControlMessage _ -> go
 
 publishToAllBut :: RoomState -> (RoomUser -> Bool) -> RoomEvent -> IO ()

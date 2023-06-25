@@ -85,7 +85,10 @@ export class UserElementFactory {
   }
 
   public removeUser(userId: string) {
-    const optUser = this.userElements.find((user) => user.getUserId() === userId);
+    const optUser = this.userElements.find((user) => { 
+      console.log(user.getUserId(), userId);
+      return user.getUserId() === userId 
+    });
     if (!optUser) throw new Error('No user found');
     this.userElements = this.userElements.filter((user) => user.getUserId() !== userId);
   }

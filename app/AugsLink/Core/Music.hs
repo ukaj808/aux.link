@@ -111,5 +111,9 @@ handleIncomingMessages stateVar conn uId = go
         WS.DataMessage {} -> do
           putStrLn "Should not be possible"
           go
-        WS.ControlMessage WS.Close {} -> return ()
+        WS.ControlMessage WS.Close {} -> do
+          modifyMVar_ stateVar $ \st -> do
+            let st' = st{streams= Map.delete uId (streams st)}
+            return st'
+          go
         WS.ControlMessage _ -> go
