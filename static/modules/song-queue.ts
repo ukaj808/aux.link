@@ -1,19 +1,19 @@
 export class SongQueue {
-    private queue: File[];
+    private queue: (File | UrlExtract)[];
 
     constructor() {
         this.queue = [];
     }
 
-    public addSongToQueue(file: File) {
+    public addSongToQueue(file: File | UrlExtract) {
         this.queue.push(file);
     }
 
-    public dequeueSong(): File | undefined {
+    public dequeueSong(): (File | UrlExtract) | undefined {
         return this.queue.shift();
     }
 
-    public peekSong(): File | undefined {
+    public peekSong(): (File | UrlExtract) | undefined {
         return this.queue[0];
     }
 

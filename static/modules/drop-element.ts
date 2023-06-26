@@ -2,17 +2,21 @@ import Sortable from "sortablejs";
 import { RestClient } from "./rest-client";
 import { SongQueue } from "./song-queue";
 import { AuxAudioPlayer } from "./aux-audio-player";
+import { HtmlParser } from "./cheerio-service";
 
 export class DropElement {
-    el: HTMLDivElement;
-    dropZoneEl: HTMLLabelElement;
-    dropZoneInputEl: HTMLInputElement;
-    sortableList: Sortable | undefined;
-    queue: SongQueue;
-    restClient: RestClient;
-    auxAudioPlayer: AuxAudioPlayer;
+    private el: HTMLDivElement;
+    private dropZoneEl: HTMLLabelElement;
+    private dropZoneInputEl: HTMLInputElement;
+    private sortableList: Sortable | undefined;
+    private queue: SongQueue;
+    private restClient: RestClient;
+    private auxAudioPlayer: AuxAudioPlayer;
+    private htmlParser: HtmlParser;
 
-    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer) {
+    //private onContextMenuBound: (e: MouseEvent) => void;
+
+    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, htmlParser: HtmlParser) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -27,11 +31,13 @@ export class DropElement {
 
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));
+        this.dropZoneEl.addEventListener('paste', this.onPaste.bind(this));
         this.dropZoneInputEl.addEventListener('input', this.onInputChange.bind(this));
         this.dropZoneInputEl.addEventListener('click', this.onInputClick.bind(this));
         this.queue = new SongQueue();
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
+        this.htmlParser = htmlParser
     }
     
     public async uploadAndDequeueSong() {
@@ -41,8 +47,42 @@ export class DropElement {
         return this.dequeueSong();
     }
 
-    private onAudioEvent(event: AudioEvent) {
-       // possibly needed??
+    private async onPaste(e: ClipboardEvent) {
+        e.preventDefault();
+        if (e.clipboardData == null) throw new Error('No clipboard data found');
+        // check if its a file
+        if (e.clipboardData.files.length > 0) {
+            [...e.clipboardData.files].forEach((file) => this.addSongToQueue(file));
+            return;
+        }
+        // check if its a url
+        let pastedText = e.clipboardData.getData("text");
+        if (!this.isValidHttpUrl(pastedText)) return;
+        try {
+            const title = await this.extractTitleFromUrl(pastedText);
+            this.addSongToQueue({
+                url: pastedText,
+                title: title,
+            });
+        } catch (e) {
+            // TODO: show error to user
+            console.error(e);
+        }
+    }
+
+    private async extractTitleFromUrl(url: string) {
+        const html = await this.restClient.getHtml(url);
+        return this.htmlParser.getTitle(html);
+    }
+
+    private isValidHttpUrl(text: string) {
+        let url;
+        try {
+            url = new URL(text);
+        } catch (_) {
+            return false;  
+        }
+        return url.protocol === "http:" || url.protocol === "https:";
     }
 
     private onDrop(e: DragEvent) {
@@ -81,7 +121,7 @@ export class DropElement {
         inputTarget.value = ''; // clear input value
     }
 
-    private addSongToQueue(file: File) {
+    private addSongToQueue(file: File | UrlExtract) {
         if (this.queue.length === 0) {
             this.initSortableList(file);
         } else {
@@ -101,7 +141,7 @@ export class DropElement {
         this.dropZoneEl.classList.add('list-contain');
     }
 
-    private initSortableList(file: File) {
+    private initSortableList(file: File | UrlExtract) {
         this.shiftToListContain();
         const songQueueEl = document.createElement('ol');
         songQueueEl.classList.add('song-queue-list');
@@ -118,11 +158,16 @@ export class DropElement {
         });
     }
 
-    private addSongToSortableList(file: File) {
+    private addSongToSortableList(file: File | UrlExtract) {
         if (this.sortableList == null) throw new Error('No sortable list found');
         const songEl = document.createElement('li');
         songEl.classList.add('song-list-item');
-        songEl.innerText = file.name;
+        // if its a file
+        if (file instanceof File) {
+            songEl.innerText = (file as File).name;
+        } else {
+            songEl.innerText = (file as UrlExtract).title;
+        };
         this.sortableList.el.appendChild(songEl);
     }
 

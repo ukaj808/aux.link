@@ -66,7 +66,7 @@ renderCurrentlyPlayingSection =
 renderDropSection :: H.Html
 renderDropSection = 
   H.section ! A.id "drop"      ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme"  $ do
-    H.label ! A.id "drop-zone" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column" $ do
+    H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column" $ do
       musicIconSvg
       H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
 

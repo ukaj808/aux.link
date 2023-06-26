@@ -119,3 +119,8 @@ type EnqueueSongRequest = {
 }
 
 type AudioEvent = SongStartingEvent;
+
+type UrlExtract = { 
+    url: string,
+    title: string,
+};
