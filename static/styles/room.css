@@ -90,6 +90,13 @@ h4 {
   opacity: 1;
 }
 
+.hidden-input {
+  border: none;
+  caret-color: transparent;
+  height: 0;
+  width: 0;
+}
+
 .secondary-theme {
   background-color: var(--secondary-bg-color)
 }

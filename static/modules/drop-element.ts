@@ -8,6 +8,7 @@ export class DropElement {
     private el: HTMLDivElement;
     private dropZoneEl: HTMLLabelElement;
     private dropZoneInputEl: HTMLInputElement;
+    private dropZonePasteHackInputEl: HTMLInputElement;
     private sortableList: Sortable | undefined;
     private queue: SongQueue;
     private restClient: RestClient;
@@ -29,11 +30,16 @@ export class DropElement {
         if (!dropZoneInputEl) throw new Error('No drop element input found');
         this.dropZoneInputEl = dropZoneInputEl as HTMLInputElement;
 
+        const dropZonePasteHackInputEl = document.getElementById("drop-zone-paste-hack");
+        if (!dropZonePasteHackInputEl) throw new Error('No drop element input hack found');
+        this.dropZonePasteHackInputEl = dropZonePasteHackInputEl as HTMLInputElement;
+
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));
         this.dropZoneEl.addEventListener('paste', this.onPaste.bind(this));
         this.dropZoneInputEl.addEventListener('input', this.onInputChange.bind(this));
         this.dropZoneInputEl.addEventListener('click', this.onInputClick.bind(this));
+        this.dropZonePasteHackInputEl.addEventListener('focus', this.onHackInputFocus.bind(this));
         this.queue = new SongQueue();
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
@@ -46,6 +52,12 @@ export class DropElement {
         await this.restClient.uploadSong(song);
         return this.dequeueSong();
     }
+
+    private onHackInputFocus(e: FocusEvent) {
+        e.preventDefault();
+        this.dropZoneEl.focus();
+    }
+
 
     private async onPaste(e: ClipboardEvent) {
         e.preventDefault();
