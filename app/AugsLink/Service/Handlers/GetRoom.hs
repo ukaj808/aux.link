@@ -66,10 +66,11 @@ renderCurrentlyPlayingSection =
 renderDropSection :: H.Html
 renderDropSection = 
   H.section ! A.id "drop"      ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme"  $ do
-    H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-flex centered column" $ do
-      musicIconSvg
-      H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
-      H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme" 
+      H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex centered column" $ do
+        H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex centered column" $ do
+          musicIconSvg
+          H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
+          H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme" 
 
 renderRoomPage :: [RoomUser] -> H.Html
 renderRoomPage users = H.docTypeHtml $ do

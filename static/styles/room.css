@@ -110,6 +110,10 @@ h4 {
   fill: var(--primary-fnt-color);
 }
 
+.full-width {
+  width: 100%;
+}
+
 .song-queue-list {
   list-style-type: none;
   padding: 0;
