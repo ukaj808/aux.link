@@ -9,6 +9,7 @@ import AugsLink.Service.Handlers.GetHome
 import AugsLink.Service.Handlers.GetRoom
 import AugsLink.Service.Handlers.MusicWs
 import AugsLink.Service.Handlers.PostHome
+import AugsLink.Service.Handlers.PutScrapeSong
 import AugsLink.Service.Handlers.PutStartMusic
 import AugsLink.Service.Handlers.PutUploadSong
 import AugsLink.Service.Handlers.RoomWs
@@ -23,6 +24,7 @@ handlers opts rr =
   :<|> connectHandler rr
   :<|> startHandler rr
   :<|> uploadHandler rr
+  :<|> scrapeHandler rr
   :<|> audioWorkerHandler opts
   :<|> publicHandler
   where 

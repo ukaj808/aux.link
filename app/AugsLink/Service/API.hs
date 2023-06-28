@@ -3,7 +3,7 @@ module AugsLink.Service.API
   ( 
     API
   , EnqueueSongRequest (..)
-  , ScrapeSongRequest (..)
+  , ScrapeUploadRequest (..)
   , ServerHtml
   , StaticHtml (..)
   , StaticJs (..)
@@ -48,11 +48,11 @@ instance ToMarkup StaticHtml where
 
 type PostSeeOther = Verb 'POST 303 
 
-newtype ScrapeSongRequest = ScrapeSongRequest
+newtype ScrapeUploadRequest = UrlUploadRequest
   {
     url :: Text
   } deriving (Generic, Show)
-instance FromJSON ScrapeSongRequest
+instance FromJSON ScrapeUploadRequest
 
 newtype EnqueueSongRequest = EnqueueSongRequest
   {
@@ -78,7 +78,8 @@ type API =
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music"                       :> WebSocketPending
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
-
+   -- https://github.com/ytdl-org/youtube-dl/issues/4503#issuecomment-68384420 url scrape
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "upload" :> "scrape"  :> QueryParam "reqType" Text :> ReqBody '[JSON] ScrapeUploadRequest :> Put '[PlainText] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 
