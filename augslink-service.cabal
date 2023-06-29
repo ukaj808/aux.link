@@ -34,6 +34,7 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.MusicWs 
                       , AugsLink.Service.Handlers.PostHome
+                      , AugsLink.Service.Handlers.PostValidateScrapeUrl
                       , AugsLink.Service.Handlers.PutStartMusic
                       , AugsLink.Service.Handlers.PutScrapeSong
                       , AugsLink.Service.Handlers.PutUploadSong

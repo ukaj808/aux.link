@@ -4,6 +4,7 @@ module AugsLink.Service.API
     API
   , EnqueueSongRequest (..)
   , ScrapeUploadRequest (..)
+  , ScrapeUrlValidateRequest (..)
   , ServerHtml
   , StaticHtml (..)
   , StaticJs (..)
@@ -54,6 +55,12 @@ newtype ScrapeUploadRequest = UrlUploadRequest
   } deriving (Generic, Show)
 instance FromJSON ScrapeUploadRequest
 
+newtype ScrapeUrlValidateRequest = ScrapeUrlValidateRequest
+  {
+    u :: Text
+  } deriving (Generic, Show)
+instance FromJSON ScrapeUrlValidateRequest
+
 newtype EnqueueSongRequest = EnqueueSongRequest
   {
     priority :: Int
@@ -79,7 +86,9 @@ type API =
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
    -- https://github.com/ytdl-org/youtube-dl/issues/4503#issuecomment-68384420 url scrape
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "upload" :> "scrape"  :> QueryParam "reqType" Text :> ReqBody '[JSON] ScrapeUploadRequest :> Put '[PlainText] Text
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "scrape"  :> ReqBody '[JSON] ScrapeUploadRequest :> Put '[PlainText] Text
+
+   :<|> "validate-scrape-url" :> ReqBody '[JSON] ScrapeUrlValidateRequest :> Post '[JSON] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 

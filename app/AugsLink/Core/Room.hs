@@ -9,12 +9,11 @@ module AugsLink.Core.Room
   where
 
 import Control.Concurrent
+import Control.Exception
 import Control.Monad
 import Data.List
 import Servant.Multipart
 import System.Directory
-import System.FilePath
-import System.IO
 
 import qualified Data.Aeson           as Aeson
 import qualified Data.Text            as T
@@ -25,11 +24,6 @@ import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
-import Commons.FFMpeg
-import Commons.Wav
-import Control.Exception
-import Control.Monad.State (MonadState(get))
-import qualified Data.ByteString as B
 
 type instance Connection IO = WS.PendingConnection
 type instance SongFile   IO = MultipartData Tmp
@@ -113,12 +107,15 @@ nextSong stateVar = do
       nextSong stateVar
 
 
-uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> SongFile IO -> IO ()
-uploadSongImpl stateVar rId uId song = do
+uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload IO -> IO ()
+uploadSongImpl stateVar rId uId u = do
   st <- readMVar stateVar
   if uId == getTurnUser st then do
-    let parse = lookupFile "file" song
-    either (error "Could not find song in file upload") store parse
+    case u of 
+      (DirectFileUpload f) -> do
+        let parse = lookupFile "file" f
+        either (error "Could not find song in file upload") store parse
+      (UrlScrapeUpload url)-> do undefined
   else
     error "Not your turn"
   where
@@ -126,6 +123,8 @@ uploadSongImpl stateVar rId uId song = do
       copyFile (fdPayload s) (genTargetPath rId $ fdFileName s)
       modifyMVar_ stateVar $ \st' -> do
         return st'{currentSong=Just $ fdFileName s}
+
+
 
 genTargetPath :: RoomId -> T.Text -> FilePath
 genTargetPath rId fileName = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName

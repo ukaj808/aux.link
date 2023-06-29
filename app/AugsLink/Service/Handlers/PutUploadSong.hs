@@ -20,5 +20,5 @@ uploadHandler rr rId uId file = liftIO $ do
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-  uploadSong room uId file
+  uploadSong room uId $ DirectFileUpload file
   return "success"

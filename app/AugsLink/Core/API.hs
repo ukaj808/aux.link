@@ -42,7 +42,7 @@ data Room m = Room
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (MusicStreamer m)
   ,  startMusic            ::  UserId                                -> m ()
-  ,  uploadSong            ::  UserId -> SongFile m                  -> m ()
+  ,  uploadSong            ::  UserId -> Upload m                    -> m ()
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
@@ -55,6 +55,8 @@ data Room m = Room
  song in your queue for consumption by the room song player, you can vote on skipping a song.
  -}
 newtype User m = User {getRoomUser :: m RoomUser}
+
+data Upload m = DirectFileUpload (SongFile m) | UrlScrapeUpload Text
 
 data MusicStreamer m = Music
   {
