@@ -43,6 +43,7 @@ executable augslink-service
                       , Commons.FFMpeg
                       , Commons.State
                       , Commons.Wav 
+                      , Commons.YoutubeDl
     -- other-extensions:
     build-depends:      aeson
                       , async
