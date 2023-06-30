@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
 module Commons.YoutubeDl
   (
-    isValidUrl,
-    ytdlp
+    ytdlpValid,
+    ytdlpDownload
   ) where
 
 import qualified Data.Text as T
@@ -10,25 +12,31 @@ import qualified Data.ByteString.Lazy.Char8 as BLC
 
 import System.Process
 import Data.Aeson
+import Control.Exception
 
 type YtdlpExecutable = FilePath
 
-isValidUrl :: T.Text -> IO Bool
-isValidUrl = undefined
+ytdlpValid :: YtdlpExecutable -> String -> IO Bool
+ytdlpValid exec url = -- validates the url by trying to download it
+  catch (do
+    _ <- ytdlp exec [skipDownloadArg] url
+    return True
+  ) (\(_ :: IOError) -> return False)
 
--- Args
---  Path to ytdlp executable -> Output directory -> Youtube URL
--- Output 
--- (Output file path, YtdlpOutput)
--- e.g. ("./output/songname.mp4", {...})
-ytdlp :: YtdlpExecutable -> FilePath -> String -> IO (FilePath, YtdlpOutput)
-ytdlp exec out url = do
-  let outFilePath = ytdlpOutFilePath out
-  jsonOutput <- readProcess exec (outputTemplateArg outFilePath ++ [fullJsonDumpArg, url]) ""
+ytdlpDownload :: YtdlpExecutable -> FilePath -> String -> IO (FilePath, YtdlpOutput)
+ytdlpDownload exec out url = do
+  let outFilePath =  ytdlpOutFilePath out
+  let outArg      =  outputTemplateArg outFilePath
+  ytdlOutput      <- ytdlp exec outArg url
+  return             (outFilePath, ytdlOutput)
+
+ytdlp :: YtdlpExecutable -> [String] -> String -> IO YtdlpOutput
+ytdlp exec args url = do
+  jsonOutput <- readProcess exec (args ++ [fullJsonDumpArg, url]) ""
   let result = eitherDecode (BLC.pack jsonOutput) :: Either String YtdlpOutput
   case result of
     Left err -> error err
-    Right ytdlpOut -> return (outFilePath, ytdlpOut)
+    Right ytdlpOut -> return ytdlpOut
 
 
 ytdlTemplate :: String
@@ -37,13 +45,16 @@ ytdlTemplate = "%(title)s.%(ext)s"
 fullJsonDumpArg :: String
 fullJsonDumpArg = "-J"
 
+skipDownloadArg :: String
+skipDownloadArg = "--skip-download"
+
 outputTemplateArg :: FilePath -> [String]
 outputTemplateArg path = ["-o", path]
 
 ytdlpOutFilePath :: FilePath -> FilePath
 ytdlpOutFilePath [] = ytdlTemplate
-ytdlpOutFilePath dir 
-  | last dir == '/' = dir ++ ytdlTemplate 
+ytdlpOutFilePath dir
+  | last dir == '/' = dir ++ ytdlTemplate
   | otherwise = '/' : dir ++ ytdlTemplate
 
 
@@ -69,8 +80,8 @@ instance FromJSON YtdlpOutput where
     ytdlpDuration <- o .: "duration"
     ytdlpChannel <- o .: "channel"
     ytdlpFullTitle <- o .: "fulltitle"
-    return YtdlpOutput 
-      { 
+    return YtdlpOutput
+      {
         ytdlId = ytdlpId
       , ytdlTitle = ytdlpTitle
       , ytdlThumbnail = ytdlpThumbnail
@@ -78,5 +89,5 @@ instance FromJSON YtdlpOutput where
       , ytdlUploader = ytdlpUploader
       , ytdlDuration = ytdlpDuration
       , ytdlChannel = ytdlpChannel
-      , ytdlFullTitle = ytdlpFullTitle 
+      , ytdlFullTitle = ytdlpFullTitle
       }
