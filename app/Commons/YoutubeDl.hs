@@ -1,6 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Use lambda-case" #-}
 module Commons.YoutubeDl
   (
     ytdlpValid,
@@ -25,9 +23,9 @@ ytdlpValid exec url = -- validates the url by trying to download it
 
 ytdlpDownload :: YtdlpExecutable -> FilePath -> String -> IO (FilePath, YtdlpOutput)
 ytdlpDownload exec out url = do
-  let outFilePath =  ytdlpOutFilePath out
-  let outArg      =  outputTemplateArg outFilePath
+  let outArg      =  ytdlpOutputArg out
   ytdlOutput      <- ytdlp exec outArg url
+  -- todo
   return             (outFilePath, ytdlOutput)
 
 ytdlp :: YtdlpExecutable -> [String] -> String -> IO YtdlpOutput
@@ -38,9 +36,18 @@ ytdlp exec args url = do
     Left err -> error err
     Right ytdlpOut -> return ytdlpOut
 
+-- Takes a directory path and returns the template string used in the youtube-dl command
+ytdlpOutputArg :: FilePath -> [String]
+ytdlpOutputArg = outputTemplateArg . ytdlpTemplatePath
 
-ytdlTemplate :: String
-ytdlTemplate = "%(title)s.%(ext)s"
+ytdlpTemplatePath :: FilePath -> FilePath
+ytdlpTemplatePath [] = ytdlTemplateStr
+ytdlpTemplatePath dir
+  | last dir == '/' = dir ++ ytdlTemplateStr
+  | otherwise = '/' : dir ++ ytdlTemplateStr
+
+ytdlTemplateStr :: String
+ytdlTemplateStr = "%(title)s.%(ext)s"
 
 fullJsonDumpArg :: String
 fullJsonDumpArg = "-J"
@@ -51,43 +58,40 @@ skipDownloadArg = "--skip-download"
 outputTemplateArg :: FilePath -> [String]
 outputTemplateArg path = ["-o", path]
 
-ytdlpOutFilePath :: FilePath -> FilePath
-ytdlpOutFilePath [] = ytdlTemplate
-ytdlpOutFilePath dir
-  | last dir == '/' = dir ++ ytdlTemplate
-  | otherwise = '/' : dir ++ ytdlTemplate
-
 
 data YtdlpOutput = YtdlpOutput
   {
-    ytdlId :: T.Text,
-    ytdlTitle :: T.Text,
-    ytdlThumbnail :: T.Text,
+    ytdlId          :: T.Text,
+    ytdlTitle       :: T.Text,
+    ytdlThumbnail   :: T.Text,
     ytdlDescription :: T.Text,
-    ytdlUploader :: T.Text,
-    ytdlDuration :: Int,
-    ytdlChannel :: T.Text,
-    ytdlFullTitle :: T.Text
+    ytdlUploader    :: T.Text,
+    ytdlChannel     :: T.Text,
+    ytdlFullTitle   :: T.Text,
+    ytdlExt         :: T.Text,
+    ytdlDuration    :: Int
   }
 
 instance FromJSON YtdlpOutput where
   parseJSON = withObject "YtdlpOutput" $ \o -> do
-    ytdlpId <- o .: "id"
-    ytdlpTitle <- o .: "title"
-    ytdlpThumbnail <- o .: "thumbnail"
+    ytdlpId          <- o .: "id"
+    ytdlpTitle       <- o .: "title"
+    ytdlpThumbnail   <- o .: "thumbnail"
     ytdlpDescription <- o .: "description"
-    ytdlpUploader <- o .: "uploader"
-    ytdlpDuration <- o .: "duration"
-    ytdlpChannel <- o .: "channel"
-    ytdlpFullTitle <- o .: "fulltitle"
+    ytdlpUploader    <- o .: "uploader"
+    ytdlpDuration    <- o .: "duration"
+    ytdlpChannel     <- o .: "channel"
+    ytdlpFullTitle   <- o .: "fulltitle"
+    ytdlpExt         <- o .: "ext"
     return YtdlpOutput
       {
-        ytdlId = ytdlpId
-      , ytdlTitle = ytdlpTitle
-      , ytdlThumbnail = ytdlpThumbnail
+        ytdlId          = ytdlpId
+      , ytdlTitle       = ytdlpTitle
+      , ytdlThumbnail   = ytdlpThumbnail
       , ytdlDescription = ytdlpDescription
-      , ytdlUploader = ytdlpUploader
-      , ytdlDuration = ytdlpDuration
-      , ytdlChannel = ytdlpChannel
-      , ytdlFullTitle = ytdlpFullTitle
+      , ytdlUploader    = ytdlpUploader
+      , ytdlDuration    = ytdlpDuration
+      , ytdlChannel     = ytdlpChannel
+      , ytdlFullTitle   = ytdlpFullTitle
+      , ytdlExt        = ytdlpExt
       }
