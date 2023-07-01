@@ -13,24 +13,27 @@ import Data.Aeson
 import Control.Exception
 
 type YtdlpExecutable = FilePath
+type URL = T.Text
 
-ytdlpValid :: YtdlpExecutable -> String -> IO Bool
+ytdlpValid :: YtdlpExecutable -> URL -> IO Bool
 ytdlpValid exec url = -- validates the url by trying to download it
   catch (do
-    _ <- ytdlp exec [skipDownloadArg] url
+    _ <- ytdlp exec [skipDownloadArg] url True
     return True
-  ) (\(_ :: IOError) -> return False)
+  ) (\(e :: IOError) -> do
+    print $ show e
+    return False
+    )
 
-ytdlpDownload :: YtdlpExecutable -> FilePath -> String -> IO (FilePath, YtdlpOutput)
+ytdlpDownload :: YtdlpExecutable -> FilePath -> URL -> IO (FilePath, YtdlpOutput)
 ytdlpDownload exec out url = do
-  let outArg      =  ytdlpOutputArg out
-  ytdlOutput      <- ytdlp exec outArg url
-  -- todo
-  return             (outFilePath, ytdlOutput)
+  ytdlOutput      <- ytdlp exec (forceOverwriteArg : ytdlpOutputArg out) url False
+  return             (ytdlpTemplatePathReplaced out ytdlOutput, ytdlOutput)
 
-ytdlp :: YtdlpExecutable -> [String] -> String -> IO YtdlpOutput
-ytdlp exec args url = do
-  jsonOutput <- readProcess exec (args ++ [fullJsonDumpArg, url]) ""
+ytdlp :: YtdlpExecutable -> [String] -> URL -> Bool -> IO YtdlpOutput
+ytdlp exec args url sim = do
+  let noSimArg' = if sim then [] else [noSimArg]
+  jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, (T.unpack url)]) ""
   let result = eitherDecode (BLC.pack jsonOutput) :: Either String YtdlpOutput
   case result of
     Left err -> error err
@@ -39,6 +42,9 @@ ytdlp exec args url = do
 -- Takes a directory path and returns the template string used in the youtube-dl command
 ytdlpOutputArg :: FilePath -> [String]
 ytdlpOutputArg = outputTemplateArg . ytdlpTemplatePath
+
+ytdlpTemplatePathReplaced :: FilePath -> YtdlpOutput -> FilePath
+ytdlpTemplatePathReplaced dir ytdlpOut = T.unpack $ T.replace "%(ext)s" (ytdlExt ytdlpOut) $ T.replace "%(title)s" (ytdlTitle ytdlpOut) (T.pack $ ytdlpTemplatePath dir)
 
 ytdlpTemplatePath :: FilePath -> FilePath
 ytdlpTemplatePath [] = ytdlTemplateStr
@@ -49,6 +55,15 @@ ytdlpTemplatePath dir
 ytdlTemplateStr :: String
 ytdlTemplateStr = "%(title)s.%(ext)s"
 
+
+forceOverwriteArg :: String
+forceOverwriteArg = "--force-overwrites"
+
+noSimArg :: String
+noSimArg = "--no-simulate"
+
+-- Should be used in conjuction with noSimArg if you want to download the video
+-- otherwise it wont actually download the video; just simulate a download
 fullJsonDumpArg :: String
 fullJsonDumpArg = "-J"
 
@@ -70,7 +85,7 @@ data YtdlpOutput = YtdlpOutput
     ytdlFullTitle   :: T.Text,
     ytdlExt         :: T.Text,
     ytdlDuration    :: Int
-  }
+  } deriving (Show)
 
 instance FromJSON YtdlpOutput where
   parseJSON = withObject "YtdlpOutput" $ \o -> do

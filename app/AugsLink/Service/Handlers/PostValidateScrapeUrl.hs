@@ -13,7 +13,7 @@ import Commons.YoutubeDl
 
 validateHandler :: ScrapeUrlValidateRequest -> Handler Text
 validateHandler req = do
-  valid <- liftIO $ isValidUrl (u req)
+  valid <- liftIO $ ytdlpValid "yt-dlp" (u req)
   if valid
     then return $ pack ""
     else throwError err400
