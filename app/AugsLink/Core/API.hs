@@ -60,7 +60,7 @@ data Upload m = DirectFileUpload (SongFile m) | UrlScrapeUpload Text
 
 data MusicStreamer m = Music
   {
-    stream             :: FilePath       -> RoomId       -> m  ()
+    stream             :: FilePath        -> RoomId       -> m  ()
   , connect             :: UserId         -> Connection m -> m  ()
   }
 
