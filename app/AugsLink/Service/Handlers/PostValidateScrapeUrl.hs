@@ -11,9 +11,6 @@ import AugsLink.Core.API
 import AugsLink.Service.API
 import Commons.YtDlp
 
-validateHandler :: ScrapeUrlValidateRequest -> Handler Text
-validateHandler req = do
-  valid <- liftIO $ ytdlpValid "yt-dlp" (u req)
-  if valid
-    then return $ pack ""
-    else throwError err400
+validateHandler :: ScrapeUrlValidateRequest -> Handler Bool
+validateHandler req = liftIO $ ytdlpValid "yt-dlp" (u req)
+  

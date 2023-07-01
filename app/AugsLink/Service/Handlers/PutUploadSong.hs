@@ -13,7 +13,7 @@ import AugsLink.Core.API
 
 type instance SongFile IO = MultipartData Tmp
 
-uploadHandler :: Registry IO -> RoomId -> UserId -> MultipartData Tmp -> Handler Text
+uploadHandler :: Registry IO -> RoomId -> UserId -> MultipartData Tmp -> Handler NoContent
 uploadHandler rr rId uId file = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
@@ -21,4 +21,4 @@ uploadHandler rr rId uId file = liftIO $ do
                Nothing -> error "Room does not exist"
 
   uploadSong room uId $ DirectFileUpload file
-  return "success"
+  return NoContent

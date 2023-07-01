@@ -70,7 +70,7 @@ instance FromJSON EnqueueSongRequest
 type API =   
         Get '[HTML] StaticHtml -- Home Page
         -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
-   :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] Text) 
+   :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] NoContent) 
    :<|> Capture "roomid" Text :> Get '[HTML] 
      (
        Headers 
@@ -81,14 +81,12 @@ type API =
         ServerHtml
       )
    :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
-
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music"                       :> WebSocketPending
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> Put '[PlainText] Text
-   :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> Put '[PlainText] Text
-   -- https://github.com/ytdl-org/youtube-dl/issues/4503#issuecomment-68384420 url scrape
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "scrape"  :> ReqBody '[JSON] ScrapeUploadRequest :> Put '[PlainText] Text
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> PutNoContent
+   :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
+   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "scrape"  :> ReqBody '[JSON] ScrapeUploadRequest :> PutNoContent
 
-   :<|> "validate-scrape-url" :> ReqBody '[JSON] ScrapeUrlValidateRequest :> Post '[JSON] Text
+   :<|> "validate-scrape-url" :> ReqBody '[JSON] ScrapeUrlValidateRequest :> Post '[JSON] Bool
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 

@@ -10,7 +10,7 @@ import Servant
 
 import AugsLink.Core.API
 
-startHandler :: Registry IO -> RoomId -> UserId -> Handler Text
+startHandler :: Registry IO -> RoomId -> UserId -> Handler NoContent
 startHandler rr rId uId = liftIO $ do
   r <- getRoom rr rId
   let room = case r of
@@ -19,4 +19,4 @@ startHandler rr rId uId = liftIO $ do
 
   startMusic room uId
     
-  return "start"
+  return NoContent

@@ -10,10 +10,10 @@ import AugsLink.Core.API
 import AugsLink.Service.API ( ScrapeUploadRequest )
 import Control.Monad.Cont
 
-scrapeHandler :: Registry IO -> RoomId -> UserId -> ScrapeUploadRequest -> Handler Text
+scrapeHandler :: Registry IO -> RoomId -> UserId -> ScrapeUploadRequest -> Handler NoContent
 scrapeHandler rr rId uId req = do
   maybeRoom <- liftIO $ getRoom rr rId
   case maybeRoom of
     Nothing -> throwError err404
     Just room -> do
-      return $ pack ""
+      return NoContent
