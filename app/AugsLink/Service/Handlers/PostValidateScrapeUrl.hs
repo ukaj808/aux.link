@@ -9,7 +9,7 @@ import Servant
 
 import AugsLink.Core.API
 import AugsLink.Service.API
-import Commons.YoutubeDl
+import Commons.YtDlp
 
 validateHandler :: ScrapeUrlValidateRequest -> Handler Text
 validateHandler req = do
