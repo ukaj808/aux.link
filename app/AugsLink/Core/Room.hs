@@ -12,7 +12,6 @@ import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Data.List
-import Servant.Multipart
 
 import System.Directory
 
@@ -25,7 +24,6 @@ import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
-import Commons.YtDlp (ytdlpDownload, YtdlpOutput (ytdlpTitle))
 
 type instance Connection IO = WS.PendingConnection
 

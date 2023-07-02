@@ -55,8 +55,8 @@ ytdlpDownload exec out url = do
 ytdlp :: YtdlpExecutable -> [String] -> URL -> Simulate -> IO (Maybe FilePath, YtdlpOutput)
 ytdlp exec args url sim = do
   let noSimArg' = case sim of
-        Simulate -> [noSimArg]
-        Download _ -> []
+        Simulate -> []
+        Download _ -> [noSimArg]
   jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, T.unpack url]) ""
   let result = eitherDecode (BLC.pack jsonOutput) :: Either String YtdlpOutput
   case result of
