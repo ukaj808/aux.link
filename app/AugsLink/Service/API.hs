@@ -78,7 +78,7 @@ type API =
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> PutNoContent
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
 
-   :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[JSON] Text
+   :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[PlainText] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 

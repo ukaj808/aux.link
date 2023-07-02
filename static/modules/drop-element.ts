@@ -2,7 +2,7 @@ import Sortable from "sortablejs";
 import { RestClient } from "./rest-client";
 import { SongQueue } from "./song-queue";
 import { AuxAudioPlayer } from "./aux-audio-player";
-import { HtmlParser } from "./cheerio-service";
+import { LoaderFactory } from "./loader";
 
 export class DropElement {
     private el: HTMLDivElement;
@@ -13,11 +13,11 @@ export class DropElement {
     private queue: SongQueue;
     private restClient: RestClient;
     private auxAudioPlayer: AuxAudioPlayer;
-    private htmlParser: HtmlParser;
+    private loaderFactory: LoaderFactory;
 
     //private onContextMenuBound: (e: MouseEvent) => void;
 
-    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, htmlParser: HtmlParser) {
+    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, loaderFactory: LoaderFactory) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -43,7 +43,7 @@ export class DropElement {
         this.queue = new SongQueue();
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
-        this.htmlParser = htmlParser
+        this.loaderFactory = loaderFactory;
     }
     
     public async uploadAndDequeueSong() {
@@ -59,7 +59,7 @@ export class DropElement {
     }
 
 
-    private async onPaste(e: ClipboardEvent) {
+    private onPaste(e: ClipboardEvent) {
         e.preventDefault();
         if (e.clipboardData == null) throw new Error('No clipboard data found');
         // check if its a file
@@ -70,22 +70,7 @@ export class DropElement {
         // check if its a url
         let pastedText = e.clipboardData.getData("text");
         if (!this.isValidHttpUrl(pastedText)) return;
-        try {
-            const title = await this.restClient.validateUrl(pastedText);
-            if (!title) {
-                console.warn("Invalid url!")
-                return;
-            }
-            this.addSongToQueue({title, url: pastedText});
-        } catch (e) {
-            // TODO: show error to user
-            console.error(e);
-        }
-    }
-
-    private async extractTitleFromUrl(url: string) {
-        const html = await this.restClient.getHtml(url);
-        return this.htmlParser.getTitle(html);
+        this.addSongToQueue({url: pastedText});
     }
 
     private isValidHttpUrl(text: string) {
@@ -179,7 +164,18 @@ export class DropElement {
         if (song instanceof File) {
             songEl.innerText = (song as File).name;
         } else {
-            songEl.innerText = (song as UrlUpload).title;
+            songEl.appendChild(this.loaderFactory.generateLoadingBars());
+            // I need a way to remove the loading bars when the song is validated
+            this.restClient.validateUrl(song.url).then((title) => {
+                if (title === "") {
+                    song.valid = false;
+                    songEl.innerText = 'Invalid url!';
+                    return;
+                }
+                song.valid = true;
+                songEl.innerText = title;
+            });
+
         };
         this.sortableList.el.appendChild(songEl);
     }

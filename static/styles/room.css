@@ -164,3 +164,45 @@ h4 {
   content: counter(gallery-cell);
   color: white;
 }
+
+.lds-facebook {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+
+.lds-facebook div {
+  position: absolute;
+  width: 8px;
+  height: 32px;
+  background: #fff;
+  animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+}
+
+.lds-facebook div:nth-child(1) {
+  left: 4px;
+  animation-delay: -0.24s;
+}
+
+.lds-facebook div:nth-child(2) {
+  left: 16px;
+  animation-delay: -0.12s;
+}
+
+.lds-facebook div:nth-child(3) {
+  left: 28px;
+  animation-delay: 0s;
+}
+
+@keyframes lds-facebook {
+  0% {
+    top: 4px;
+    height: 24px;
+  }
+  50%,
+  100% {
+    top: 12px;
+    height: 12px;
+  }
+}

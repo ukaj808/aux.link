@@ -93,7 +93,7 @@ nextSong stateVar = do
   nextUp <- modifyMVar stateVar $ \st' -> return $ getNextUser st'
  -- Get the next user to play music
   messageToUser st nextUp ServerUploadSongCommand
-  polled <- pollSongIsUploaded stateVar 5
+  polled <- pollSongIsUploaded stateVar 10
   case polled of
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp

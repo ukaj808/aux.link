@@ -124,5 +124,6 @@ type Song = File | UrlUpload;
 
 type UrlUpload = {
     url: string,
-    title: string,
+    valid?: boolean,
+    title?: string,
 };
