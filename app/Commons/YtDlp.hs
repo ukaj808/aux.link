@@ -3,7 +3,8 @@ module Commons.YtDlp
   (
     ytdlpDownload,
     YtdlpOutput (..),
-    ytdlpValid
+    ytdlpValid,
+    ytdlpTemplatePath
   ) where
 
 import System.Process
@@ -21,17 +22,17 @@ data Simulate = Simulate | Download FilePath
 --             URL to the video
 -- Result:     True if yt-dlp can download the video
 --             False if yt-dlp cannot download the video in which case it will return an exit code
-ytdlpValid :: YtdlpExecutable -> URL -> IO Bool
+ytdlpValid :: YtdlpExecutable -> URL -> IO T.Text
 ytdlpValid exec url =
-  catch 
+  catch
 
     (do
-    _ <- ytdlp exec [skipDownloadArg] url Simulate
-    return True)
+    (_, result) <- ytdlp exec [skipDownloadArg] url Simulate
+    return $ ytdlpTitle result)
 
     (\(e :: IOError) -> do
     print $ show e
-    return False)
+    return "")
 
 -- Parameters: Path to the YtdlpExecutable
 --             Directory to save the video (should be a directory; not a file)
@@ -56,7 +57,7 @@ ytdlp exec args url sim = do
   let noSimArg' = case sim of
         Simulate -> [noSimArg]
         Download _ -> []
-  jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, (T.unpack url)]) ""
+  jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, T.unpack url]) ""
   let result = eitherDecode (BLC.pack jsonOutput) :: Either String YtdlpOutput
   case result of
     Left err -> error err
@@ -88,7 +89,7 @@ ytdlpTemplatePath :: FilePath -> FilePath
 ytdlpTemplatePath [] = ytdlTemplateStr
 ytdlpTemplatePath dir
   | last dir == '/' = dir ++ ytdlTemplateStr
-  | otherwise = '/' : dir ++ ytdlTemplateStr
+  | otherwise = dir ++ '/' : ytdlTemplateStr
 
 -- Result:     A standard ytdlp template used for the output file name
 ytdlTemplateStr :: String

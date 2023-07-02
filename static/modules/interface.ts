@@ -120,7 +120,9 @@ type EnqueueSongRequest = {
 
 type AudioEvent = SongStartingEvent;
 
-type UrlExtract = { 
+type Song = File | UrlUpload;
+
+type UrlUpload = {
     url: string,
     title: string,
 };

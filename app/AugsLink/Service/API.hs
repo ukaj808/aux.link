@@ -3,8 +3,7 @@ module AugsLink.Service.API
   ( 
     API
   , EnqueueSongRequest (..)
-  , ScrapeUrlUploadRequest (..)
-  , ScrapeUrlValidateRequest (..)
+  , ValidateUrlRequest (..)
   , ServerHtml
   , StaticHtml (..)
   , StaticJs (..)
@@ -49,17 +48,11 @@ instance ToMarkup StaticHtml where
 
 type PostSeeOther = Verb 'POST 303 
 
-newtype ScrapeUrlUploadRequest = UrlUploadRequest
+newtype ValidateUrlRequest = ValidateUrlRequest
   {
     url :: Text
   } deriving (Generic, Show)
-instance FromJSON ScrapeUrlUploadRequest
-
-newtype ScrapeUrlValidateRequest = ScrapeUrlValidateRequest
-  {
-    u :: Text
-  } deriving (Generic, Show)
-instance FromJSON ScrapeUrlValidateRequest
+instance FromJSON ValidateUrlRequest
 
 newtype EnqueueSongRequest = EnqueueSongRequest
   {
@@ -85,7 +78,7 @@ type API =
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> PutNoContent
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
 
-   :<|> "validate-scrape-url" :> ReqBody '[JSON] ScrapeUrlValidateRequest :> Post '[JSON] Bool
+   :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[JSON] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
      (
        Headers 

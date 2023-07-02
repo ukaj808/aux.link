@@ -20,22 +20,29 @@ export class RestClient {
     });
   }
 
-  public uploadSong(file: File | UrlExtract): Promise<Response> {
+  public validateUrl(url: string): Promise<string> {
+    console.log(JSON.stringify({url}));
+    return fetch("/validate-url", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({url})
+    }).then(res => res.text());
+  }
+
+  public uploadSong(song: Song): Promise<Response> {
     if (!this.basePath) throw new Error('No base path set');
-    // if a file
-    if (file instanceof File) {
-      const formData = new FormData();
-      formData.append('file', file);
-      return fetch(this.basePath + `/music/upload/file`, {
-              method: 'PUT',
-              body: formData
-          });
+    const formData = new FormData();
+    if (song instanceof File) {
+      formData.append('file', song);
     } else {
-      return fetch(this.basePath + `/music/upload/url`, {
-              method: 'PUT',
-              body: JSON.stringify(file)
-          });
+      formData.append('url', song.url);
     }
+    return fetch(this.basePath + `/music/upload`, {
+            method: 'PUT',
+            body: formData
+        });
   }
 
   public enqueueSong(req: EnqueueSongRequest): Promise<Response> {

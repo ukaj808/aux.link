@@ -108,24 +108,16 @@ nextSong stateVar = do
       nextSong stateVar
 
 
-uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload IO -> IO ()
+uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload -> IO Bool
 uploadSongImpl stateVar rId uId u = do
   st <- readMVar stateVar
   if uId == getTurnUser st then do
-    n <- case u of 
-        (DirectFileUpload (name, path)) -> do
-          copyFile path (genTargetPath rId name)
-          return $ T.pack name
-        (UrlScrapeUpload url)-> do
-          (vidFilePath, vidMetadata) <- ytdlpDownload "yt-dlp" (genTargetDir rId) url
-
-          --todo: convert to audio
-          -- store in room path
-          return (ytdlpTitle vidMetadata)
+    copyFile (uploadTmp u) (genTargetPath rId $ T.unpack $ uploadName u)
     modifyMVar_ stateVar $ \st' -> do
-      return st'{currentSong=Just n}
+      return st'{currentSong=Just $ uploadName u}
+    return True
   else
-    error "Not your turn"
+    return False
 
 
 genTargetDir :: RoomId -> FilePath

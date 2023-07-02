@@ -71,11 +71,12 @@ export class DropElement {
         let pastedText = e.clipboardData.getData("text");
         if (!this.isValidHttpUrl(pastedText)) return;
         try {
-            const title = await this.extractTitleFromUrl(pastedText);
-            this.addSongToQueue({
-                url: pastedText,
-                title: title,
-            });
+            const title = await this.restClient.validateUrl(pastedText);
+            if (!title) {
+                console.warn("Invalid url!")
+                return;
+            }
+            this.addSongToQueue({title, url: pastedText});
         } catch (e) {
             // TODO: show error to user
             console.error(e);
@@ -133,7 +134,7 @@ export class DropElement {
         inputTarget.value = ''; // clear input value
     }
 
-    private addSongToQueue(file: File | UrlExtract) {
+    private addSongToQueue(file: Song) {
         if (this.queue.length === 0) {
             this.initSortableList(file);
         } else {
@@ -153,14 +154,14 @@ export class DropElement {
         this.dropZoneEl.classList.add('list-contain');
     }
 
-    private initSortableList(file: File | UrlExtract) {
+    private initSortableList(song: Song) {
         this.shiftToListContain();
         const songQueueEl = document.createElement('ol');
         songQueueEl.classList.add('song-queue-list');
         this.sortableList = new Sortable(songQueueEl, {});
         this.clearDropZoneChildrenEls();
         this.dropZoneEl.appendChild(songQueueEl);
-        this.addSongToSortableList(file);
+        this.addSongToSortableList(song);
     }
 
     private clearDropZoneChildrenEls() {
@@ -170,15 +171,15 @@ export class DropElement {
         });
     }
 
-    private addSongToSortableList(file: File | UrlExtract) {
+    private addSongToSortableList(song: Song) {
         if (this.sortableList == null) throw new Error('No sortable list found');
         const songEl = document.createElement('li');
         songEl.classList.add('song-list-item');
         // if its a file
-        if (file instanceof File) {
-            songEl.innerText = (file as File).name;
+        if (song instanceof File) {
+            songEl.innerText = (song as File).name;
         } else {
-            songEl.innerText = (file as UrlExtract).title;
+            songEl.innerText = (song as UrlUpload).title;
         };
         this.sortableList.el.appendChild(songEl);
     }

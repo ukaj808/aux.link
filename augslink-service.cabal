@@ -34,9 +34,8 @@ executable augslink-service
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.MusicWs 
                       , AugsLink.Service.Handlers.PostHome
-                      , AugsLink.Service.Handlers.PostValidateScrapeUrl
+                      , AugsLink.Service.Handlers.PostValidateUrl
                       , AugsLink.Service.Handlers.PutStartMusic
-                      , AugsLink.Service.Handlers.PutScrapeSong
                       , AugsLink.Service.Handlers.PutUploadSong
                       , AugsLink.Service.Handlers.RoomWs 
                       , CommandLine 
@@ -68,6 +67,7 @@ executable augslink-service
                       , servant-multipart-api
                       , servant-server
                       , servant-websockets
+                      , temporary
                       , text 
                       , time
                       , unordered-containers
