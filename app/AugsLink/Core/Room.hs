@@ -117,10 +117,11 @@ uploadSongImpl stateVar rId uId u = do
           copyFile path (genTargetPath rId name)
           return $ T.pack name
         (UrlScrapeUpload url)-> do
-          (path, vidMeta) <- ytdlpDownload "yt-dlp" (genTargetDir rId) url
+          (vidFilePath, vidMetadata) <- ytdlpDownload "yt-dlp" (genTargetDir rId) url
+
           --todo: convert to audio
           -- store in room path
-          return (ytdlpTitle vidMeta)
+          return (ytdlpTitle vidMetadata)
     modifyMVar_ stateVar $ \st' -> do
       return st'{currentSong=Just n}
   else
