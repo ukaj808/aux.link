@@ -7,7 +7,6 @@ module AugsLink.Core.Music
 import Control.Concurrent
 import Control.Monad
 import GHC.IO.Handle
-import Servant.Multipart
 import System.Directory
 
 import qualified Data.ByteString    as B
@@ -22,7 +21,6 @@ import System.IO
 import Commons.Wav
 
 type instance Connection IO = WS.PendingConnection
-type instance SongFile IO   = MultipartData Tmp
 
 data UserStreamState = Consuming | Waiting
   deriving (Eq, Show)

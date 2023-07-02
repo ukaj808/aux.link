@@ -3,7 +3,6 @@ module AugsLink.Service.Handlers.PutScrapeSong
   scrapeHandler
 ) where
 
-import Data.Text
 import Servant
 
 import AugsLink.Core.API
@@ -16,5 +15,5 @@ scrapeHandler rr rId uId req = do
   case maybeRoom of
     Nothing -> throwError err404
     Just room -> do
-      uploadSong room uId (UrlScrapeUpload $ url req)
+      liftIO $ uploadSong room uId (UrlScrapeUpload $ url req)
       return NoContent

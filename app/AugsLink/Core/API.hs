@@ -4,10 +4,9 @@ module AugsLink.Core.API where
 import Data.Aeson.Types
 import Data.Kind
 import Data.Text
-import GHC.IO.Handle
 
 import qualified Data.Aeson as Aeson
-import Commons.Wav (FmtSubChunk)
+import Servant.Multipart.API
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -56,7 +55,7 @@ data Room m = Room
  -}
 newtype User m = User {getRoomUser :: m RoomUser}
 
-data Upload m = DirectFileUpload (SongFile m) | UrlScrapeUpload Text
+data Upload m = DirectFileUpload (String, MultipartResult Tmp) | UrlScrapeUpload Text
 
 data MusicStreamer m = Music
   {

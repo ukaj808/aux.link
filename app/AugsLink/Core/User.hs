@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Core.User
   (
     newUser
@@ -7,14 +6,12 @@ module AugsLink.Core.User
 
 import Control.Concurrent
 import Data.Text
-import Servant.Multipart
 
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
 
 type instance Connection IO = WS.PendingConnection
-type instance SongFile IO   = MultipartData Tmp
 
 newtype UserState = UserState
   {

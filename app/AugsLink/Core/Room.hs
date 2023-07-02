@@ -13,6 +13,7 @@ import Control.Exception
 import Control.Monad
 import Data.List
 import Servant.Multipart
+
 import System.Directory
 
 import qualified Data.Aeson           as Aeson
@@ -24,9 +25,9 @@ import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
+import Commons.YtDlp (ytdlpDownload, YtdlpOutput (ytdlpTitle))
 
 type instance Connection IO = WS.PendingConnection
-type instance SongFile   IO = MultipartData Tmp
 
 data RoomState = RoomState
   {
@@ -111,23 +112,26 @@ uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload IO -> IO ()
 uploadSongImpl stateVar rId uId u = do
   st <- readMVar stateVar
   if uId == getTurnUser st then do
-    case u of 
-      (DirectFileUpload f) -> do
-        let parse = lookupFile "file" f
-        either (error "Could not find song in file upload") store parse
-      (UrlScrapeUpload url)-> do undefined
+    n <- case u of 
+        (DirectFileUpload (name, path)) -> do
+          copyFile path (genTargetPath rId name)
+          return $ T.pack name
+        (UrlScrapeUpload url)-> do
+          (path, vidMeta) <- ytdlpDownload "yt-dlp" (genTargetDir rId) url
+          --todo: convert to audio
+          -- store in room path
+          return (ytdlpTitle vidMeta)
+    modifyMVar_ stateVar $ \st' -> do
+      return st'{currentSong=Just n}
   else
     error "Not your turn"
-  where
-    store s = do
-      copyFile (fdPayload s) (genTargetPath rId $ fdFileName s)
-      modifyMVar_ stateVar $ \st' -> do
-        return st'{currentSong=Just $ fdFileName s}
 
 
+genTargetDir :: RoomId -> FilePath
+genTargetDir rId = "./rooms/" ++ T.unpack rId
 
-genTargetPath :: RoomId -> T.Text -> FilePath
-genTargetPath rId fileName = "./rooms/" ++ T.unpack rId ++ "/" ++ T.unpack fileName
+genTargetPath :: RoomId -> String -> FilePath
+genTargetPath rId fileName =  genTargetDir rId ++ "/" ++ fileName
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do

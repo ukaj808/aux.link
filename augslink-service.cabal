@@ -65,6 +65,7 @@ executable augslink-service
                       , regex-posix
                       , servant-blaze
                       , servant-multipart
+                      , servant-multipart-api
                       , servant-server
                       , servant-websockets
                       , text 

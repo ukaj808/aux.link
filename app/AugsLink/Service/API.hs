@@ -84,7 +84,6 @@ type API =
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music"                       :> WebSocketPending
    :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> PutNoContent
    :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "scrape"  :> ReqBody '[JSON] ScrapeUrlUploadRequest :> PutNoContent
 
    :<|> "validate-scrape-url" :> ReqBody '[JSON] ScrapeUrlValidateRequest :> Post '[JSON] Bool
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]

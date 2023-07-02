@@ -4,21 +4,32 @@ module AugsLink.Service.Handlers.PutUploadSong
     uploadHandler
   ) where 
 
-import Data.Text
-import Control.Monad.IO.Class
+import Control.Monad.Cont
 import Servant
 import Servant.Multipart
 
+import qualified Data.Text as T
+
 import AugsLink.Core.API
 
-type instance SongFile IO = MultipartData Tmp
-
 uploadHandler :: Registry IO -> RoomId -> UserId -> MultipartData Tmp -> Handler NoContent
-uploadHandler rr rId uId file = liftIO $ do
-  r <- getRoom rr rId
-  let room = case r of
-               Just rm -> rm
-               Nothing -> error "Room does not exist"
+uploadHandler rr rId uId mlt = do
+  maybeRoom <- liftIO $ getRoom rr rId
+  case maybeRoom of
+    Nothing -> throwError err404
+    Just room -> do
+      -- check if file in multipart data
+      -- if not, then check if url in multipart data
+      -- if not, then return 400
+      let parseFile = lookupFile "file" mlt
+      let parseUrl = lookupInput "url" mlt
 
-  uploadSong room uId $ DirectFileUpload file
-  return NoContent
+      case (parseFile, parseUrl) of
+        (Left _, Left _) -> throwError err400
+        (Right _, Right _) -> throwError err400
+        (Right fileData, Left _) -> do
+          liftIO $ uploadSong room uId $ DirectFileUpload (T.unpack $ fdFileName fileData, fdPayload fileData)
+        (Left _, Right input) -> do
+          liftIO $ uploadSong room uId $ UrlScrapeUpload input
+      
+      return NoContent

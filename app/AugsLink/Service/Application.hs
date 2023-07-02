@@ -25,7 +25,6 @@ handlers opts rr =
   :<|> connectHandler rr
   :<|> startHandler rr
   :<|> uploadHandler rr
-  :<|> scrapeHandler rr
   :<|> validateHandler
   :<|> audioWorkerHandler opts
   :<|> publicHandler
