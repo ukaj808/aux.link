@@ -90,6 +90,14 @@ h4 {
   opacity: 1;
 }
 
+.handle {
+  cursor: grab;
+}
+
+.hidden-edit {
+  caret-color: transparent;
+}
+
 .hidden-input {
   border: none;
   caret-color: transparent;
@@ -103,6 +111,13 @@ h4 {
 
 .tertiary-theme {
   background-color: var(--tertiary-bg-color)
+}
+
+.primary-icon-stroke {
+  stroke: var(--primary-fnt-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .centered-icon {

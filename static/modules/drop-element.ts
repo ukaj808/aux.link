@@ -3,6 +3,7 @@ import { RestClient } from "./rest-client";
 import { SongQueue } from "./song-queue";
 import { AuxAudioPlayer } from "./aux-audio-player";
 import { LoaderFactory } from "./loader";
+import { SvgFactory } from "./svg";
 
 export class DropElement {
     private el: HTMLDivElement;
@@ -14,10 +15,11 @@ export class DropElement {
     private restClient: RestClient;
     private auxAudioPlayer: AuxAudioPlayer;
     private loaderFactory: LoaderFactory;
+    private svgFactory: SvgFactory;
 
     //private onContextMenuBound: (e: MouseEvent) => void;
 
-    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, loaderFactory: LoaderFactory) {
+    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -45,6 +47,7 @@ export class DropElement {
         this.restClient = restClient;
         this.auxAudioPlayer = auxAudioPlayer;
         this.loaderFactory = loaderFactory;
+        this.svgFactory = svgFactory;
     }
     
     public async uploadAndDequeueSong() {
@@ -156,11 +159,9 @@ export class DropElement {
         this.shiftToListContain();
         const songQueueEl = document.createElement('ol');
         songQueueEl.classList.add('song-queue-list');
-        songQueueEl.contentEditable = 'false';
-        songQueueEl.addEventListener('contextmenu', () => {
-            console.log('clicked');
+        this.sortableList = new Sortable(songQueueEl, {
+            handle: '.handle',
         });
-        this.sortableList = new Sortable(songQueueEl, {});
         this.clearDropZoneChildrenEls();
         this.dropZoneEl.appendChild(songQueueEl);
         this.addSongToSortableList(song);
@@ -170,33 +171,35 @@ export class DropElement {
         Array.from(this.dropZoneEl.children).forEach((child) => {
             this.dropZoneEl.removeChild(child);
         });
-        // This should allow dropzone to be passteable again...
-        /*
-        this.dropZoneEl.appendChild(this.dropZoneInputEl);
-        this.dropZoneEl.appendChild(this.dropZonePasteHackInputEl);
-        */
     }
 
     private addSongToSortableList(song: Song) {
         if (this.sortableList == null) throw new Error('No sortable list found');
         const songEl = document.createElement('li');
-        songEl.classList.add('song-list-item');
+        const loadingBars = this.loaderFactory.generateLoadingBars();
+        songEl.classList.add('song-list-item', 'hidden-edit');
+        const dragIcon = this.svgFactory.generateDragIcon();
+        dragIcon.classList.add('handle');
+        songEl.appendChild(dragIcon);
         // if its a file
         if (song instanceof File) {
-            songEl.innerText = (song as File).name;
+            const text = document.createTextNode((song as File).name);
+            songEl.prepend(text)
         } else {
-            songEl.appendChild(this.loaderFactory.generateLoadingBars());
+            songEl.prepend(loadingBars);
             // I need a way to remove the loading bars when the song is validated
             this.restClient.validateUrl(song.url).then((title) => {
+                songEl.removeChild(loadingBars);
                 if (title === "") {
                     song.valid = false;
-                    songEl.innerText = 'Invalid url!';
+                    const text = document.createTextNode('Invalid url!');
+                    songEl.prepend(text);
                     return;
                 }
                 song.valid = true;
-                songEl.innerText = title;
+                const text = document.createTextNode(title);
+                songEl.prepend(text);
             });
-
         };
         this.sortableList.el.appendChild(songEl);
     }

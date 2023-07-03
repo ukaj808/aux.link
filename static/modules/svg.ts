@@ -23,4 +23,22 @@ export class SvgFactory {
     }
 
 
+    public generateDragIcon(): SVGElement {
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.classList.add('primary-icon-stroke');
+        svg.setAttribute("width", "24px");
+        svg.setAttribute("height", "24px");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+        // Create the path element
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", "M5 10H19M14 19L12 21L10 19M14 5L12 3L10 5M5 14H19");
+
+        svg.appendChild(path);
+
+        return svg;
+    }
+
+
 }
