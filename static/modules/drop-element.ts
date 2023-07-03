@@ -37,6 +37,7 @@ export class DropElement {
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));
         this.dropZoneEl.addEventListener('paste', this.onPaste.bind(this));
+        this.dropZoneEl.addEventListener('keydown', this.onDropzoneKeyDown.bind(this));
         this.dropZoneInputEl.addEventListener('input', this.onInputChange.bind(this));
         this.dropZoneInputEl.addEventListener('click', this.onInputClick.bind(this));
         this.dropZonePasteHackInputEl.addEventListener('focus', this.onHackInputFocus.bind(this));
@@ -53,6 +54,18 @@ export class DropElement {
         return this.dequeueSong();
     }
 
+    /* 
+      This is a hack to prevent the user from typing in the dropzone since its contenteditable
+      The dropzone is contenteditable so that the user can paste into it
+    */
+    private onDropzoneKeyDown(e: KeyboardEvent) {
+        e.preventDefault();
+    }
+
+    /*
+      This is hack which enables pasting into the dropzone. Without any input element in the dropzone,
+      the paste option isnt available; so I've added an input element which is hidden.
+    */
     private onHackInputFocus(e: FocusEvent) {
         e.preventDefault();
         this.dropZoneEl.focus();
@@ -143,6 +156,10 @@ export class DropElement {
         this.shiftToListContain();
         const songQueueEl = document.createElement('ol');
         songQueueEl.classList.add('song-queue-list');
+        songQueueEl.contentEditable = 'false';
+        songQueueEl.addEventListener('contextmenu', () => {
+            console.log('clicked');
+        });
         this.sortableList = new Sortable(songQueueEl, {});
         this.clearDropZoneChildrenEls();
         this.dropZoneEl.appendChild(songQueueEl);
@@ -151,9 +168,13 @@ export class DropElement {
 
     private clearDropZoneChildrenEls() {
         Array.from(this.dropZoneEl.children).forEach((child) => {
-            if (child === this.dropZoneInputEl) return;
             this.dropZoneEl.removeChild(child);
         });
+        // This should allow dropzone to be passteable again...
+        /*
+        this.dropZoneEl.appendChild(this.dropZoneInputEl);
+        this.dropZoneEl.appendChild(this.dropZonePasteHackInputEl);
+        */
     }
 
     private addSongToSortableList(song: Song) {
