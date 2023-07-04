@@ -163,8 +163,15 @@ h4 {
 .song-title {
   display: flex;
   align-items: center;
+  max-width: 225px;
 }
 
+.text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
 
 .user-carousel {
   background-color: var(--secondary-bg-color)

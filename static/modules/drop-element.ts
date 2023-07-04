@@ -176,6 +176,7 @@ export class DropElement {
 
     private addSongToSortableList(song: Song) {
         if (this.sortableList == null) throw new Error('No sortable list found');
+
         const songEl = document.createElement('li');
         const loadingBars = this.loaderFactory.generateLoadingBars();
         songEl.classList.add('song-list-item', 'hidden-edit');
@@ -188,7 +189,6 @@ export class DropElement {
         dragIcon.classList.add('handle');
         songEl.appendChild(dragIcon);
 
-        // if its a file
         if (song instanceof File) {
             songTitleEl.innerText = (song as File).name;
         } else {
@@ -202,6 +202,7 @@ export class DropElement {
                     return;
                 }
                 song.valid = true;
+                songTitleEl.classList.add('text-ellipsis');
                 songTitleEl.innerText = title;
             });
         };
