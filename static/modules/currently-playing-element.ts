@@ -8,7 +8,7 @@ export class CurrentlyPlayingElement {
   private listening: boolean;
   private audioCanvas: HTMLCanvasElement;
   private canvasCtx: CanvasRenderingContext2D;
-  private buffer: Uint8Array;
+  private buffer: Float32Array;
   private drawVisual?: number;
 
   constructor(auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
@@ -19,6 +19,7 @@ export class CurrentlyPlayingElement {
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
     this.audioCanvas = audioCanvas;
+    this.audioCanvas.width = document.body.clientWidth;
 
     const canvasCtx = this.audioCanvas.getContext("2d");
     if (!canvasCtx) throw new Error('No canvas context found');
@@ -29,7 +30,7 @@ export class CurrentlyPlayingElement {
     this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
     this.analyser.fftSize = 256;
-    this.buffer = new Uint8Array(this.analyser.frequencyBinCount);
+    this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 
     this.el.addEventListener("click", () => this.onSectionClick());
   }
@@ -40,9 +41,13 @@ export class CurrentlyPlayingElement {
         this.listening = true;
         this.toggleDisconnectOverlay();
 
+        console.log(this.audioCanvas.width, this.audioCanvas.height);
+        console.log(this.analyser.frequencyBinCount);
+        console.log(this.canvasCtx);
+
         const draw = () => {
           this.drawVisual = requestAnimationFrame(draw);
-          this.analyser.getByteFrequencyData(this.buffer);
+          this.analyser.getFloatFrequencyData(this.buffer);
           this.canvasCtx.fillStyle = 'rgb(0, 0, 0)';
           this.canvasCtx.fillRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
 
@@ -54,7 +59,7 @@ export class CurrentlyPlayingElement {
 
           for (let i = 0; i < this.analyser.frequencyBinCount; i++) {
             barHeight = this.buffer[i] / 2;
-        
+
             this.canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
             this.canvasCtx.fillRect(x, this.audioCanvas.height - barHeight / 2, barWidth, barHeight);
         
