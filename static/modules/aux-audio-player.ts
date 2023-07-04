@@ -1,7 +1,8 @@
 export class AuxAudioPlayer {
   private roomId: string;
+  private audioContext: AudioContext;
+  private analyser: AnalyserNode;
   private userId?: string;
-  private audioContext?: AudioContext;
   private wsWorker?: Worker;
   private audioWorklet?: AudioWorkletNode;
   private ringBufferSize?: number;
@@ -9,8 +10,10 @@ export class AuxAudioPlayer {
   private wsBuffers?: WsBuffers;
   private audioWorkletBuffers?: AudioWorkletBuffers;
 
-  constructor(roomId: string) {
+  constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode) {
     this.roomId = roomId;
+    this.audioContext = audioContext;
+    this.analyser = analyser;
     this.ringBufferSize = 3072000; // kb
   }
 
@@ -28,6 +31,8 @@ export class AuxAudioPlayer {
         sampleRate: 48000,
       }
     );
+
+    this.analyser = this.audioContext.createAnalyser();
 
     this.audioContext.suspend();
 
@@ -90,16 +95,17 @@ export class AuxAudioPlayer {
     this.audioWorklet.disconnect(this.audioContext.destination);
     this.audioWorklet = undefined;
     this.audioContext.close();
-    this.audioContext = undefined;
   }
 
   private onWsWorkerEvent = async (event: MessageEvent<WsWorkerEvent>) => {
     if (this.audioContext === undefined) throw new Error("Audio context wasnt initialized");
+    if (this.analyser === undefined) throw new Error("Analyser wasnt initialized");
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
     switch (event.data.type) {
       case 'WS_WORKER_READY': {
         console.info("Ws worker intialized...");
-        this.audioWorklet.connect(this.audioContext.destination);
+        this.audioWorklet.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
         this.audioContext.resume();
         break;
       }

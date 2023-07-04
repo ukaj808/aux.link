@@ -60,14 +60,15 @@ renderOrderSection users =
 renderCurrentlyPlayingSection :: H.Html
 renderCurrentlyPlayingSection = 
   H.section ! A.id "currently-playing"   ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
+    H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
     H.div ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg
 
 renderDropSection :: H.Html
 renderDropSection = 
-  H.section ! A.id "drop"      ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme"  $ do
-      H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex centered column" $ do
-        H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex centered column" $ do
+  H.section ! A.id "drop"      ! A.class_ "full-flex frame centered flex-cell-lg default-margin secondary-theme"  $ do
+      H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex frame centered column" $ do
+        H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex frame centered column" $ do
           musicIconSvg
           H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
           H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme" 
@@ -83,7 +84,7 @@ renderRoomPage users = H.docTypeHtml $ do
     H.link   ! A.rel "stylesheet" ! A.href    "/public/room.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
-    H.main ! A.id "room" ! A.class_ "full-flex column" $ do
+    H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
       renderOrderSection users
       renderCurrentlyPlayingSection
       renderDropSection

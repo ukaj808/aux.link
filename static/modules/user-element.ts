@@ -42,7 +42,7 @@ export class UserElement {
     userCellEl.classList.add('overlay-sect', 'overlay');
 
     const overlayEl = document.createElement('div');
-    overlayEl.classList.add('overlay', 'full-flex', 'centered');
+    overlayEl.classList.add('overlay', 'full-flex', 'frame', 'centered');
 
     overlayEl.appendChild(this.svgFactory.generatePlayIcon());
 

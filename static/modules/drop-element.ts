@@ -13,13 +13,12 @@ export class DropElement {
     private sortableList: Sortable | undefined;
     private queue: SongQueue;
     private restClient: RestClient;
-    private auxAudioPlayer: AuxAudioPlayer;
     private loaderFactory: LoaderFactory;
     private svgFactory: SvgFactory;
 
     //private onContextMenuBound: (e: MouseEvent) => void;
 
-    constructor(restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
+    constructor(restClient: RestClient, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -45,7 +44,6 @@ export class DropElement {
         this.dropZonePasteHackInputEl.addEventListener('focus', this.onHackInputFocus.bind(this));
         this.queue = new SongQueue();
         this.restClient = restClient;
-        this.auxAudioPlayer = auxAudioPlayer;
         this.loaderFactory = loaderFactory;
         this.svgFactory = svgFactory;
     }
