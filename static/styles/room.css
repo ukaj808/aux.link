@@ -148,9 +148,10 @@ h4 {
   margin-bottom: 5px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
-.song-list-item::before {
+.song-title::before {
   content: counter(item);
   counter-increment: item;
   font-weight: bold;
@@ -158,6 +159,12 @@ h4 {
   padding: 5px;
   margin-right: 10px;
 }
+
+.song-title {
+  display: flex;
+  align-items: center;
+}
+
 
 .user-carousel {
   background-color: var(--secondary-bg-color)

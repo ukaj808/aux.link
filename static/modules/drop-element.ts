@@ -179,27 +179,30 @@ export class DropElement {
         const songEl = document.createElement('li');
         const loadingBars = this.loaderFactory.generateLoadingBars();
         songEl.classList.add('song-list-item', 'hidden-edit');
+
+        const songTitleEl = document.createElement('span');
+        songTitleEl.classList.add('song-title');
+        songEl.appendChild(songTitleEl);
+
         const dragIcon = this.svgFactory.generateDragIcon();
         dragIcon.classList.add('handle');
         songEl.appendChild(dragIcon);
+
         // if its a file
         if (song instanceof File) {
-            const text = document.createTextNode((song as File).name);
-            songEl.prepend(text)
+            songTitleEl.innerText = (song as File).name;
         } else {
-            songEl.prepend(loadingBars);
-            // I need a way to remove the loading bars when the song is validated
+            songTitleEl.append(loadingBars);
+
             this.restClient.validateUrl(song.url).then((title) => {
-                songEl.removeChild(loadingBars);
+                songTitleEl.removeChild(loadingBars);
                 if (title === "") {
                     song.valid = false;
-                    const text = document.createTextNode('Invalid url!');
-                    songEl.prepend(text);
+                    songTitleEl.innerText = "Invalid URL";
                     return;
                 }
                 song.valid = true;
-                const text = document.createTextNode(title);
-                songEl.prepend(text);
+                songTitleEl.innerText = title;
             });
         };
         this.sortableList.el.appendChild(songEl);
