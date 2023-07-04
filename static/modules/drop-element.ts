@@ -171,6 +171,7 @@ export class DropElement {
         Array.from(this.dropZoneEl.children).forEach((child) => {
             this.dropZoneEl.removeChild(child);
         });
+        this.dropZoneEl.appendChild(this.dropZoneInputEl);
     }
 
     private addSongToSortableList(song: Song) {
