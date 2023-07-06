@@ -94,7 +94,6 @@ export class AuxAudioPlayer {
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
     switch (event.data.type) {
       case 'WS_WORKER_READY': {
-        console.info("Ws worker intialized...");
         this.audioWorklet.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
         this.audioContext.resume();
