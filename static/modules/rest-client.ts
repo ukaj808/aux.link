@@ -21,7 +21,6 @@ export class RestClient {
   }
 
   public validateUrl(url: string): Promise<string> {
-    console.log(JSON.stringify({url}));
     return fetch("/validate-url", {
         method: 'POST',
         headers: {

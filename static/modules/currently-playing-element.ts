@@ -40,10 +40,6 @@ export class CurrentlyPlayingElement {
         this.listening = true;
         this.toggleDisconnectOverlay();
 
-        console.log(this.audioCanvas.width, this.audioCanvas.height);
-        console.log(this.analyser.frequencyBinCount);
-        console.log(this.canvasCtx);
-
         const draw = () => {
           this.drawVisual = requestAnimationFrame(draw);
           this.analyser.getFloatFrequencyData(this.buffer);
@@ -57,7 +53,7 @@ export class CurrentlyPlayingElement {
           let x = 0;
 
           for (let i = 0; i < this.analyser.frequencyBinCount; i++) {
-            barHeight = this.buffer[i] / 2;
+            barHeight = this.buffer[i];
 
             this.canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
             this.canvasCtx.fillRect(x, this.audioCanvas.height - barHeight / 2, barWidth, barHeight);

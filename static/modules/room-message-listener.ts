@@ -45,14 +45,12 @@ export class RoomMessageListener {
             break;
         case "SongStartingEvent":
           const songStartingEvent = data as SongStartingEvent;
-          console.log(`Song starting in ${songStartingEvent.s} seconds`)
           break;
         case "ServerUploadSongCommand":
             this.dropEl.uploadAndDequeueSong();
             break;
         case "SongUploadedEvent":
             const uploadedEvent = data as SongUploadedEvent;
-            console.log(`Song uploaded!`);
             break;
         default:
             console.error("Unrecognized Event!");
