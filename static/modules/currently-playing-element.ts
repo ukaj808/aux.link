@@ -19,7 +19,6 @@ export class CurrentlyPlayingElement {
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
     this.audioCanvas = audioCanvas;
-    this.audioCanvas.width = document.body.clientWidth;
 
     const canvasCtx = this.audioCanvas.getContext("2d");
     if (!canvasCtx) throw new Error('No canvas context found');

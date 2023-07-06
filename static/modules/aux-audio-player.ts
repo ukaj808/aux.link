@@ -25,15 +25,6 @@ export class AuxAudioPlayer {
     if (this.userId === undefined) throw new Error("Audio context wasnt initialized");
     if (this.ringBufferSize === undefined) throw new Error("Ring buffer size wasnt initialized");
 
-    this.audioContext = new AudioContext(
-      {
-        latencyHint: "playback", 
-        sampleRate: 48000,
-      }
-    );
-
-    this.analyser = this.audioContext.createAnalyser();
-
     this.audioContext.suspend();
 
     // we might want to refactor the audio context construction to be done in reaction/accordance to the song starting event
