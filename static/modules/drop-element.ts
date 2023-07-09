@@ -4,9 +4,11 @@ import { SongQueue } from "./song-queue";
 import { AuxAudioPlayer } from "./aux-audio-player";
 import { LoaderFactory } from "./loader";
 import { SvgFactory } from "./svg";
+import { RoomMessageListener } from "./room-message-listener";
 
 export class DropElement {
     private el: HTMLDivElement;
+    private roomMessageListener: RoomMessageListener;
     private dropZoneEl: HTMLLabelElement;
     private dropZoneInputEl: HTMLInputElement;
     private dropZonePasteHackInputEl: HTMLInputElement;
@@ -18,7 +20,7 @@ export class DropElement {
 
     //private onContextMenuBound: (e: MouseEvent) => void;
 
-    constructor(restClient: RestClient, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
+    constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
         const el = document.getElementById("drop");
         if (!el) throw new Error('No drop element found');
         this.el = el as HTMLDivElement;
@@ -34,6 +36,11 @@ export class DropElement {
         const dropZonePasteHackInputEl = document.getElementById("drop-zone-paste-hack");
         if (!dropZonePasteHackInputEl) throw new Error('No drop element input hack found');
         this.dropZonePasteHackInputEl = dropZonePasteHackInputEl as HTMLInputElement;
+
+        this.roomMessageListener = roomMessageListener; 
+        this.roomMessageListener.subscribe('ServerUploadSongCommand', () => {
+            this.uploadAndDequeueSong();
+        });
 
         this.dropZoneEl.addEventListener('drop', this.onDrop.bind(this));
         this.dropZoneEl.addEventListener('dragover', this.onDragOver.bind(this));

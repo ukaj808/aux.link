@@ -1,7 +1,10 @@
+import { RoomMessageListener } from "./room-message-listener";
+
 export class AuxAudioPlayer {
   private roomId: string;
   private audioContext: AudioContext;
   private analyser: AnalyserNode;
+  private roomMessageListener: RoomMessageListener;
   private userId?: string;
   private wsWorker?: Worker;
   private audioWorklet?: AudioWorkletNode;
@@ -10,11 +13,16 @@ export class AuxAudioPlayer {
   private wsBuffers?: WsBuffers;
   private audioWorkletBuffers?: AudioWorkletBuffers;
 
-  constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode) {
+  constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode, roomMessageListener: RoomMessageListener) {
     this.roomId = roomId;
     this.audioContext = audioContext;
     this.analyser = analyser;
     this.ringBufferSize = 3072000; // kb
+    this.roomMessageListener = roomMessageListener;
+    this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
+      const welcomeCommand = data as ServerWelcomeCommand;
+      this.setUserId(welcomeCommand.userId);
+    });
   }
 
   public setUserId(userId: string) {
@@ -83,7 +91,8 @@ export class AuxAudioPlayer {
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
     this.wsWorker.terminate();
     this.wsWorker = undefined;
-    this.audioWorklet.disconnect(this.audioContext.destination);
+    this.audioWorklet.disconnect(this.analyser);
+    this.analyser.disconnect(this.audioContext.destination);
     this.audioWorklet = undefined;
     this.audioContext.close();
   }

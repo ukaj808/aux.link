@@ -1,8 +1,10 @@
 import { AuxAudioPlayer } from "./aux-audio-player";
+import { RoomMessageListener } from "./room-message-listener";
 
 export class CurrentlyPlayingElement {
 
   private el: HTMLElement;
+  private roomMessageListener: RoomMessageListener;
   private auxAudioPlayer: AuxAudioPlayer;
   private analyser: AnalyserNode;
   private listening: boolean;
@@ -11,7 +13,7 @@ export class CurrentlyPlayingElement {
   private buffer: Float32Array;
   private drawVisual?: number;
 
-  constructor(auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
+  constructor(roomMessageListener: RoomMessageListener, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
     const optEl = document.getElementById("currently-playing");
     if (!optEl) throw new Error('No currently playing element found');
     this.el = optEl;
@@ -25,6 +27,10 @@ export class CurrentlyPlayingElement {
     this.canvasCtx = canvasCtx;
     this.canvasCtx.clearRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
 
+    this.roomMessageListener = roomMessageListener;
+    this.roomMessageListener.subscribe('SongStartingEvent', (data) => {
+      const songStartingEvent = data as SongStartingEvent;
+    });
     this.listening = false;
     this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
@@ -32,6 +38,15 @@ export class CurrentlyPlayingElement {
     this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 
     this.el.addEventListener("click", () => this.onSectionClick());
+  }
+
+  private showSecondsLeft(secondsLeft: number) {
+    const secondSpan = document.createElement("span");
+    secondSpan.classList.add("seconds-left");
+    secondSpan.innerText = secondsLeft.toString();
+
+    // store current child elements and structure
+
   }
 
   private onSectionClick() {
@@ -43,9 +58,8 @@ export class CurrentlyPlayingElement {
         const draw = () => {
           this.drawVisual = requestAnimationFrame(draw);
           this.analyser.getFloatFrequencyData(this.buffer);
-          this.canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+          this.canvasCtx.fillStyle = 'rgb(48, 49, 53)';
           this.canvasCtx.fillRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
-
 
           const barWidth = (this.audioCanvas.width / this.analyser.frequencyBinCount) * 2.5;
           let barHeight;
@@ -65,6 +79,7 @@ export class CurrentlyPlayingElement {
     } else {
         this.auxAudioPlayer.stopListening();
         this.listening = false;
+        this.toggleDisconnectOverlay();
     }
   }
 

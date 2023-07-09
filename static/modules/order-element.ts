@@ -2,17 +2,36 @@ import Flickity from "flickity";
 import { UserElement, UserElementFactory } from "./user-element";
 import { RestClient } from "./rest-client";
 import { SvgFactory } from "./svg";
+import { RoomMessageListener } from "./room-message-listener";
 
 export class OrderElement {
 
+  private roomMessageListener: RoomMessageListener;
   private orderCarouselEl: Element;
   private userElementFactory: UserElementFactory;
   private flkty: Flickity;
 
-  constructor(restClient: RestClient, svgFactory: SvgFactory) {
+  constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {
+
     const optOrderCarouselEl = document.querySelector(".user-carousel");
     if (!optOrderCarouselEl) throw new Error('No order carousel element found');
     this.orderCarouselEl = optOrderCarouselEl;
+
+    this.roomMessageListener = roomMessageListener;
+    this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
+      const welcomeCommand = data as ServerWelcomeCommand;
+      this.addNewUserToOrderCarousel(welcomeCommand.userId, welcomeCommand.userName, welcomeCommand.isCreator);
+
+    });
+    this.roomMessageListener.subscribe('UserEnterEvent', (data) => {
+      const userEnterEvent = data as UserEnterEvent;
+      this.addNewUserToOrderCarousel(userEnterEvent.userId, userEnterEvent.userName);
+    });
+    this.roomMessageListener.subscribe('UserLeftEvent', (data) => {
+      const userLeftEvent = data as UserLeftEvent;
+      this.removeUserFromOrderCarousel(userLeftEvent.userId);
+    });
+
     this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.orderCarouselEl);
     this.flkty = new Flickity( this.orderCarouselEl, {
       // options

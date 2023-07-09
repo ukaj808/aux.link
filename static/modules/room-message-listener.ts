@@ -1,24 +1,11 @@
-import { DropElement } from "./drop-element";
-import { OrderElement } from "./order-element";
-import { RestClient } from "./rest-client";
-import { AuxAudioPlayer } from "./aux-audio-player";
-
 export class RoomMessageListener {
 
   private roomId: string;
-  private ws: WebSocket | null;
-  private orderEl: OrderElement;
-  private dropEl: DropElement;
-  private restClient: RestClient;
-  private auxAudioPlayer: AuxAudioPlayer;
+  private ws: WebSocket | null = null;
+  private subscriptions: Map<RoomMessageType, ((event: RoomMessage) => void)[]> = new Map();
 
-  constructor(roomId: string, orderEl: OrderElement, dropEl: DropElement, restClient: RestClient, auxAudioPlayer: AuxAudioPlayer) {
+  constructor(roomId: string) {
     this.roomId = roomId;
-    this.orderEl = orderEl;
-    this.dropEl = dropEl;
-    this.ws = null;
-    this.restClient = restClient;
-    this.auxAudioPlayer = auxAudioPlayer;
   }
 
   public start() {
@@ -26,35 +13,29 @@ export class RoomMessageListener {
     this.ws.onmessage = this.process;
   }
 
+  public subscribe(msgType: RoomMessageType, callback: (event: RoomMessage) => void) {
+    if (!this.subscriptions.has(msgType)) {
+      this.subscriptions.set(msgType, []);
+    }
+    this.subscriptions.get(msgType)!.push(callback);
+  }
+
+  public unsubscribe(eventType: RoomMessageType, callback: (event: RoomMessage) => void) {
+    if (!this.subscriptions.has(eventType)) {
+      return;
+    }
+    const callbacks = this.subscriptions.get(eventType)!;
+    const index = callbacks.indexOf(callback);
+    if (index >= 0) {
+      callbacks.splice(index, 1);
+    }
+  }
+
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
-    switch (data.type) {
-        case "ServerWelcomeCommand":
-            const welcomeMessage = data as ServerWelcomeCommand;
-            this.restClient.setUserId(welcomeMessage.userId);
-            this.auxAudioPlayer.setUserId(welcomeMessage.userId);
-            this.orderEl.addNewUserToOrderCarousel(welcomeMessage.userId, welcomeMessage.userName, welcomeMessage.isCreator);
-            break;
-        case "UserEnterEvent":
-            const userEnterEvent = data as UserEnterEvent;
-            this.orderEl.addNewUserToOrderCarousel(userEnterEvent.userId, userEnterEvent.userName);
-            break;
-        case "UserLeftEvent":
-            const userLeftEvent = data as UserLeftEvent;
-            this.orderEl.removeUserFromOrderCarousel(userLeftEvent.userId);
-            break;
-        case "SongStartingEvent":
-          const songStartingEvent = data as SongStartingEvent;
-          break;
-        case "ServerUploadSongCommand":
-            this.dropEl.uploadAndDequeueSong();
-            break;
-        case "SongUploadedEvent":
-            const uploadedEvent = data as SongUploadedEvent;
-            break;
-        default:
-            console.error("Unrecognized Event!");
-            break;
+    const callbacks = this.subscriptions.get(data.type);
+    if (callbacks) {
+      callbacks.forEach(callback => callback(data));
     }
   }
 }

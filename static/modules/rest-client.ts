@@ -1,11 +1,19 @@
+import { RoomMessageListener } from "./room-message-listener";
+
 export class RestClient {
 
   private roomId: string;
+  private roomMessageListener: RoomMessageListener;
   private basePath?: string;
   private userId?: string;
 
-  constructor(roomId: string) {
+  constructor(roomId: string, roomMessageListener: RoomMessageListener) {
     this.roomId = roomId;
+    this.roomMessageListener = roomMessageListener;
+    this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
+      const welcomeCommand = data as ServerWelcomeCommand;
+      this.setUserId(welcomeCommand.userId);
+    });
   }
 
   public setUserId(userId: string) {

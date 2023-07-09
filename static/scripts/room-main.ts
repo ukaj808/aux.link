@@ -11,6 +11,7 @@ import { LoaderFactory } from "../modules/loader";
 let roomId: string    = location.pathname.substr(1);
 let listening: boolean = false;
 
+const roomMessageListener: RoomMessageListener = new RoomMessageListener(roomId);
 const audioContext = new AudioContext({
     latencyHint: "playback",
     sampleRate: 48000,
@@ -18,17 +19,10 @@ const audioContext = new AudioContext({
 const analyser = audioContext.createAnalyser();
 const svgFactory: SvgFactory = new SvgFactory();
 const loaderFactory: LoaderFactory = new LoaderFactory();
-const auxAudioPlayer: AuxAudioPlayer = new AuxAudioPlayer(roomId, audioContext, analyser);
-const restClient: RestClient = new RestClient(roomId);
-const orderElement: OrderElement = new OrderElement(restClient, svgFactory);
+const auxAudioPlayer: AuxAudioPlayer = new AuxAudioPlayer(roomId, audioContext, analyser, roomMessageListener);
+const restClient: RestClient = new RestClient(roomId, roomMessageListener);
+const orderElement: OrderElement = new OrderElement(roomMessageListener, restClient, svgFactory);
 const currentlyPlayingElement: CurrentlyPlayingElement 
-    = new CurrentlyPlayingElement(auxAudioPlayer, analyser);
-const dropElement: DropElement = new DropElement(restClient, loaderFactory, svgFactory);
-const roomMessageListener: RoomMessageListener = new RoomMessageListener(
-    roomId,
-    orderElement,
-    dropElement,
-    restClient,
-    auxAudioPlayer
-);
+    = new CurrentlyPlayingElement(roomMessageListener, auxAudioPlayer, analyser);
+const dropElement: DropElement = new DropElement(roomMessageListener, restClient, loaderFactory, svgFactory);
 roomMessageListener.start();
