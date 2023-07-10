@@ -1,4 +1,4 @@
-import { AuxAudioPlayer } from "./aux-audio-player";
+import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "./aux-audio-player";
 import { RoomMessageListener } from "./room-message-listener";
 
 export class CurrentlyPlayingElement {
@@ -69,6 +69,7 @@ export class CurrentlyPlayingElement {
       case 'playing':
         if (this.state === 'countdown') {
         } else if (this.state === 'loading') {
+          this.loadingToPlaying();
         } else throw Error(`Invalid transition from ${this.state} to ${state}`);
         break;
       case 'countdown':
@@ -110,6 +111,13 @@ export class CurrentlyPlayingElement {
     this.state = state;
   }
   
+  private loadingToPlaying() {
+    this.auxAudioPlayer.startListening();
+    this.listening = true;
+    this.toggleOverlay();
+    this.draw();
+  }
+  
   private countdownToLoading() {
     this.toggleCountdown();
   }
@@ -143,10 +151,15 @@ export class CurrentlyPlayingElement {
   }
 
   private disconnectedToLoading() {
+    const onStreamStarting = (data: AuxAudioPlayerEvent) => {
+      const streamStartingEvent = data as StreamStartingEvent;
+      this.transitionTo('playing');
+      this.auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamStarting);
+    }
+    this.auxAudioPlayer.subscribe('STREAM_STARTING', onStreamStarting);
     this.auxAudioPlayer.startListening();
     this.listening = true;
     this.toggleOverlay();
-    this.draw();
   }
   
   private onSectionClick() {
@@ -161,6 +174,10 @@ export class CurrentlyPlayingElement {
   private toggleCountdown() {
     this.el.classList.toggle("overlay");
     this.countdownTimer.classList.toggle("hidden");
+  }
+
+  private toggleLoading() {
+    this.el.classList.toggle("overlay");
   }
 
   private draw() {

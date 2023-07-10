@@ -1,4 +1,19 @@
+import { EventBus } from "./event-bus";
 import { RoomMessageListener } from "./room-message-listener";
+
+export type StreamStartingEvent = {
+  type: "STREAM_STARTING",
+  artist: string;
+  title: string;
+};
+export type StreamFinishedEvent = {
+  type: "STREAM_FINISHED",
+};
+
+export type AuxAudioPlayerEventType = 'STREAM_STARTING' | 'STREAM_FINISHED';
+
+export type AuxAudioPlayerEvent = StreamStartingEvent | StreamFinishedEvent;
+
 
 export class AuxAudioPlayer {
   private roomId: string;
@@ -12,6 +27,7 @@ export class AuxAudioPlayer {
   private writeSharedBuffers?: WriteSharedBuffers;
   private wsBuffers?: WsBuffers;
   private audioWorkletBuffers?: AudioWorkletBuffers;
+  private eventBus: EventBus<AuxAudioPlayerEventType, AuxAudioPlayerEvent> = new EventBus();
 
   constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode, roomMessageListener: RoomMessageListener) {
     this.roomId = roomId;
@@ -25,11 +41,19 @@ export class AuxAudioPlayer {
     });
   }
 
+  public subscribe(msgType: AuxAudioPlayerEventType, callback: (event: AuxAudioPlayerEvent) => void) {
+    this.eventBus.subscribe(msgType, callback);
+  }
+
+  public unsubscribe(eventType: AuxAudioPlayerEventType, callback: (event: AuxAudioPlayerEvent) => void) {
+    this.eventBus.unsubscribe(eventType, callback);
+  }
+
   public setUserId(userId: string) {
     this.userId = userId;
   }
 
-  public async startListening() {
+  public async startListening(onStreamStarting: (event: StreamStartingEvent) => void) {
     if (this.userId === undefined) throw new Error("Audio context wasnt initialized");
     if (this.ringBufferSize === undefined) throw new Error("Ring buffer size wasnt initialized");
 

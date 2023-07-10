@@ -1,8 +1,10 @@
+import { EventBus } from "./event-bus";
+
 export class RoomMessageListener {
 
   private roomId: string;
   private ws: WebSocket | null = null;
-  private subscriptions: Map<RoomMessageType, ((event: RoomMessage) => void)[]> = new Map();
+  private eventBus: EventBus<RoomMessageType, RoomMessage> = new EventBus();
 
   constructor(roomId: string) {
     this.roomId = roomId;
@@ -14,28 +16,15 @@ export class RoomMessageListener {
   }
 
   public subscribe(msgType: RoomMessageType, callback: (event: RoomMessage) => void) {
-    if (!this.subscriptions.has(msgType)) {
-      this.subscriptions.set(msgType, []);
-    }
-    this.subscriptions.get(msgType)!.push(callback);
+    this.eventBus.subscribe(msgType, callback);
   }
 
   public unsubscribe(eventType: RoomMessageType, callback: (event: RoomMessage) => void) {
-    if (!this.subscriptions.has(eventType)) {
-      return;
-    }
-    const callbacks = this.subscriptions.get(eventType)!;
-    const index = callbacks.indexOf(callback);
-    if (index >= 0) {
-      callbacks.splice(index, 1);
-    }
+    this.eventBus.unsubscribe(eventType, callback);
   }
 
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
-    const callbacks = this.subscriptions.get(data.type);
-    if (callbacks) {
-      callbacks.forEach(callback => callback(data));
-    }
+    this.eventBus.publish(data.type, data);
   }
 }
