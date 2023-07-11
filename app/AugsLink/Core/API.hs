@@ -7,6 +7,7 @@ import Data.Text
 
 import qualified Data.Aeson as Aeson
 import Servant.Multipart.API
+import GHC.Generics
 
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
@@ -40,7 +41,7 @@ data Room m = Room
   ,  viewRoom              ::                                           m RoomView
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (MusicStreamer m)
-  ,  startMusic            ::  UserId                                -> m ()
+  ,  startMusic            ::  UserId                                -> m StartMusicResult
   ,  uploadSong            ::  UserId -> Upload                      -> m Bool
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
@@ -66,20 +67,22 @@ data MusicStreamer m = Music
   , connect             :: UserId         -> Connection m -> m  ()
   }
 
-data PlayerStatus = Running | Paused | NotRunning deriving (Show, Eq)
+data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomStillCreating deriving (Show, Eq)
+
+data MusicStreamerStatus = Running | NotRunning deriving (Show, Eq, Generic)
+instance ToJSON MusicStreamerStatus
 
 data RoomView = RoomView
   {
-     roomUsers        :: [RoomUser]
-  ,  roomSong         :: Maybe SongId
-  ,  roomPlayerStatus       :: Maybe PlayerStatus
+     roomViewUsers        :: [RoomUser]
+  ,  roomViewSong         :: Maybe SongId
+  ,  roomViewMusicStreamerStatus :: MusicStreamerStatus
+  ,  roomViewTurn         :: Int
   }
 
-data RoomUser = RoomUser
+newtype RoomUser = RoomUser
    {
-     userId         :: UserId
-   , userName       :: UserName
-   , isCreator      :: Bool
+     userName       :: UserName
    }
 
 data AudioFile = AudioFile
@@ -97,7 +100,7 @@ data RoomEvent = UserEnterEvent      RoomUser
   |              SongUploadedEvent
 
 -- Message from server to user
-data ServerCommand = ServerWelcomeCommand RoomUser
+data ServerCommand = ServerWelcomeCommand UserId Bool
   |                  ServerUploadSongCommand
 
 newtype UserEvent = UserAudioPrepared UserId
@@ -111,12 +114,6 @@ type Vote     = Bool
 type family Connection (m :: Type -> Type) :: Type
 type family SongFile   (m :: Type -> Type) :: Type
 
-instance Eq RoomUser where
-  u1 == u2 = userId u1 == userId u2
-
-instance Ord RoomUser where
-  u1 <= u2 = userId u1 <= userId u2
-
 instance ToJSON Message where
   toJSON :: Message -> Value
   toJSON (RoomEventMessage e) = toJSON e
@@ -128,7 +125,6 @@ instance ToJSON RoomEvent where
   toJSON (UserEnterEvent u) = Aeson.object
     [
        "type"        .= ("UserEnterEvent" :: Text)
-    ,  "userId"      .= show (userId u)
     ,  "userName"    .= userName u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object
@@ -149,14 +145,30 @@ instance ToJSON RoomEvent where
 
 instance ToJSON ServerCommand where
   toJSON :: ServerCommand -> Value
-  toJSON (ServerWelcomeCommand u) = Aeson.object
+  toJSON (ServerWelcomeCommand uId creator) = Aeson.object
     [
        "type"        .= ("ServerWelcomeCommand" :: Text)
-    ,  "userId"      .= show (userId u)
-    ,  "userName"    .= userName u
-    ,  "isCreator"   .= isCreator u
+    ,  "userId"      .= uId
+    ,  "isCreator"   .= creator
     ]
   toJSON ServerUploadSongCommand = Aeson.object
     [
        "type"        .= ("ServerUploadSongCommand" :: Text)
+    ]
+
+instance ToJSON RoomUser where
+  toJSON :: RoomUser -> Value
+  toJSON u = Aeson.object
+    [
+       "userName"    .= userName u
+    ]
+
+instance ToJSON RoomView where
+  toJSON :: RoomView -> Value
+  toJSON rv = Aeson.object
+    [
+       "users"               .= roomViewUsers rv
+    ,  "song"                .= roomViewSong rv
+    ,  "musicStreamerStatus" .= roomViewMusicStreamerStatus rv
+    ,  "turn"                .= roomViewTurn rv
     ]

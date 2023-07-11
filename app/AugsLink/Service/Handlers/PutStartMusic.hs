@@ -11,12 +11,15 @@ import Servant
 import AugsLink.Core.API
 
 startHandler :: Registry IO -> RoomId -> UserId -> Handler NoContent
-startHandler rr rId uId = liftIO $ do
-  r <- getRoom rr rId
+startHandler rr rId uId = do
+  r <- liftIO $ getRoom rr rId
   let room = case r of
                Just rm -> rm
                Nothing -> error "Room does not exist"
 
-  startMusic room uId
+  success <- liftIO $ startMusic room uId
     
-  return NoContent
+  if success
+    then return NoContent
+    else
+      throwError $ err401 { errBody = "You are not the creator of this room" }

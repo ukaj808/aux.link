@@ -58,9 +58,9 @@ renderOrderSection users =
     H.div ! A.class_"user-carousel" $ do
       forM_ users renderUser 
 
-renderCurrentlyPlayingSection :: String -> H.Html
-renderCurrentlyPlayingSection state = 
-  H.section ! A.id "currently-playing" ! A.dataAttribute "state" (textValue $ pack state) ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
+renderCurrentlyPlayingSection :: MusicStreamerStatus -> H.Html
+renderCurrentlyPlayingSection status = 
+  H.section ! A.id "currently-playing" ! A.dataAttribute "state" (textValue $ pack $ show status) ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
     H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg
@@ -79,8 +79,8 @@ renderDropSection =
           H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
           H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme" 
 
-renderRoomPage :: [RoomUser] -> H.Html
-renderRoomPage users = H.docTypeHtml $ do
+renderRoomPage :: RoomView -> H.Html
+renderRoomPage room = H.docTypeHtml $ do
   H.head $ do
     H.title "Room"
     H.meta   ! A.charset "UTF-8"
@@ -91,8 +91,8 @@ renderRoomPage users = H.docTypeHtml $ do
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
-      renderOrderSection users
-      renderCurrentlyPlayingSection
+      renderOrderSection $ roomViewUsers room
+      renderCurrentlyPlayingSection $ roomViewMusicStreamerStatus room
       renderDropSection
       H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
 

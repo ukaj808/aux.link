@@ -11,7 +11,6 @@ module AugsLink.Core.Room
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import Data.List
 
 import System.Directory
 
@@ -33,6 +32,7 @@ data RoomState = RoomState
   , roomUsers                    :: Map.Map UserId UserSession
   , registryManage               :: RegistryManage
   , musicStreamer                :: MusicStreamer IO
+  , musicStreamerStatus          :: MusicStreamerStatus
   , creator                      :: Maybe UserId
   , userCount                    :: Int
   , currentSong                  :: Maybe T.Text
@@ -53,6 +53,7 @@ initialRoomState rId rsm musicStreamer = RoomState
   , roomUsers      = Map.empty
   , registryManage = rsm
   , musicStreamer  = musicStreamer
+  , musicStreamerStatus = NotRunning
   , creator        = Nothing
   , userCount      = 0
   , currentSong    = Nothing
@@ -74,14 +75,17 @@ newRoom rId registryManage = do
     , uploadSong        = uploadSongImpl       stateVar rId
     }
 
-startMusicImpl :: MVar RoomState -> UserId -> IO ()
+startMusicImpl :: MVar RoomState -> UserId -> IO StartMusicResult
 startMusicImpl stateVar uId = do
-  st <- readMVar stateVar
-  case creator st of
-    Just cId | cId == uId -> do
-      _ <- forkIO $ nextSong stateVar
-      return ()
-    _ -> error "Only the creator can start the music"
+  modifyMVar stateVar $ \st -> do
+    case (creator st, musicStreamerStatus st) of
+      (Nothing, _) -> return (st, RoomStillCreating)
+      (_, Running) -> return (st, AlreadyRunning)
+      (Just cId, _) 
+        | cId /= uId -> return (st, NotCreator)
+        | otherwise -> do
+          _ <- forkIO $ nextSong stateVar
+          return (st{musicStreamerStatus=Running}, StartMusicSuccess)
 
 nextSong  :: MVar RoomState -> IO ()
 nextSong stateVar = do
@@ -132,13 +136,13 @@ enterRoomImpl stateVar pend = do
       let uId  =      userCount st
       u        <-     newUser (roomId st) uId (uId == 0)
       rUser    <-     getRoomUser u
-      let st'  =      addUserToRoom st (userId rUser) (USession conn u)
+      let st'  =      addUserToRoom st uId (USession conn u)
       let c = case creator st of
                Just existing -> Just existing
 
                Nothing       -> Just uId
-      messageToUser   st' (userId rUser) (ServerWelcomeCommand rUser)
-      publishToAllBut st' (/= rUser)     (UserEnterEvent rUser)
+      messageToUser   st' uId (ServerWelcomeCommand uId $ c == Just uId)
+      publishToAllBut st' uId (UserEnterEvent rUser)
       return  (st'{userCount=uId + 1, creator=c}, uId)
   WS.withPingThread conn 30 (return ()) $
     handleIncomingMessages stateVar conn uId
@@ -164,12 +168,17 @@ leaveRoomImpl stateVar uId = do
    when (Map.size (roomUsers st) == 0) $
      selfDestructCallback $ registryManage st
 
-viewRoomImpl :: MVar RoomState -> IO [RoomUser]
+viewRoomImpl :: MVar RoomState -> IO RoomView
 viewRoomImpl stateVar = do
   roomState <- readMVar stateVar
   let userSessions = Map.elems $ roomUsers roomState
   users <- mapM (getRoomUser . user) userSessions
-  return $ sort users
+  return $ RoomView {
+      roomViewUsers = users
+    , roomViewSong = currentSong roomState
+    , roomViewMusicStreamerStatus = musicStreamerStatus roomState
+    , roomViewTurn = turn roomState
+  }
 
 -- Messaging Via Websockets
 
@@ -189,11 +198,14 @@ handleIncomingMessages stateVar conn uid = do
           go
         WS.ControlMessage _ -> go
 
-publishToAllBut :: RoomState -> (RoomUser -> Bool) -> RoomEvent -> IO ()
-publishToAllBut rmSt p e = do
-  forM_ (roomUsers rmSt) $ \uSession -> do
-    rUser <- getRoomUser $ user uSession
-    when (p rUser) $ WS.sendTextData (conn uSession) (Aeson.encode e)
+publishToAllBut :: RoomState -> UserId -> RoomEvent -> IO ()
+publishToAllBut rmSt uId e = do
+  Map.foldrWithKey
+    (\uId' uSession _ -> do
+      when (uId' /= uId) $
+        safeSendTextData (conn uSession) uId' (RoomEventMessage e))
+      (return ())
+      (roomUsers rmSt)
 
 publishToRoom ::  RoomState -> RoomEvent -> IO ()
 publishToRoom rmSt e = do
@@ -236,11 +248,11 @@ getNextUser st = (st{turn=turn'}, order st !! turn')
       turn' = (turn st + 1) `mod` length (order st)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ _ order _) uId uSession =
   st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
 
 getTurnUser :: RoomState -> UserId
