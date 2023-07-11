@@ -183,7 +183,7 @@ export class DropElement {
         if (this.sortableList == null) throw new Error('No sortable list found');
 
         const songEl = document.createElement('li');
-        const loadingBars = this.loaderFactory.generateLoadingBars();
+        const loadingBars = this.loaderFactory.generateSmallLoadingBars();
         songEl.classList.add('song-list-item', 'hidden-edit');
 
         const songTitleEl = document.createElement('span');

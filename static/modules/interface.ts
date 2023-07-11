@@ -67,17 +67,19 @@ type WsSongFinishedEvent = {
     offset: number;
 }
 
-type WsWorkerEvent = {
-    type: "WS_WORKER_READY" | "WRITE_SONG_STARTED"
-} | WsSongFinishedEvent
+type WsSongStartedEvent = {
+    type: "WRITE_SONG_STARTED";
+    title: string;
+}
 
+type WsWorkerEvent = { type: "WS_WORKER_READY" } | WsSongStartedEvent | WsSongFinishedEvent
 
 type AudioWorkletCommand = {
     type: "WRITE_SONG_STARTED",
 } | WsSongFinishedEvent;
 
 type AudioWorkletEvent = {
-    type: "READ_SONG_FINISHED",
+    type: "READ_SONG_STARTED" | "READ_SONG_FINISHED",
 }
 
 type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";

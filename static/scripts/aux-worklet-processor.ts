@@ -3,6 +3,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
   private buffersView: AudioWorkletBuffersView;
   private writeSharedBuffersView: WriteSharedBuffersView;
   private _wsBuffersView: WsBuffersView;
+  private readStartedEventPublished: boolean = false;
 
   constructor(options: AudioWorkletNodeOptions) {
     super();
@@ -23,18 +24,6 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
       samplesWritten: new Int32Array(options.processorOptions._wsBuffers.samplesWritten),
     }
 
-    this.port.onmessage = this.onPostMessage;
-  }
-
-  private onPostMessage = (message: MessageEvent<AudioWorkletCommand>) => { 
-    switch (message.data.type) {
-      case 'WRITE_SONG_STARTED': {
-        break;
-      }
-      case 'WRITE_SONG_FINISHED': {
-        break;
-      }
-    }
   }
 
   private resetMyBuffers() {
@@ -51,7 +40,13 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
   process(_inputs: Float32Array[][], outputs: Float32Array[][]) {
     if (!this.isAudioAvailable()) {
       return true;
-    } 
+    }
+    
+    if (!this.readStartedEventPublished) {
+      this.port.postMessage({ type: 'READ_SONG_STARTED' });
+      this.readStartedEventPublished = true;
+    }
+    
     const output    = outputs[0]; // 1st output source
     const numChannels = output.length;
 
@@ -74,6 +69,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
           if (calcPcmSampleIndex == this.writeSharedBuffersView.sampleIndexBreak[0]) {
             this.resetMyBuffers();
             this.resetWriteSharedBuffers();
+            this.readStartedEventPublished = false;
             this.port.postMessage({ type: 'READ_SONG_FINISHED' });
             return true;
           }

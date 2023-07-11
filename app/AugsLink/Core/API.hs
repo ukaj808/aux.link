@@ -37,7 +37,7 @@ data Room m = Room
   {
      enterRoom             ::   Connection m                         -> m ()
   ,  leaveRoom             ::   UserId                               -> m ()
-  ,  viewRoom              ::                                           m [RoomUser]
+  ,  viewRoom              ::                                           m RoomView
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (MusicStreamer m)
   ,  startMusic            ::  UserId                                -> m ()
@@ -64,6 +64,15 @@ data MusicStreamer m = Music
   {
     stream             :: FilePath        -> RoomId       -> m  ()
   , connect             :: UserId         -> Connection m -> m  ()
+  }
+
+data PlayerStatus = Running | Paused | NotRunning deriving (Show, Eq)
+
+data RoomView = RoomView
+  {
+     roomUsers        :: [RoomUser]
+  ,  roomSong         :: Maybe SongId
+  ,  roomPlayerStatus       :: Maybe PlayerStatus
   }
 
 data RoomUser = RoomUser

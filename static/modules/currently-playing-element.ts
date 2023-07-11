@@ -13,6 +13,7 @@ export class CurrentlyPlayingElement {
   private overlayEl: HTMLDivElement;
   private listenIcon: HTMLElement;
   private countdownTimer: HTMLSpanElement;
+  private loadingBars: HTMLDivElement;
   private canvasCtx: CanvasRenderingContext2D;
   private buffer: Float32Array;
   private drawVisual?: number;
@@ -42,6 +43,10 @@ export class CurrentlyPlayingElement {
     const countdownTimer = document.getElementById("countdown-timer");
     if (!countdownTimer) throw new Error('No countdown timer element found');
     this.countdownTimer = countdownTimer as HTMLSpanElement;
+
+    const loadingBars = document.getElementById("cp-loading");
+    if (!loadingBars) throw new Error('No loading bars element found');
+    this.loadingBars = loadingBars as HTMLDivElement;
 
     this.state = 'disconnected';
 
@@ -151,15 +156,17 @@ export class CurrentlyPlayingElement {
   }
 
   private disconnectedToLoading() {
-    const onStreamStarting = (data: AuxAudioPlayerEvent) => {
+    const onStreamConnected = (data: AuxAudioPlayerEvent) => {
       const streamStartingEvent = data as StreamStartingEvent;
-      this.transitionTo('playing');
-      this.auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamStarting);
+      this.transitionTo('connected');
+      this.auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamConnected);
+      this.toggleLoading();
     }
-    this.auxAudioPlayer.subscribe('STREAM_STARTING', onStreamStarting);
+    this.auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected);
+    this.toggleOverlay();
+    this.toggleLoading();
     this.auxAudioPlayer.startListening();
     this.listening = true;
-    this.toggleOverlay();
   }
   
   private onSectionClick() {
@@ -172,12 +179,11 @@ export class CurrentlyPlayingElement {
   }
   
   private toggleCountdown() {
-    this.el.classList.toggle("overlay");
     this.countdownTimer.classList.toggle("hidden");
   }
 
   private toggleLoading() {
-    this.el.classList.toggle("overlay");
+    this.loadingBars.classList.toggle("hidden");
   }
 
   private draw() {

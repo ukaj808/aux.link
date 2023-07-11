@@ -17,6 +17,7 @@ import qualified Text.Blaze.Svg11.Attributes as SVGA
 
 import AugsLink.Core.API
 import AugsLink.Service.API
+import qualified Text.Blaze.Html as A
 
 musicIconSvg :: S.Svg
 musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" ! SVGA.id_ "Capa_1" ! SVGA.viewbox "0 0 98.121 98.121" ! SVGA.xmlSpace "preserve" $
@@ -57,13 +58,17 @@ renderOrderSection users =
     H.div ! A.class_"user-carousel" $ do
       forM_ users renderUser 
 
-renderCurrentlyPlayingSection :: H.Html
-renderCurrentlyPlayingSection = 
-  H.section ! A.id "currently-playing"   ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
+renderCurrentlyPlayingSection :: String -> H.Html
+renderCurrentlyPlayingSection state = 
+  H.section ! A.id "currently-playing" ! A.dataAttribute "state" (textValue $ pack state) ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
     H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg
       H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden" $ "0"
+      H.div ! A.id "cp-loading" ! A.class_ "lds-facebook-md hidden" $ do
+        H.div ""
+        H.div ""
+        H.div ""
 
 renderDropSection :: H.Html
 renderDropSection = 

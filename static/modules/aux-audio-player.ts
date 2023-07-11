@@ -1,22 +1,36 @@
 import { EventBus } from "./event-bus";
 import { RoomMessageListener } from "./room-message-listener";
 
+export type AuxAudioPlayerStatus = 'disconnected' | 'not_running' | 'running';
+
+export type StreamConnectedEvent = {
+  type: "STREAM_CONNECTED",
+};
+
 export type StreamStartingEvent = {
   type: "STREAM_STARTING",
-  artist: string;
   title: string;
-};
+}
+
+export type AudioPlayingEvent = {
+  type: "AUDIO_PLAYING",
+}
+
 export type StreamFinishedEvent = {
   type: "STREAM_FINISHED",
 };
 
-export type AuxAudioPlayerEventType = 'STREAM_STARTING' | 'STREAM_FINISHED';
+export type AudioFinishedEvent = {
+  type: "AUDIO_FINISHED",
+}
 
-export type AuxAudioPlayerEvent = StreamStartingEvent | StreamFinishedEvent;
+export type AuxAudioPlayerEventType = 'STREAM_CONNECTED' | 'STREAM_STARTING' | 'AUDIO_PLAYING' | 'STREAM_FINISHED' | 'AUDIO_FINISHED';
 
+export type AuxAudioPlayerEvent = StreamConnectedEvent | StreamStartingEvent | AudioPlayingEvent | StreamFinishedEvent | AudioFinishedEvent;
 
 export class AuxAudioPlayer {
   private roomId: string;
+  private status: AuxAudioPlayerStatus;
   private audioContext: AudioContext;
   private analyser: AnalyserNode;
   private roomMessageListener: RoomMessageListener;
@@ -31,6 +45,7 @@ export class AuxAudioPlayer {
 
   constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode, roomMessageListener: RoomMessageListener) {
     this.roomId = roomId;
+    this.status = 'disconnected';
     this.audioContext = audioContext;
     this.analyser = analyser;
     this.ringBufferSize = 3072000; // kb
@@ -53,7 +68,11 @@ export class AuxAudioPlayer {
     this.userId = userId;
   }
 
-  public async startListening(onStreamStarting: (event: StreamStartingEvent) => void) {
+  public getStatus(): AuxAudioPlayerStatus {
+    return this.status;
+  }
+
+  public async startListening() {
     if (this.userId === undefined) throw new Error("Audio context wasnt initialized");
     if (this.ringBufferSize === undefined) throw new Error("Ring buffer size wasnt initialized");
 
@@ -130,15 +149,18 @@ export class AuxAudioPlayer {
         this.audioWorklet.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
         this.audioContext.resume();
+        this.eventBus.publish('STREAM_CONNECTED', { type: 'STREAM_CONNECTED' });
         break;
       }
       case 'WRITE_SONG_STARTED': {
         this.audioWorklet.port.postMessage({ type: event.data.type });
         this.audioContext.resume();
+        this.eventBus.publish('STREAM_STARTING', { type: 'STREAM_STARTING', title: 'dummy title' });
         break;
       }
       case 'WRITE_SONG_FINISHED': {
         this.audioWorklet.port.postMessage({ type: event.data.type, offset: event.data.offset });
+        this.eventBus.publish('STREAM_FINISHED', { type: 'STREAM_FINISHED' });
         break;
       }
     }
@@ -146,8 +168,11 @@ export class AuxAudioPlayer {
 
   private onAudioWorkletEvent = (event: MessageEvent<AudioWorkletEvent>) => {
     switch (event.data.type) {
+      case 'READ_SONG_STARTED':
+        this.eventBus.publish('AUDIO_PLAYING', { type: 'AUDIO_PLAYING' });
+        break;
       case 'READ_SONG_FINISHED':
-        // this.audioContext?.suspend();
+        this.eventBus.publish('AUDIO_FINISHED', { type: 'AUDIO_FINISHED' });
         break;
     }
   }
