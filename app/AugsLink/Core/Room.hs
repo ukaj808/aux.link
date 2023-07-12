@@ -80,7 +80,7 @@ startMusicImpl stateVar uId = do
   modifyMVar stateVar $ \st -> do
     case (creator st, musicStreamerStatus st) of
       (Nothing, _) -> return (st, RoomStillCreating)
-      (_, Running) -> return (st, AlreadyRunning)
+      (_, Running) -> return (st, AlreadyRunning   )
       (Just cId, _) 
         | cId /= uId -> return (st, NotCreator)
         | otherwise -> do
@@ -174,10 +174,10 @@ viewRoomImpl stateVar = do
   let userSessions = Map.elems $ roomUsers roomState
   users <- mapM (getRoomUser . user) userSessions
   return $ RoomView {
-      roomViewUsers = users
-    , roomViewSong = currentSong roomState
+      roomViewUsers               = users
+    , roomViewSong                = currentSong roomState
     , roomViewMusicStreamerStatus = musicStreamerStatus roomState
-    , roomViewTurn = turn roomState
+    , roomViewTurn                = turn roomState
   }
 
 -- Messaging Via Websockets

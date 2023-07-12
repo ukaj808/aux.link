@@ -14,10 +14,10 @@ import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Text.Blaze.Svg11            as S
 import qualified Text.Blaze.Svg11.Attributes as SVGA
+import qualified Data.Aeson                  as Aeson
 
 import AugsLink.Core.API
 import AugsLink.Service.API
-import qualified Text.Blaze.Html as A
 
 musicIconSvg :: S.Svg
 musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" ! SVGA.id_ "Capa_1" ! SVGA.viewbox "0 0 98.121 98.121" ! SVGA.xmlSpace "preserve" $
@@ -46,21 +46,21 @@ listenIconSvg = S.docTypeSvg ! A.id "listen-icon" ! SVGA.class_ "centered-icon" 
 
 renderUser :: RoomUser -> H.Html
 renderUser user = 
-  let uid = toValue $ userId user
+  let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
   in
-  H.div ! A.id uid ! A.class_ "user-carousel-cell" $ ""
+  H.div ! A.id suid ! A.class_ "user-carousel-cell" $ ""
 
 
-renderOrderSection :: [RoomUser] -> H.Html 
-renderOrderSection users = 
+renderOrderSection :: OrderView -> H.Html 
+renderOrderSection ov = 
   H.section ! A.id "order" ! A.class_ "default-margin flex-cell-sm" $ do
     H.div ! A.class_"user-carousel" $ do
-      forM_ users renderUser 
+      forM_ (orderUsers ov) renderUser 
 
-renderCurrentlyPlayingSection :: MusicStreamerStatus -> H.Html
-renderCurrentlyPlayingSection status = 
-  H.section ! A.id "currently-playing" ! A.dataAttribute "state" (textValue $ pack $ show status) ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
+renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
+renderCurrentlyPlayingSection cpv = 
+  H.section ! A.id "currently-playing" ! H.dataAttribute "state" jsonCpv ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
     H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg
@@ -69,6 +69,8 @@ renderCurrentlyPlayingSection status =
         H.div ""
         H.div ""
         H.div ""
+  where
+    jsonCpv = textValue $ pack $ show $ Aeson.toJSON cpv
 
 renderDropSection :: H.Html
 renderDropSection = 
@@ -91,8 +93,8 @@ renderRoomPage room = H.docTypeHtml $ do
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
-      renderOrderSection $ roomViewUsers room
-      renderCurrentlyPlayingSection $ roomViewMusicStreamerStatus room
+      renderOrderSection            $ orderView room
+      renderCurrentlyPlayingSection $ currentlyPlayingView room
       renderDropSection
       H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
 

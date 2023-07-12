@@ -18,10 +18,10 @@ newtype UserState = UserState
     userData        :: RoomUser
   }
 
-newUser :: RoomId -> UserId -> Bool -> IO (User IO)
-newUser rId uId isCreator = do
+newUser :: RoomId -> UserId -> IO (User IO)
+newUser rId uId = do
   let uName = pack $ show uId
-  stateVar <- newMVar $ UserState (RoomUser uId uName isCreator)
+  stateVar <- newMVar $ UserState (RoomUser uId uName)
   return $ User {
     getRoomUser = userData <$> readMVar stateVar
   }

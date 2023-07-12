@@ -4,11 +4,9 @@ module AugsLink.Core.API where
 import Data.Aeson.Types
 import Data.Kind
 import Data.Text
-
-import qualified Data.Aeson as Aeson
-import Servant.Multipart.API
 import GHC.Generics
 
+import qualified Data.Aeson as Aeson
 {-
  The Registry monadic interface. This datatype abstracts the actions that the registry 
  can perform on any data type m. It's more useful to look at this data type as 
@@ -72,17 +70,29 @@ data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomSt
 data MusicStreamerStatus = Running | NotRunning deriving (Show, Eq, Generic)
 instance ToJSON MusicStreamerStatus
 
-data RoomView = RoomView
+data OrderView = Order
   {
-     roomViewUsers        :: [RoomUser]
-  ,  roomViewSong         :: Maybe SongId
-  ,  roomViewMusicStreamerStatus :: MusicStreamerStatus
-  ,  roomViewTurn         :: Int
+     orderUsers :: [RoomUser]
+  ,  orderTurn  :: Int
   }
 
-newtype RoomUser = RoomUser
+data CurrentlyPlayingView = CurrentlyPlaying
+  {
+     currentlyPlayingSong :: Maybe SongId
+  ,  musicStreamerStatus :: MusicStreamerStatus
+  }
+
+-- A sanitized view of the room
+data RoomView = RoomView
+  {
+     currentlyPlayingView :: CurrentlyPlayingView
+  ,  orderView            :: OrderView
+  }
+
+data RoomUser = RoomUser
    {
-     userName       :: UserName
+      sanitizedUserId :: UserId
+   ,  userName        :: UserName
    }
 
 data AudioFile = AudioFile
@@ -163,12 +173,18 @@ instance ToJSON RoomUser where
        "userName"    .= userName u
     ]
 
-instance ToJSON RoomView where
-  toJSON :: RoomView -> Value
-  toJSON rv = Aeson.object
+instance ToJSON CurrentlyPlayingView where
+  toJSON :: CurrentlyPlayingView -> Value
+  toJSON cpv = Aeson.object
     [
-       "users"               .= roomViewUsers rv
-    ,  "song"                .= roomViewSong rv
-    ,  "musicStreamerStatus" .= roomViewMusicStreamerStatus rv
-    ,  "turn"                .= roomViewTurn rv
+       "song"                .= currentlyPlayingSong cpv
+    ,  "musicStreamerStatus" .= musicStreamerStatus cpv
+    ]
+
+instance ToJSON OrderView where
+  toJSON :: OrderView -> Value
+  toJSON ov = Aeson.object
+    [
+       "users"               .= orderUsers ov
+    ,  "turn"                .= orderTurn ov
     ]
