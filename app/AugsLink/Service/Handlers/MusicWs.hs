@@ -15,7 +15,7 @@ type instance Connection IO = WS.PendingConnection
 
 -- Should not terminate until the room is no longer required; because if it
 -- does then the ws connection will close on the browser
-connectHandler :: Registry IO -> Text ->  Int -> WS.PendingConnection -> Handler ()
+connectHandler :: Registry IO -> Text ->  UserId -> WS.PendingConnection -> Handler ()
 connectHandler rr rId uId pc = liftIO $ do
 
   r <- getRoom rr rId

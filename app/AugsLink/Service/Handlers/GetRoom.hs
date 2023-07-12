@@ -54,9 +54,11 @@ renderUser user =
 
 renderOrderSection :: OrderView -> H.Html 
 renderOrderSection ov = 
-  H.section ! A.id "order" ! A.class_ "default-margin flex-cell-sm" $ do
+  H.section ! A.id "order" ! H.dataAttribute "state" jsonOv ! A.class_ "default-margin flex-cell-sm" $ do
     H.div ! A.class_"user-carousel" $ do
       forM_ (orderUsers ov) renderUser 
+  where
+    jsonOv = textValue $ pack $ show $ Aeson.toJSON ov
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv = 

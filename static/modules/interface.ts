@@ -129,3 +129,11 @@ type UrlUpload = {
     valid?: boolean,
     title?: string,
 };
+
+type CurrentlyPlayingView = {
+    musicStreamerStatus: MusicStreamerStatus;
+    currentlyPlayingSong: string | null;
+}
+
+type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerStatus;
+type MusicStreamerStatus = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning'

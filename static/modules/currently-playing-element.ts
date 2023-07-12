@@ -4,7 +4,8 @@ import { RoomMessageListener } from "./room-message-listener";
 export class CurrentlyPlayingElement {
 
   private el: HTMLElement;
-  private state: 'playing' | 'countdown' | 'loading' | 'not_started' | 'disconnected';
+  private state: CurrentlyPlayingState;
+  private view: CurrentlyPlayingView;
   private roomMessageListener: RoomMessageListener;
   private auxAudioPlayer: AuxAudioPlayer;
   private analyser: AnalyserNode;
@@ -22,6 +23,10 @@ export class CurrentlyPlayingElement {
     const optEl = document.getElementById("currently-playing");
     if (!optEl) throw new Error('No currently playing element found');
     this.el = optEl;
+
+    const stateAttribute = optEl.getAttribute('data-state');
+    if (!stateAttribute) throw new Error('No state attribute found');
+    this.view = JSON.parse(stateAttribute) as CurrentlyPlayingView;
 
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
@@ -48,8 +53,6 @@ export class CurrentlyPlayingElement {
     if (!loadingBars) throw new Error('No loading bars element found');
     this.loadingBars = loadingBars as HTMLDivElement;
 
-    this.state = 'disconnected';
-
     this.roomMessageListener = roomMessageListener;
     this.roomMessageListener.subscribe('SongStartingEvent', (data) => {
       const songStartingEvent = data as SongStartingEvent;
@@ -69,15 +72,15 @@ export class CurrentlyPlayingElement {
     this.el.addEventListener("click", () => this.onSectionClick());
   }
 
-  private transitionTo(state: 'playing' | 'countdown' | 'loading' | 'not_started' | 'disconnected') {
+  private transitionTo(state: CurrentlyPlayingState) {
     switch (state) {
-      case 'playing':
+      case 'Streaming':
         if (this.state === 'countdown') {
         } else if (this.state === 'loading') {
           this.loadingToPlaying();
         } else throw Error(`Invalid transition from ${this.state} to ${state}`);
         break;
-      case 'countdown':
+      case 'Polling':
         if (this.state === 'playing') {
         } else if (this.state === 'loading') {
           this.loadingToCountdown();
@@ -85,7 +88,7 @@ export class CurrentlyPlayingElement {
         } else if (this.state === 'disconnected') {
         } else throw Error(`Invalid transition from ${this.state} to ${state}`);
         break;
-      case 'loading':
+      case 'Connecting':
         if (this.state === 'playing') {
         } else if (this.state === 'countdown') {
           this.countdownToLoading();
@@ -94,14 +97,14 @@ export class CurrentlyPlayingElement {
           this.disconnectedToLoading();
         } else throw Error(`Invalid transition from ${this.state} to ${state}`);
         break;
-      case 'not_started':
+      case 'Disconnected':
         if (this.state === 'playing') {
         } else if (this.state === 'countdown') {
         } else if (this.state === 'loading') {
         } else if (this.state === 'disconnected') {
         } else throw Error(`Invalid transition from ${this.state} to ${state}`);
         break;
-      case 'disconnected':
+      case 'NotRunning':
         if (this.state === 'playing') {
           this.playingToDisconnected();
         } else if (this.state === 'countdown') {

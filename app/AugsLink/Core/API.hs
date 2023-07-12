@@ -35,7 +35,7 @@ data Registry m = Registry
 data Room m = Room
   {
      enterRoom             ::   Connection m                         -> m ()
-  ,  leaveRoom             ::   UserId                               -> m ()
+  ,  leaveRoom             ::   (UserId, UserId)                               -> m ()
   ,  viewRoom              ::                                           m RoomView
   ,  getUser               ::   UserId                               -> m (Maybe (User m))
   ,  getMusic              ::                                           m (MusicStreamer m)
@@ -67,7 +67,7 @@ data MusicStreamer m = Music
 
 data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomStillCreating deriving (Show, Eq)
 
-data MusicStreamerStatus = Running | NotRunning deriving (Show, Eq, Generic)
+data MusicStreamerStatus = Streaming | Countdown | Polling | NotRunning deriving (Show, Eq, Generic)
 instance ToJSON MusicStreamerStatus
 
 data OrderView = Order
@@ -116,7 +116,7 @@ data ServerCommand = ServerWelcomeCommand UserId Bool
 newtype UserEvent = UserAudioPrepared UserId
 
 type RoomId   = Text
-type UserId   = Int
+type UserId   = Text
 type SongId   = Text
 type UserName = Text
 type Vote     = Bool

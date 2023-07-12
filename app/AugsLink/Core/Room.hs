@@ -23,6 +23,8 @@ import AugsLink.Core.API
 import AugsLink.Core.Music
 import AugsLink.Core.Shared
 import AugsLink.Core.User
+import Data.UUID
+import Data.UUID.V4
 
 type instance Connection IO = WS.PendingConnection
 
@@ -32,9 +34,8 @@ data RoomState = RoomState
   , roomUsers                    :: Map.Map UserId UserSession
   , registryManage               :: RegistryManage
   , musicStreamer                :: MusicStreamer IO
-  , musicStreamerStatus          :: MusicStreamerStatus
+  , musicStatus          :: MusicStreamerStatus
   , creator                      :: Maybe UserId
-  , userCount                    :: Int
   , currentSong                  :: Maybe T.Text
   , order                        :: [UserId]
   , turn                         :: Int
@@ -53,9 +54,8 @@ initialRoomState rId rsm musicStreamer = RoomState
   , roomUsers      = Map.empty
   , registryManage = rsm
   , musicStreamer  = musicStreamer
-  , musicStreamerStatus = NotRunning
+  , musicStatus = NotRunning
   , creator        = Nothing
-  , userCount      = 0
   , currentSong    = Nothing
   , order          = []
   , turn           = -1
@@ -77,18 +77,22 @@ newRoom rId registryManage = do
 
 startMusicImpl :: MVar RoomState -> UserId -> IO StartMusicResult
 startMusicImpl stateVar uId = do
-  modifyMVar stateVar $ \st -> do
-    case (creator st, musicStreamerStatus st) of
-      (Nothing, _) -> return (st, RoomStillCreating)
-      (_, Running) -> return (st, AlreadyRunning   )
-      (Just cId, _) 
-        | cId /= uId -> return (st, NotCreator)
-        | otherwise -> do
-          _ <- forkIO $ nextSong stateVar
-          return (st{musicStreamerStatus=Running}, StartMusicSuccess)
+  st <- readMVar stateVar
+  case (creator st, musicStatus st) of
+    (Nothing, _) -> return RoomStillCreating
+    (_, Streaming) -> return AlreadyRunning
+    (Just cId, _) 
+      | cId /= uId -> return NotCreator
+      | otherwise -> do
+        _ <- forkIO $ nextSong stateVar
+        return StartMusicSuccess
 
 nextSong  :: MVar RoomState -> IO ()
 nextSong stateVar = do
+
+  modifyMVar_ stateVar $ \st -> do
+    return st{musicStatus=Countdown}
+
   forM_ [5,4,3,2,1,0] $ \i -> do
     st' <- readMVar stateVar
     publishToRoom st' (SongStartingEvent i)
@@ -97,6 +101,10 @@ nextSong stateVar = do
   nextUp <- modifyMVar stateVar $ \st' -> return $ getNextUser st'
  -- Get the next user to play music
   messageToUser st nextUp ServerUploadSongCommand
+
+  modifyMVar_ stateVar $ \st' -> do
+    return st'{musicStatus=Polling}
+
   polled <- pollSongIsUploaded stateVar 10
   case polled of
     Nothing -> do
@@ -131,21 +139,21 @@ genTargetPath rId fileName =  genTargetDir rId ++ "/" ++ fileName
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend
-  uId  <-
+  (_uId, suid)  <-
     modifyMVar stateVar $ \st -> do
-      let uId  =      userCount st
-      u        <-     newUser (roomId st) uId (uId == 0)
+      -- private user id
+      _uId     <-     toText <$> nextRandom    
+      u        <-     newUser
       rUser    <-     getRoomUser u
-      let st'  =      addUserToRoom st uId (USession conn u)
+      let st'  =      addUserToRoom st _uId (USession conn u)
       let c = case creator st of
                Just existing -> Just existing
-
-               Nothing       -> Just uId
-      messageToUser   st' uId (ServerWelcomeCommand uId $ c == Just uId)
-      publishToAllBut st' uId (UserEnterEvent rUser)
-      return  (st'{userCount=uId + 1, creator=c}, uId)
+               Nothing       -> Just _uId
+      messageToUser   st' _uId (ServerWelcomeCommand _uId $ c == Just _uId)
+      publishToAllBut st' _uId (UserEnterEvent rUser)
+      return  (st'{creator=c}, (_uId, sanitizedUserId rUser))
   WS.withPingThread conn 30 (return ()) $
-    handleIncomingMessages stateVar conn uId
+    handleIncomingMessages stateVar conn (_uId, suid)
   -- todo: deal with async threads
   -- we should keep a reference to the thread so when room is empty we can terminate it 
 
@@ -157,11 +165,11 @@ getUserImpl stateVar uId = do
   st <- readMVar stateVar
   return $ user <$> Map.lookup uId (roomUsers st)
 
-leaveRoomImpl :: MVar RoomState -> UserId -> IO ()
-leaveRoomImpl stateVar uId = do
+leaveRoomImpl :: MVar RoomState -> (UserId, UserId) -> IO ()
+leaveRoomImpl stateVar (_uId, suid) = do
    modifyMVar_ stateVar $ \st -> do
-     let st'' = removeUser st uId
-     publishToRoom st'' $ UserLeftEvent uId
+     let st'' = removeUser st _uId
+     publishToRoom st'' $ UserLeftEvent suid
      return st''
 
    st <- readMVar stateVar
@@ -174,15 +182,21 @@ viewRoomImpl stateVar = do
   let userSessions = Map.elems $ roomUsers roomState
   users <- mapM (getRoomUser . user) userSessions
   return $ RoomView {
-      roomViewUsers               = users
-    , roomViewSong                = currentSong roomState
-    , roomViewMusicStreamerStatus = musicStreamerStatus roomState
-    , roomViewTurn                = turn roomState
+    currentlyPlayingView =
+      CurrentlyPlaying{
+        currentlyPlayingSong = currentSong roomState
+      , musicStreamerStatus  = musicStatus roomState
+      }
+  ,  orderView           =
+      Order{
+        orderUsers = users
+      , orderTurn  = turn roomState
+      }
   }
 
 -- Messaging Via Websockets
 
-handleIncomingMessages :: MVar RoomState -> WS.Connection -> UserId -> IO ()
+handleIncomingMessages :: MVar RoomState -> WS.Connection -> (UserId, UserId) -> IO ()
 handleIncomingMessages stateVar conn uid = do
   go
   where
@@ -248,11 +262,11 @@ getNextUser st = (st{turn=turn'}, order st !! turn')
       turn' = (turn st + 1) `mod` length (order st)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ _ order _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
   st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
 
 getTurnUser :: RoomState -> UserId

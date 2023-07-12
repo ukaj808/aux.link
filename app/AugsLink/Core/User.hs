@@ -5,11 +5,12 @@ module AugsLink.Core.User
 
 
 import Control.Concurrent
-import Data.Text
 
 import qualified Network.WebSockets as WS
 
 import AugsLink.Core.API
+import Data.UUID.V4
+import Data.UUID
 
 type instance Connection IO = WS.PendingConnection
 
@@ -18,10 +19,10 @@ newtype UserState = UserState
     userData        :: RoomUser
   }
 
-newUser :: RoomId -> UserId -> IO (User IO)
-newUser rId uId = do
-  let uName = pack $ show uId
-  stateVar <- newMVar $ UserState (RoomUser uId uName)
+newUser :: IO (User IO)
+newUser = do
+  uuid <- toText <$> nextRandom
+  stateVar <- newMVar $ UserState (RoomUser uuid uuid)
   return $ User {
     getRoomUser = userData <$> readMVar stateVar
   }
