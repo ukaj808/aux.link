@@ -1,4 +1,4 @@
-import { CurrentlyPlayingElement } from "./currently-playing-element";
+import { CurrentlyPlayingElement } from "./currently-playing/currently-playing-element";
 
 export class AudioMessageProcessor {
 

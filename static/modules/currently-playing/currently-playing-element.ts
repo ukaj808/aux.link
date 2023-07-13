@@ -1,5 +1,6 @@
-import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "./aux-audio-player";
-import { RoomMessageListener } from "./room-message-listener";
+import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
+import { RoomMessageListener } from "../room-message-listener";
+import { fromDisconnectedToConnecting } from "./transitions/from-disconnected-to-connecting";
 
 type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';
 type CurrentlyPlayingView = {
@@ -20,6 +21,7 @@ export class CurrentlyPlayingElement {
   private audioCanvas: HTMLCanvasElement;
   private overlayEl: HTMLDivElement
   private listenIcon: HTMLElement;
+  private disconnectBtn: HTMLButtonElement
   private countdownTimer: HTMLSpanElement;
   private loadingBars: HTMLDivElement;
   private canvasCtx: CanvasRenderingContext2D;
@@ -30,10 +32,6 @@ export class CurrentlyPlayingElement {
     const optEl = document.getElementById("currently-playing");
     if (!optEl) throw new Error('No currently playing element found');
     this.el = optEl;
-
-    const stateAttribute = optEl.getAttribute('data-state');
-    if (!stateAttribute) throw new Error('No state attribute found');
-    this.iState = JSON.parse(stateAttribute) as CurrentlyPlayingView;
 
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
@@ -51,7 +49,11 @@ export class CurrentlyPlayingElement {
     const listenIcon = document.getElementById("listen-icon");
     if (!listenIcon) throw new Error('No listen icon element found');
     this.listenIcon = listenIcon;
-    
+
+    const disconnectBtn = document.getElementById("cp-disconnect-btn");
+    if (!disconnectBtn) throw new Error('No disconnect button element found');
+    this.disconnectBtn = disconnectBtn as HTMLButtonElement;
+
     const countdownTimer = document.getElementById("countdown-timer");
     if (!countdownTimer) throw new Error('No countdown timer element found');
     this.countdownTimer = countdownTimer as HTMLSpanElement;
@@ -61,32 +63,39 @@ export class CurrentlyPlayingElement {
     this.loadingBars = loadingBars as HTMLDivElement;
 
     this.roomMessageListener = roomMessageListener;
+
     this.roomMessageListener.subscribe('SongStartingEvent', (data) => {
       const songStartingEvent = data as SongStartingEvent;
       if (songStartingEvent.s === 5) {
-        this.transitionTo('countdown');
+        this.transitionTo('Countdown');
       } else if (songStartingEvent.s === 0) {
-        this.transitionTo('loading');
+        this.transitionTo('Polling');
       }
       this.countdownTimer.innerHTML = songStartingEvent.s.toString();
     });
+
+    const stateAttribute = optEl.getAttribute('data-state');
+    if (!stateAttribute) throw new Error('No state attribute found');
+    this.iState = JSON.parse(stateAttribute) as CurrentlyPlayingView;
+    this.xState = this.iState.musicStreamerState;
+
     this.listening = false;
     this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
     this.analyser.fftSize = 256;
     this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 
-    this.el.addEventListener("click", () => this.onSectionClick());
+    this.el.addEventListener("click", () => this.transitionTo('Connecting'));
+    this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
   }
 
   private transitionTo(targetState: CurrentlyPlayingState) {
     switch (targetState) {
       case 'Disconnected':
-        // Should all states can transition to Disconnected...
-        // The user should be able to disconnect at anytime
+        this.allStatesToDisconnected();
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          // fromDisconnectedToConnecting
+          fromDisconnectedToConnecting(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
         } else {
           throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
         }
@@ -126,36 +135,44 @@ export class CurrentlyPlayingElement {
     }
     this.xState = targetState;
   }
-  
-  private fromDisconnectedToConnecting() {
-    const onStreamConnected = (data: AuxAudioPlayerEvent) => {
-      const streamStartingEvent = data as StreamStartingEvent;
-      this.auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamConnected);
-      this.toggleLoading();
-      // route logic??
-    }
-    this.auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected);
-    this.toggleOverlay();
-    this.toggleLoading();
-    this.auxAudioPlayer.startListening();
-    this.listening = true;
+
+  private allStatesToDisconnected() {
+    this.auxAudioPlayer.stopListening();
+    this.showOverlay();
+    this.hideLoading();
+    this.hideCountdown();
+    this.hideDisconnectBtn();
   }
   
-  private onSectionClick() {
-    if (!this.listening) this.transitionTo('loading');
-    else this.transitionTo('disconnected');
+  private showOverlay() {
+    this.overlayEl.classList.remove("hidden");
   }
 
-  private toggleOverlay() {
-    this.el.classList.toggle("overlay");
+  private hideOverlay() {
+    this.overlayEl.classList.add("hidden");
   }
   
-  private toggleCountdown() {
-    this.countdownTimer.classList.toggle("hidden");
+  private showCountdown() {
+    this.countdownTimer.classList.remove("hidden");
   }
 
-  private toggleLoading() {
-    this.loadingBars.classList.toggle("hidden");
+  private hideCountdown() {
+    this.countdownTimer.classList.add("hidden");
+  }
+
+  private showDisconnectBtn() {
+    this.disconnectBtn.classList.remove("hidden");
+  }
+  private hideDisconnectBtn() {
+    this.disconnectBtn.classList.add("hidden");
+  }
+
+  private showLoading() {
+    this.loadingBars.classList.remove("hidden");
+  }
+
+  private hideLoading() {
+    this.loadingBars.classList.add("hidden");
   }
 
   private draw() {

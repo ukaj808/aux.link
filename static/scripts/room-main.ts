@@ -2,7 +2,7 @@ import { AuxAudioPlayer } from "../modules/aux-audio-player";
 import { RoomMessageListener } from "../modules/room-message-listener";
 import { OrderElement } from "../modules/order-element";
 import { DropElement } from "../modules/drop-element"; 
-import { CurrentlyPlayingElement } from "../modules/currently-playing-element";
+import { CurrentlyPlayingElement } from "../modules/currently-playing/currently-playing-element";
 import { RestClient } from "../modules/rest-client";
 import { SvgFactory } from "../modules/svg";
 import { SongQueue } from "../modules/song-queue";
