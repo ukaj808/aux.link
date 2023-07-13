@@ -33,8 +33,8 @@ data RoomState = RoomState
     roomId                       :: RoomId
   , roomUsers                    :: Map.Map UserId UserSession
   , registryManage               :: RegistryManage
-  , musicStreamer                :: MusicStreamer IO
-  , musicStatus          :: MusicStreamerStatus
+  , mStreamer                    :: MusicStreamer IO
+  , mState                       :: MusicState
   , creator                      :: Maybe UserId
   , currentSong                  :: Maybe T.Text
   , order                        :: [UserId]
@@ -53,8 +53,8 @@ initialRoomState rId rsm musicStreamer = RoomState
     roomId         = rId
   , roomUsers      = Map.empty
   , registryManage = rsm
-  , musicStreamer  = musicStreamer
-  , musicStatus = NotRunning
+  , mStreamer  = musicStreamer
+  , mState     = NotRunning
   , creator        = Nothing
   , currentSong    = Nothing
   , order          = []
@@ -78,7 +78,7 @@ newRoom rId registryManage = do
 startMusicImpl :: MVar RoomState -> UserId -> IO StartMusicResult
 startMusicImpl stateVar uId = do
   st <- readMVar stateVar
-  case (creator st, musicStatus st) of
+  case (creator st, mState st) of
     (Nothing, _) -> return RoomStillCreating
     (_, Streaming) -> return AlreadyRunning
     (Just cId, _) 
@@ -91,7 +91,7 @@ nextSong  :: MVar RoomState -> IO ()
 nextSong stateVar = do
 
   modifyMVar_ stateVar $ \st -> do
-    return st{musicStatus=Countdown}
+    return st{mState=Countdown}
 
   forM_ [5,4,3,2,1,0] $ \i -> do
     st' <- readMVar stateVar
@@ -103,7 +103,7 @@ nextSong stateVar = do
   messageToUser st nextUp ServerUploadSongCommand
 
   modifyMVar_ stateVar $ \st' -> do
-    return st'{musicStatus=Polling}
+    return st'{mState=Polling}
 
   polled <- pollSongIsUploaded stateVar 10
   case polled of
@@ -112,7 +112,7 @@ nextSong stateVar = do
       nextSong stateVar
     Just file -> do
       publishToRoom st SongUploadedEvent
-      stream (musicStreamer st) (T.unpack file) (roomId st)
+      stream (mStreamer st) (T.unpack file) (roomId st)
       modifyMVar_ stateVar $ \st'' -> do
         return st''{currentSong=Nothing}
       nextSong stateVar
@@ -158,7 +158,7 @@ enterRoomImpl stateVar pend = do
   -- we should keep a reference to the thread so when room is empty we can terminate it 
 
 getMusicImpl :: MVar RoomState -> IO (MusicStreamer IO)
-getMusicImpl stateVar = musicStreamer <$> readMVar stateVar
+getMusicImpl stateVar = mStreamer <$> readMVar stateVar
 
 getUserImpl :: MVar RoomState -> UserId -> IO (Maybe (User IO))
 getUserImpl stateVar uId = do
@@ -182,15 +182,15 @@ viewRoomImpl stateVar = do
   let userSessions = Map.elems $ roomUsers roomState
   users <- mapM (getRoomUser . user) userSessions
   return $ RoomView {
-    currentlyPlayingView =
+    cpv =
       CurrentlyPlaying{
-        currentlyPlayingSong = currentSong roomState
-      , musicStreamerStatus  = musicStatus roomState
+        cpvSong   = currentSong roomState
+      , cpvState  = mState roomState
       }
-  ,  orderView           =
+  ,  ov           =
       Order{
-        orderUsers = users
-      , orderTurn  = turn roomState
+        ovUsers = users
+      , ovTurn  = turn roomState
       }
   }
 

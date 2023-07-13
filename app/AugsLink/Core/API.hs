@@ -67,26 +67,26 @@ data MusicStreamer m = Music
 
 data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomStillCreating deriving (Show, Eq)
 
-data MusicStreamerStatus = Streaming | Countdown | Polling | NotRunning deriving (Show, Eq, Generic)
-instance ToJSON MusicStreamerStatus
+data MusicState = Streaming | Countdown | Polling | NotRunning deriving (Show, Eq, Generic)
+instance ToJSON MusicState
 
 data OrderView = Order
   {
-     orderUsers :: [RoomUser]
-  ,  orderTurn  :: Int
+     ovUsers :: [RoomUser]
+  ,  ovTurn  :: Int
   }
 
 data CurrentlyPlayingView = CurrentlyPlaying
   {
-     currentlyPlayingSong :: Maybe SongId
-  ,  musicStreamerStatus :: MusicStreamerStatus
+     cpvSong   :: Maybe SongId
+  ,  cpvState  :: MusicState
   }
 
 -- A sanitized view of the room
 data RoomView = RoomView
   {
-     currentlyPlayingView :: CurrentlyPlayingView
-  ,  orderView            :: OrderView
+     cpv :: CurrentlyPlayingView
+  ,  ov  :: OrderView
   }
 
 data RoomUser = RoomUser
