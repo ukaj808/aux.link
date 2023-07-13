@@ -1,17 +1,24 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "./aux-audio-player";
 import { RoomMessageListener } from "./room-message-listener";
 
+type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';
+type CurrentlyPlayingView = {
+    musicStreamerState: MusicStreamerState;
+    currentlyPlayingSong: string | null;
+}
+type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
+
 export class CurrentlyPlayingElement {
 
   private el: HTMLElement;
-  private state: CurrentlyPlayingState;
-  private view: CurrentlyPlayingView;
+  private iState: CurrentlyPlayingView;
+  private xState: CurrentlyPlayingState;
   private roomMessageListener: RoomMessageListener;
   private auxAudioPlayer: AuxAudioPlayer;
   private analyser: AnalyserNode;
   private listening: boolean;
   private audioCanvas: HTMLCanvasElement;
-  private overlayEl: HTMLDivElement;
+  private overlayEl: HTMLDivElement
   private listenIcon: HTMLElement;
   private countdownTimer: HTMLSpanElement;
   private loadingBars: HTMLDivElement;
@@ -26,7 +33,7 @@ export class CurrentlyPlayingElement {
 
     const stateAttribute = optEl.getAttribute('data-state');
     if (!stateAttribute) throw new Error('No state attribute found');
-    this.view = JSON.parse(stateAttribute) as CurrentlyPlayingView;
+    this.iState = JSON.parse(stateAttribute) as CurrentlyPlayingView;
 
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
@@ -72,98 +79,60 @@ export class CurrentlyPlayingElement {
     this.el.addEventListener("click", () => this.onSectionClick());
   }
 
-  private transitionTo(state: CurrentlyPlayingState) {
-    switch (state) {
-      case 'Streaming':
-        if (this.state === 'countdown') {
-        } else if (this.state === 'loading') {
-          this.loadingToPlaying();
-        } else throw Error(`Invalid transition from ${this.state} to ${state}`);
-        break;
-      case 'Polling':
-        if (this.state === 'playing') {
-        } else if (this.state === 'loading') {
-          this.loadingToCountdown();
-        } else if (this.state === 'not_started') {
-        } else if (this.state === 'disconnected') {
-        } else throw Error(`Invalid transition from ${this.state} to ${state}`);
-        break;
-      case 'Connecting':
-        if (this.state === 'playing') {
-        } else if (this.state === 'countdown') {
-          this.countdownToLoading();
-        } else if (this.state === 'not_started') {
-        } else if (this.state === 'disconnected') {
-          this.disconnectedToLoading();
-        } else throw Error(`Invalid transition from ${this.state} to ${state}`);
-        break;
+  private transitionTo(targetState: CurrentlyPlayingState) {
+    switch (targetState) {
       case 'Disconnected':
-        if (this.state === 'playing') {
-        } else if (this.state === 'countdown') {
-        } else if (this.state === 'loading') {
-        } else if (this.state === 'disconnected') {
-        } else throw Error(`Invalid transition from ${this.state} to ${state}`);
+        // Should all states can transition to Disconnected...
+        // The user should be able to disconnect at anytime
+      case 'Connecting':
+        if (this.xState === 'Disconnected') {
+          // fromDisconnectedToConnecting
+        } else {
+          throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
+        }
         break;
       case 'NotRunning':
-        if (this.state === 'playing') {
-          this.playingToDisconnected();
-        } else if (this.state === 'countdown') {
-          this.countdownToDisconnected();
-        } else if (this.state === 'loading') {
-          this.loadingToDisconnected();
-        } else if (this.state === 'not_started') {
-          this.notStartedToDisconnected();
-        } else throw Error(`Invalid transition from ${this.state} to ${state}`);
+        if (this.xState === 'Connecting') {
+          // fromConnectingToNotRunning
+        } else { 
+          throw Error(`Invalid transition from ${this.xState} to ${targetState}`); 
+        }
+        break;
+      case 'Streaming':
+        if (this.xState === 'Connecting') {
+          // fromConnectingToStreaming
+        } else if (this.xState === 'Polling') {
+          // fromPolllingToStreaming
+        }
+        break;
+      case 'Countdown':
+        if (this.xState === 'Connecting') {
+          // fromConnectingToCountdown
+        }
+        else if (this.xState === 'Streaming') {
+          // fromStreamingToCountdown
+        } else if (this.xState === 'Polling') {
+          // when the user didnt have a song to upload.
+          // fromPollingToCountdown
+        }
+        break;
+      case 'Polling':
+        if (this.xState === 'Connecting') {
+          // fromConnectingToPolling
+        } else if (this.xState === 'Countdown') {
+          // fromCountdownToPolling
+        }
         break;
     }
-    this.state = state;
+    this.xState = targetState;
   }
   
-  private loadingToPlaying() {
-    this.auxAudioPlayer.startListening();
-    this.listening = true;
-    this.toggleOverlay();
-    this.draw();
-  }
-  
-  private countdownToLoading() {
-    this.toggleCountdown();
-  }
-  
-  private loadingToCountdown() {
-    this.toggleCountdown();
-  }
-
-  private playingToDisconnected() {
-    this.auxAudioPlayer.stopListening();
-    this.listening = false;
-    this.toggleOverlay();
-  }
-
-  private loadingToDisconnected() {
-    this.auxAudioPlayer.stopListening();
-    this.listening = false;
-    this.toggleOverlay();
-  }
-
-  private countdownToDisconnected() {
-    this.auxAudioPlayer.stopListening();
-    this.listening = false;
-    this.toggleOverlay();
-  }
-
-  private notStartedToDisconnected() {
-    this.auxAudioPlayer.stopListening();
-    this.listening = false;
-    this.toggleOverlay();
-  }
-
-  private disconnectedToLoading() {
+  private fromDisconnectedToConnecting() {
     const onStreamConnected = (data: AuxAudioPlayerEvent) => {
       const streamStartingEvent = data as StreamStartingEvent;
-      this.transitionTo('connected');
       this.auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamConnected);
       this.toggleLoading();
+      // route logic??
     }
     this.auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected);
     this.toggleOverlay();
