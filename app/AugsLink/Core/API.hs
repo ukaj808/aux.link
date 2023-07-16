@@ -62,7 +62,7 @@ data Upload = Upload {
 data MusicStreamer m = Music
   {
     stream             :: FilePath        -> RoomId       -> m  ()
-  , connect             :: UserId         -> Connection m -> m  ()
+  , connect            :: Connection m                    -> m  ()
   }
 
 data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomStillCreating deriving (Show, Eq)

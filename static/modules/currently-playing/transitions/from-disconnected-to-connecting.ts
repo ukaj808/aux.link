@@ -2,7 +2,7 @@ import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../../
 
 export function fromDisconnectedToConnecting(
     auxAudioPlayer: AuxAudioPlayer, 
-    overlayEl: HTMLDivElement,
+    el: HTMLElement,
     loadingBars: HTMLDivElement,
     disconnectBtn: HTMLButtonElement,
     listeningFlag: boolean
@@ -15,7 +15,7 @@ export function fromDisconnectedToConnecting(
       // route logic??
     }
     auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected);
-    overlayEl.classList.add("hidden");
+    el.classList.remove("overlay");
     loadingBars.classList.remove("hidden");
     disconnectBtn.classList.remove("hidden");
     auxAudioPlayer.startListening();

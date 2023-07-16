@@ -19,6 +19,8 @@ import System.FilePath
 import Commons.FFMpeg
 import System.IO
 import Commons.Wav
+import Data.UUID
+import Data.UUID.V4
 
 type instance Connection IO = WS.PendingConnection
 
@@ -46,8 +48,9 @@ newMusicStreamer rId = do
     , stream             = streamImpl         stateVar
     }
 
-listenImpl :: MVar MusicStreamerState -> UserId -> Connection IO -> IO ()
-listenImpl stateVar uId pend = do
+listenImpl :: MVar MusicStreamerState -> Connection IO -> IO ()
+listenImpl stateVar pend = do
+  uId   <- toText <$> nextRandom
   conn  <-     WS.acceptRequest pend
   modifyMVar_ stateVar $ \st -> do
     let u   = UserStreamSession conn Waiting

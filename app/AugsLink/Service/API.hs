@@ -73,10 +73,10 @@ type API =
         ] 
         RoomView
       )
-   :<|> Capture "roomid" Text :> "ws" :> WebSocketPending
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music"                       :> WebSocketPending
-   :<|> Capture "roomid" Text :> "users":> Capture "userId" UserId :> "music" :> "start"            :> PutNoContent
-   :<|> Capture "roomId" Text :> "users":> Capture "userId" UserId :> "music" :> "upload"           :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
+   :<|> Capture "roomid" Text :> "ws"     :> WebSocketPending
+   :<|> Capture "roomid" Text :> "music"  :> WebSocketPending
+   :<|> Capture "roomid" Text :> Header "X-User-Id" :> "start"  :> PutNoContent
+   :<|> Capture "roomId" Text :> Header "X-User-Id" :> "upload" :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
 
    :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[PlainText] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]

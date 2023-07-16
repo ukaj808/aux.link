@@ -45,7 +45,7 @@ listenIconSvg = S.docTypeSvg ! SVGA.viewbox "0 0 24 24" $ do
   S.path ! SVGA.d "M18.19 12.4492H18.06C15.96 12.4492 14.25 14.1592 14.25 16.2592V18.1392C14.25 20.2392 15.96 21.9492 18.06 21.9492H18.19C20.29 21.9492 22 20.2392 22 18.1392V16.2592C22 14.1592 20.29 12.4492 18.19 12.4492Z"
 
 disconnectIconSvg :: S.Svg
-disconnectIconSvg = S.docTypeSvg !  SVGA.viewbox "0 0 512 512" ! SVGA.viewbox "0 0 512 512" $ do
+disconnectIconSvg = S.docTypeSvg !  SVGA.viewbox "0 0 512 512" ! SVGA.viewbox "0 0 512 512" ! SVGA.fill "currentColor" $ do
   S.path ! SVGA.d "M210.287,176.988h-57.062c-36.544,0-67.206,24.836-76.238,58.53H0v40.973h76.987c9.04,33.686,39.702,58.522,76.238,58.522h57.062v-38.588h43.025v-80.84h-43.025V176.988z"
   S.path ! SVGA.d "M435.005,235.517c-9.032-33.694-39.686-58.53-76.23-58.53h-57.062v158.024h57.062c36.544,0,67.191-24.836,76.23-58.522H512v-40.973H435.005z"
 
@@ -68,16 +68,17 @@ renderOrderSection ov =
 renderCurrentlyPlayingSection :: H.Html
 renderCurrentlyPlayingSection = 
   H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
-    H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
+    H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs" $ ""
+    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn" $ do
+      disconnectIconSvg
+    H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden centered-abs" $ "0"
+    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs" $ do
+      H.div ! A.class_ "lds-facebook-md" $ do
+        H.div ""
+        H.div ""
+        H.div ""
     H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg ! A.id "listen-icon" ! A.class_ "centered-icon"
-      H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden" $ do
-        disconnectIconSvg ! A.id "disconnect-icon" ! A.class_ "centered-icon"
-      H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden" $ "0"
-      H.div ! A.id "cp-loading" ! A.class_ "lds-facebook-md hidden" $ do
-        H.div ""
-        H.div ""
-        H.div ""
 
 renderDropSection :: H.Html
 renderDropSection = 

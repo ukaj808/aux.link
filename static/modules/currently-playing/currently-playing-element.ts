@@ -52,6 +52,7 @@ export class CurrentlyPlayingElement {
     const disconnectBtn = document.getElementById("cp-disconnect-btn");
     if (!disconnectBtn) throw new Error('No disconnect button element found');
     this.disconnectBtn = disconnectBtn as HTMLButtonElement;
+    this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
 
     const countdownTimer = document.getElementById("countdown-timer");
     if (!countdownTimer) throw new Error('No countdown timer element found');
@@ -73,7 +74,7 @@ export class CurrentlyPlayingElement {
       this.countdownTimer.innerHTML = songStartingEvent.s.toString();
     });
 
-    this.xState = 'NotRunning';
+    this.xState = 'Disconnected';
 
     this.listening = false;
     this.auxAudioPlayer = auxAudioPlayer;
@@ -91,7 +92,7 @@ export class CurrentlyPlayingElement {
         this.allStatesToDisconnected();
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          fromDisconnectedToConnecting(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+          fromDisconnectedToConnecting(this.auxAudioPlayer, this.el, this.loadingBars, this.disconnectBtn, this.listening);
         } else {
           throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
         }
