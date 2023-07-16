@@ -12,7 +12,6 @@ type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
 export class CurrentlyPlayingElement {
 
   private el: HTMLElement;
-  private iState: CurrentlyPlayingView;
   private xState: CurrentlyPlayingState;
   private roomMessageListener: RoomMessageListener;
   private auxAudioPlayer: AuxAudioPlayer;
@@ -74,10 +73,7 @@ export class CurrentlyPlayingElement {
       this.countdownTimer.innerHTML = songStartingEvent.s.toString();
     });
 
-    const stateAttribute = optEl.getAttribute('data-state');
-    if (!stateAttribute) throw new Error('No state attribute found');
-    this.iState = JSON.parse(stateAttribute) as CurrentlyPlayingView;
-    this.xState = this.iState.musicStreamerState;
+    this.xState = 'NotRunning';
 
     this.listening = false;
     this.auxAudioPlayer = auxAudioPlayer;

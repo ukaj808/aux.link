@@ -70,6 +70,7 @@ data StartMusicResult = StartMusicSuccess | NotCreator | AlreadyRunning | RoomSt
 data MusicState = Streaming | Countdown | Polling | NotRunning deriving (Show, Eq, Generic)
 instance ToJSON MusicState
 
+
 data OrderView = Order
   {
      ovUsers :: [RoomUser]
@@ -177,14 +178,22 @@ instance ToJSON CurrentlyPlayingView where
   toJSON :: CurrentlyPlayingView -> Value
   toJSON cpv = Aeson.object
     [
-       "song"                .= currentlyPlayingSong cpv
-    ,  "musicStreamerStatus" .= musicStreamerStatus cpv
+       "song"                .= cpvSong cpv
+    ,  "musicState" .= cpvState cpv
     ]
 
 instance ToJSON OrderView where
   toJSON :: OrderView -> Value
   toJSON ov = Aeson.object
     [
-       "users"               .= orderUsers ov
-    ,  "turn"                .= orderTurn ov
+       "users"               .= ovUsers ov
+    ,  "turn"                .= ovTurn ov
+    ]
+
+instance ToJSON RoomView where
+  toJSON :: RoomView -> Value
+  toJSON rv = Aeson.object
+    [
+       "currentlyPlayingView"    .= cpv rv
+    ,  "orderView"               .= ov rv
     ]

@@ -6,12 +6,17 @@ import { RoomMessageListener } from "./room-message-listener";
 
 export class OrderElement {
 
+  private el: HTMLElement;
   private roomMessageListener: RoomMessageListener;
   private orderCarouselEl: Element;
   private userElementFactory: UserElementFactory;
   private flkty: Flickity;
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {
+
+    const el = document.getElementById("order");
+    if (!el) throw new Error('No order element found');
+    this.el = el;
 
     const optOrderCarouselEl = document.querySelector(".user-carousel");
     if (!optOrderCarouselEl) throw new Error('No order carousel element found');
@@ -31,6 +36,11 @@ export class OrderElement {
       const userLeftEvent = data as UserLeftEvent;
       this.removeUserFromOrderCarousel(userLeftEvent.userId);
     });
+
+    const stateAttribute = el.getAttribute('data-state');
+    if (!stateAttribute) throw new Error('No state attribute found');
+    console.log('stateAttribute', stateAttribute);
+    console.log(JSON.parse(stateAttribute));
 
     this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.orderCarouselEl);
     this.flkty = new Flickity( this.orderCarouselEl, {

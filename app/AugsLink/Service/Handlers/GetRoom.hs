@@ -63,11 +63,11 @@ renderOrderSection ov =
     H.div ! A.class_"user-carousel" $ do
       forM_ (ovUsers ov) renderUser 
   where
-    jsonOv = textValue $ pack $ show $ Aeson.toJSON ov
+    jsonOv = textValue $ pack $ show $ Aeson.encode ov
 
-renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
-renderCurrentlyPlayingSection cpv = 
-  H.section ! A.id "currently-playing" ! H.dataAttribute "state" jsonCpv ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
+renderCurrentlyPlayingSection :: H.Html
+renderCurrentlyPlayingSection = 
+  H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-width" $ ""
     H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
       listenIconSvg ! A.id "listen-icon" ! A.class_ "centered-icon"
@@ -78,8 +78,6 @@ renderCurrentlyPlayingSection cpv =
         H.div ""
         H.div ""
         H.div ""
-  where
-    jsonCpv = textValue $ pack $ show $ Aeson.toJSON cpv
 
 renderDropSection :: H.Html
 renderDropSection = 
@@ -103,11 +101,12 @@ renderRoomPage room = H.docTypeHtml $ do
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
       renderOrderSection            $ ov room
-      renderCurrentlyPlayingSection $ cpv room
+      renderCurrentlyPlayingSection
       renderDropSection
       H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
 
-
+instance ToMarkup RoomView where
+  toMarkup = renderRoomPage
 
 roomHandler :: Registry IO 
   -> RoomId 
@@ -117,7 +116,7 @@ roomHandler :: Registry IO
          Header "Cross-Origin-Opener-Policy" Text, 
          Header "Cross-Origin-Embedder-Policy" Text
         ] 
-        ServerHtml
+        RoomView
       )
 roomHandler registry rId = do
 
@@ -132,6 +131,6 @@ roomHandler registry rId = do
   return 
     ( 
       addHeader "same-origin"       $
-      addHeader "credentialless"      $
-      renderRoomPage roomView
+      addHeader "credentialless"  
+      roomView
     )
