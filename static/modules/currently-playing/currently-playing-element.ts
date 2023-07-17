@@ -1,8 +1,9 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { MusicStreamerState } from "../interface";
+import { MusicStreamerState, SongStartingEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { fromConnectingToDisconnected } from "./transitions/from-connecting-to-disconnecting";
+import { fromConnectingToNotRunning } from "./transitions/from-connecting-to-not-running";
 import { fromDisconnectedToConnecting } from "./transitions/from-disconnected-to-connecting";
 
 export type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
@@ -17,7 +18,8 @@ export class CurrentlyPlayingElement {
   private analyser: AnalyserNode;
   private listening: boolean;
   private audioCanvas: HTMLCanvasElement;
-  private overlayEl: HTMLDivElement
+  private overlayEl: HTMLDivElement;
+  private description: HTMLSpanElement;
   private listenIcon: HTMLElement;
   private disconnectBtn: HTMLButtonElement
   private countdownTimer: HTMLSpanElement;
@@ -53,13 +55,17 @@ export class CurrentlyPlayingElement {
     this.disconnectBtn = disconnectBtn as HTMLButtonElement;
     this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
 
-    const countdownTimer = document.getElementById("countdown-timer");
+    const countdownTimer = document.getElementById("cp-timer");
     if (!countdownTimer) throw new Error('No countdown timer element found');
     this.countdownTimer = countdownTimer as HTMLSpanElement;
 
     const loadingBars = document.getElementById("cp-loading");
     if (!loadingBars) throw new Error('No loading bars element found');
     this.loadingBars = loadingBars as HTMLDivElement;
+
+    const description = document.getElementById("cp-desc");
+    if (!description) throw new Error('No description element found');
+    this.description = description as HTMLSpanElement;
 
     this.roomMessageListener = roomMessageListener;
 
@@ -86,26 +92,22 @@ export class CurrentlyPlayingElement {
     this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
   }
 
-  private transitionTo(targetState: CurrentlyPlayingState) {
+  private transitionTo(targetState: CurrentlyPlayingState, data?: any) {
     switch (targetState) {
       case 'Disconnected':
         if (this.xState === 'Connecting') { 
           fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.disconnectBtn, this.listening);
         }
+        break;
       case 'Connecting':
         if (this.xState === 'Disconnected') {
           fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
-        } else {
-          throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
-        }
+        } 
         break;
       case 'NotRunning':
         if (this.xState === 'Connecting') {
-          // fromConnectingToNotRunning
-        } else { 
-          throw Error(`Invalid transition from ${this.xState} to ${targetState}`); 
+          fromConnectingToNotRunning(this.description);
         }
-        break;
       case 'Streaming':
         if (this.xState === 'Connecting') {
           // fromConnectingToStreaming
@@ -133,45 +135,6 @@ export class CurrentlyPlayingElement {
         break;
     }
     this.xState = targetState;
-  }
-
-  private allStatesToDisconnected() {
-    this.auxAudioPlayer.stopListening();
-    this.showOverlay();
-    this.hideLoading();
-    this.hideCountdown();
-    this.hideDisconnectBtn();
-  }
-  
-  private showOverlay() {
-    this.overlayEl.classList.remove("hidden");
-  }
-
-  private hideOverlay() {
-    this.overlayEl.classList.add("hidden");
-  }
-  
-  private showCountdown() {
-    this.countdownTimer.classList.remove("hidden");
-  }
-
-  private hideCountdown() {
-    this.countdownTimer.classList.add("hidden");
-  }
-
-  private showDisconnectBtn() {
-    this.disconnectBtn.classList.remove("hidden");
-  }
-  private hideDisconnectBtn() {
-    this.disconnectBtn.classList.add("hidden");
-  }
-
-  private showLoading() {
-    this.loadingBars.classList.remove("hidden");
-  }
-
-  private hideLoading() {
-    this.loadingBars.classList.add("hidden");
   }
 
   private draw() {

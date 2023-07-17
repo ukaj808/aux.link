@@ -70,7 +70,8 @@ renderCurrentlyPlayingSection =
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
     H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-1" $ do
       disconnectIconSvg
-    H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden centered-abs z-1" $ "0"
+    H.span ! A.id "cp-timer" ! A.class_ "countdown-timer hidden centered-abs z-1" $ "0"
+    H.span ! A.id "cp-desc" ! A.class_  "hidden centered-abs z-1" $ ""
     H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs z-1" $ do
       H.div ! A.class_ "lds-facebook-md" $ do
         H.div ""

@@ -5,6 +5,7 @@ import { AuxAudioPlayer } from "./aux-audio-player";
 import { LoaderFactory } from "./loader";
 import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
+import { Song } from "./interface";
 
 export class DropElement {
     private el: HTMLDivElement;

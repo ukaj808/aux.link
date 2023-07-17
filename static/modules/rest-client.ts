@@ -22,7 +22,7 @@ export class RestClient {
   }
 
   public getRoom(): Promise<RoomView> {
-    return fetch(this.basePath + "/room", {
+    return fetch(this.basePath, {
       method: "GET",
       headers: {
         Accept: "application/json",

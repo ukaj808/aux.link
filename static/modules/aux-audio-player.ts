@@ -1,4 +1,5 @@
 import { EventBus } from "./event-bus";
+import { AudioWorkletBuffers, AudioWorkletEvent, ServerWelcomeCommand, WriteSharedBuffers, WsBuffers, WsWorkerEvent, WsWorkerOpts } from "./interface";
 import { RoomMessageListener } from "./room-message-listener";
 
 export type AuxAudioPlayerStatus = 'disconnected' | 'not_running' | 'running';

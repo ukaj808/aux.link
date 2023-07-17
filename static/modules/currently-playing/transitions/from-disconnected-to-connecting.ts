@@ -1,4 +1,5 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../../aux-audio-player";
+import { RoomView } from "../../interface";
 import { RestClient } from "../../rest-client";
 import { CurrentlyPlayingElement, CurrentlyPlayingState } from "../currently-playing-element";
 
@@ -10,21 +11,22 @@ export function fromDisconnectedToConnecting(
     loadingBars: HTMLDivElement,
     disconnectBtn: HTMLButtonElement,
     listeningFlag: boolean,
-    transitionTo: (state: CurrentlyPlayingState) => void
+    transitionTo: (state: CurrentlyPlayingState, data?: any) => void
     ){
 
-    const onStreamConnected = (data: AuxAudioPlayerEvent) => {
-      const streamStartingEvent = data as StreamStartingEvent;
-      auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamConnected);
+    const onStreamConnected = (roomView: RoomView) => (data: AuxAudioPlayerEvent) => {
+      listeningFlag = true;
+      auxAudioPlayer.unsubscribe('STREAM_STARTING', onStreamConnected(roomView));
       loadingBars.classList.add("hidden");
+      transitionTo(roomView.currentlyPlayingView.musicState, roomView);
     }
-    restClient.getRoom().then((room) => {
-      
-    });
-    auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected);
+
     overlay.classList.add("invisible");
     loadingBars.classList.remove("hidden");
     disconnectBtn.classList.remove("hidden");
-    auxAudioPlayer.startListening();
-    listeningFlag = true;
+
+    restClient.getRoom().then((room) => {
+      auxAudioPlayer.subscribe('STREAM_CONNECTED', onStreamConnected(room));
+      auxAudioPlayer.startListening();
+    });
 }

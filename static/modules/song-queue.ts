@@ -1,3 +1,5 @@
+import { Song } from "./interface";
+
 export class SongQueue {
     private queue: Song[];
 

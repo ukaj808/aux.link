@@ -1,3 +1,5 @@
+import { AudioChunk, AudioWorkletBuffersView, FmtSubChunk, WriteSharedBuffersView, WsBuffersView, WsWorkerOpts } from "../modules/interface";
+
 let roomId: string;
 let ws: WebSocket;
 

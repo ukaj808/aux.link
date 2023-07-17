@@ -1,4 +1,4 @@
-type FmtSubChunk = {
+export type FmtSubChunk = {
     subchunk1Id: string,
     subchunk1Size: number,
     audioFormat: number,
@@ -12,7 +12,7 @@ type FmtSubChunk = {
     channelMask: number,
 }
 
-type WsWorkerOpts = {
+export type WsWorkerOpts = {
     type: "INIT", 
     roomId: string, 
     writeSharedBuffers: WriteSharedBuffers,
@@ -21,68 +21,68 @@ type WsWorkerOpts = {
 }
 
 // Only the ws worker has access to write to these buffers
-type WsBuffers = {
+export type WsBuffers = {
     writerOffset: SharedArrayBuffer,
     samplesWritten: SharedArrayBuffer,
 }
 
-type WsBuffersView = {
+export type WsBuffersView = {
     writerOffset: Int32Array,
     samplesWritten: Int32Array,
 }
 
 // Only the audio worklet has access to write from these buffers
-type AudioWorkletBuffers = {
+export type AudioWorkletBuffers = {
     readerOffset: SharedArrayBuffer,
     samplesRead: SharedArrayBuffer,
 }
 
-type AudioWorkletBuffersView = {
+export type AudioWorkletBuffersView = {
     readerOffset: Int32Array,
     samplesRead: Int32Array,
 }
 
 // Both the audio worklet and the ws worker have access to write to these buffers
-type WriteSharedBuffers = {
+export type WriteSharedBuffers = {
     ringBuffer: SharedArrayBuffer,
     bufferReady: SharedArrayBuffer,
     sampleIndexBreak: SharedArrayBuffer,
 }
 
-type WriteSharedBuffersView = {
+export type WriteSharedBuffersView = {
     ringBuffer: Float32Array,
     ringBufferDataView: DataView,
     bufferReady: Uint8Array,
     sampleIndexBreak: Int32Array,
 }
 
-type AudioStreamPrepOptions = {
+export type AudioStreamPrepOptions = {
     ringBufferSize: number,
 }
 
-type WsSongFinishedEvent = {
+export type WsSongFinishedEvent = {
     type: "WRITE_SONG_FINISHED";
     offset: number;
 }
 
-type WsSongStartedEvent = {
+export type WsSongStartedEvent = {
     type: "WRITE_SONG_STARTED";
     title: string;
 }
 
-type WsWorkerEvent = { type: "WS_WORKER_READY" } | WsSongStartedEvent | WsSongFinishedEvent
+export type WsWorkerEvent = { type: "WS_WORKER_READY" } | WsSongStartedEvent | WsSongFinishedEvent
 
-type AudioWorkletCommand = {
+export type AudioWorkletCommand = {
     type: "WRITE_SONG_STARTED",
 } | WsSongFinishedEvent;
 
-type AudioWorkletEvent = {
+export type AudioWorkletEvent = {
     type: "READ_SONG_STARTED" | "READ_SONG_FINISHED",
 }
 
-type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";
+export type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";
 
-type SongStartingEvent = {
+export type SongStartingEvent = {
     s: number,
 }
 
@@ -92,45 +92,45 @@ export type ServerWelcomeCommand = {
     isCreator: boolean,
 }
 
-type SongUploadedEvent = {
+export type SongUploadedEvent = {
 
 }
 
-type UserEnterEvent = {
+export type UserEnterEvent = {
     userId: string,
     userName: string,
 }
 
-type ServerUploadSongCommand = {}
-type SongFinishedEvent = {}
-type UserAudioPreparedEvent = {
+export type ServerUploadSongCommand = {}
+export type SongFinishedEvent = {}
+export type UserAudioPreparedEvent = {
     userId: string
 }
-type UserLeftEvent = {
+export type UserLeftEvent = {
     userId: string
 }
 
-type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongStartingEvent) & { type: RoomMessageType };
+export type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongStartingEvent) & { type: RoomMessageType };
 
-type AudioChunk = ArrayBuffer;
+export type AudioChunk = ArrayBuffer;
 
-type EnqueueSongRequest = {
+export type EnqueueSongRequest = {
     priority: number,
 }
 
-type AudioEvent = SongStartingEvent;
+export type AudioEvent = SongStartingEvent;
 
 export type Song = File | UrlUpload;
 
-type UrlUpload = {
+export type UrlUpload = {
     url: string,
     valid?: boolean,
     title?: string,
 };
 
 export type RoomView = {
-    ov: OrderView;
-    cpv: CurrentlyPlayingView;
+    orderView: OrderView;
+    currentlyPlayingView: CurrentlyPlayingView;
 }
 
 export type OrderView = {
@@ -139,12 +139,12 @@ export type OrderView = {
 }
 
 export type UserView = {
-    userId: string;
+    userName: string;
 }
 
 export type CurrentlyPlayingView = {
-    musicStreamerState: MusicStreamerState;
-    currentlyPlayingSong: string | null;
+    musicState: MusicStreamerState;
+    song: string | null;
 }
 
 export type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';

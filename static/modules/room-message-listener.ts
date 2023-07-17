@@ -1,4 +1,5 @@
 import { EventBus } from "./event-bus";
+import { RoomMessage, RoomMessageType } from "./interface";
 
 export class RoomMessageListener {
 

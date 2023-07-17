@@ -3,6 +3,7 @@ import { UserElement, UserElementFactory } from "./user-element";
 import { RestClient } from "./rest-client";
 import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
+import { ServerWelcomeCommand, UserEnterEvent, UserLeftEvent } from "./interface";
 
 export class OrderElement {
 

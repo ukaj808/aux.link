@@ -1,3 +1,5 @@
+import { AudioWorkletBuffersView, WriteSharedBuffersView, WsBuffersView } from "../modules/interface";
+
 class AuxWorkletProcessor extends AudioWorkletProcessor {
 
   private buffersView: AudioWorkletBuffersView;
