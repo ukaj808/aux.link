@@ -39,16 +39,16 @@ export class UserElement {
   }
 
   private addCreatorOverlay(userCellEl: HTMLElement) {
-    userCellEl.classList.add('overlay-sect', 'overlay');
+    userCellEl.classList.add('pos-rel', 'full-flex', 'centered');
 
     const overlayEl = document.createElement('div');
-    overlayEl.classList.add('overlay', 'full-flex', 'frame', 'centered');
+    overlayEl.classList.add('overlay', 'full-flex', 'centered');
 
     overlayEl.appendChild(this.svgFactory.generatePlayIcon());
 
     overlayEl.onclick = () => {
       this.restClient.startMusic().then(() => {
-        userCellEl.classList.toggle('overlay');
+        overlayEl.classList.add('invisible');
       }).catch((err) => {
         console.error("Error calling the start music api", err);
       });

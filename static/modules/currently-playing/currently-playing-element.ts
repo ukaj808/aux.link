@@ -92,7 +92,7 @@ export class CurrentlyPlayingElement {
         this.allStatesToDisconnected();
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          fromDisconnectedToConnecting(this.auxAudioPlayer, this.el, this.loadingBars, this.disconnectBtn, this.listening);
+          fromDisconnectedToConnecting(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
         } else {
           throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
         }

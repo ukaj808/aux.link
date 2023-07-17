@@ -23,6 +23,10 @@ h4 {
   color: var(--primary-fnt-color);
 }
 
+.pos-rel {
+  position: relative;
+}
+
 .hidden {
   display: none;
 }
@@ -100,11 +104,7 @@ h4 {
   justify-content: flex-start;
 }
 
-.overlay-sect {
-  position: relative;
-}
-
-.overlay-sect .overlay {
+.overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -112,13 +112,12 @@ h4 {
   height: 100%;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%); /* Overlay gradient */
   z-index: 1;
-  opacity: 0;
+  opacity: 1;
   transition: opacity .2s ease; 
 }
 
-.overlay-sect.overlay .overlay {
-  display: flex;
-  opacity: 1;
+.invisible {
+  opacity: 0;
 }
 
 .handle {
@@ -167,6 +166,18 @@ h4 {
 
 .full-width {
   width: 100%;
+}
+
+.z-1 {
+  z-index: 1;
+}
+
+.z-0 {
+  z-index: 0;
+}
+
+.z-2 {
+  z-index: 2;
 }
 
 .song-queue-list {
@@ -234,16 +245,7 @@ h4 {
   height: 200px;
   margin-right: 10px;
   background: var(--tertiary-bg-color);
-  border-radius: 5px;
   counter-increment: gallery-cell;
-}
-
-/* cell number */
-.user-carousel-cell:before {
-  display: block;
-  text-align: start;
-  content: counter(gallery-cell);
-  color: white;
 }
 
 .lds-facebook-sm {

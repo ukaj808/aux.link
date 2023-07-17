@@ -17,7 +17,6 @@ import qualified Text.Blaze.Svg11.Attributes as SVGA
 import qualified Data.Aeson                  as Aeson
 
 import AugsLink.Core.API
-import AugsLink.Service.API
 
 musicIconSvg :: S.Svg
 musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" ! SVGA.id_ "Capa_1" ! SVGA.viewbox "0 0 98.121 98.121" ! SVGA.xmlSpace "preserve" $
@@ -67,17 +66,17 @@ renderOrderSection ov =
 
 renderCurrentlyPlayingSection :: H.Html
 renderCurrentlyPlayingSection = 
-  H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme overlay-sect overlay" $ do
-    H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs" $ ""
-    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn" $ do
+  H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
+    H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
+    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-1" $ do
       disconnectIconSvg
-    H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden centered-abs" $ "0"
-    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs" $ do
+    H.span ! A.id "countdown-timer" ! A.class_ "countdown-timer hidden centered-abs z-1" $ "0"
+    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs z-1" $ do
       H.div ! A.class_ "lds-facebook-md" $ do
         H.div ""
         H.div ""
         H.div ""
-    H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered" $ do
+    H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ do
       listenIconSvg ! A.id "listen-icon" ! A.class_ "centered-icon"
 
 renderDropSection :: H.Html
