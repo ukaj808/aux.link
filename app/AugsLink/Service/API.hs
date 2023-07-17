@@ -75,8 +75,8 @@ type API =
       )
    :<|> Capture "roomid" Text :> "ws"     :> WebSocketPending
    :<|> Capture "roomid" Text :> "music"  :> WebSocketPending
-   :<|> Capture "roomid" Text :> Header "X-User-Id" :> "start"  :> PutNoContent
-   :<|> Capture "roomId" Text :> Header "X-User-Id" :> "upload" :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
+   :<|> Capture "roomid" Text :> Header "X-User-Id" Text :> "start"  :> PutNoContent
+   :<|> Capture "roomId" Text :> Header "X-User-Id" Text :> "upload" :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
 
    :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[PlainText] Text
    :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
