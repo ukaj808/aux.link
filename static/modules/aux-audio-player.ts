@@ -119,7 +119,6 @@ export class AuxAudioPlayer {
       const wsWorkerOpts: WsWorkerOpts = {
         type: "INIT", 
         roomId: this.roomId, 
-        userId: this.userId, 
         writeSharedBuffers: this.writeSharedBuffers,
         buffers: this.wsBuffers,
         _audioWorkletOwnedBuffers: this.audioWorkletBuffers,

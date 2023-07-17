@@ -18,13 +18,17 @@ export class RestClient {
 
   public setUserId(userId: string) {
     this.userId = userId;
-    this.basePath = `/${this.roomId}/users/${this.userId}`;
+    this.basePath = `/${this.roomId}`;
   }
 
   public startMusic(): Promise<Response> {
     if (!this.basePath) throw new Error('No base path set');
-    return fetch(this.basePath + '/music/start', {
-        method: 'PUT'
+    if (!this.userId) throw new Error('No user id set');
+    return fetch(this.basePath + '/start', {
+        method: 'PUT',
+        headers: {
+            'X-User-Id': this.userId
+        }
     });
   }
 
@@ -40,47 +44,19 @@ export class RestClient {
 
   public uploadSong(song: Song): Promise<Response> {
     if (!this.basePath) throw new Error('No base path set');
+    if (!this.userId) throw new Error('No user id set');
     const formData = new FormData();
     if (song instanceof File) {
       formData.append('file', song);
     } else {
       formData.append('url', song.url);
     }
-    return fetch(this.basePath + `/music/upload`, {
+    return fetch(this.basePath + `/upload`, {
             method: 'PUT',
-            body: formData
+            body: formData,
+            headers: {
+                'X-User-Id': this.userId
+            },
         });
-  }
-
-  public enqueueSong(req: EnqueueSongRequest): Promise<Response> {
-    if (!this.basePath) throw new Error('No base path set');
-    return fetch(this.basePath + '/music/start', {
-            method: 'PUT',
-            body: JSON.stringify(req)
-        });
-  }
-
-  public removeSong(songId: string): Promise<Response> {
-    if (!this.basePath) throw new Error('No base path set');
-    return fetch(this.basePath + `/songs/${songId}`, {
-            method: 'DELETE'
-        });
-  }
-
-  
-  public reprioritizeSong(songId: string, priority: number): Promise<Response> {
-    if (!this.basePath) throw new Error('No base path set');
-    return fetch(this.basePath + `/songs/${songId}?priority=${priority}`, {
-            method: 'PUT'
-        });
-  }
-
-  public getHtml(url: string): Promise<string> {
-    return fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'text/html'
-        }
-    }).then(res => res.text());
   }
 }

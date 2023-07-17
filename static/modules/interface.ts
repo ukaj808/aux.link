@@ -15,8 +15,6 @@ type FmtSubChunk = {
 type WsWorkerOpts = {
     type: "INIT", 
     roomId: string, 
-    userId: string, 
-
     writeSharedBuffers: WriteSharedBuffers,
     buffers: WsBuffers,
     _audioWorkletOwnedBuffers: AudioWorkletBuffers,
