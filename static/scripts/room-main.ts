@@ -23,6 +23,6 @@ const auxAudioPlayer: AuxAudioPlayer = new AuxAudioPlayer(roomId, audioContext, 
 const restClient: RestClient = new RestClient(roomId, roomMessageListener);
 const orderElement: OrderElement = new OrderElement(roomMessageListener, restClient, svgFactory);
 const currentlyPlayingElement: CurrentlyPlayingElement 
-    = new CurrentlyPlayingElement(roomMessageListener, auxAudioPlayer, analyser);
+    = new CurrentlyPlayingElement(roomMessageListener, restClient, auxAudioPlayer, analyser);
 const dropElement: DropElement = new DropElement(roomMessageListener, restClient, loaderFactory, svgFactory);
 roomMessageListener.start();

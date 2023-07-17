@@ -86,7 +86,7 @@ type SongStartingEvent = {
     s: number,
 }
 
-type ServerWelcomeCommand = {
+export type ServerWelcomeCommand = {
     userId: string,
     userName: string,
     isCreator: boolean,
@@ -120,10 +120,31 @@ type EnqueueSongRequest = {
 
 type AudioEvent = SongStartingEvent;
 
-type Song = File | UrlUpload;
+export type Song = File | UrlUpload;
 
 type UrlUpload = {
     url: string,
     valid?: boolean,
     title?: string,
 };
+
+export type RoomView = {
+    ov: OrderView;
+    cpv: CurrentlyPlayingView;
+}
+
+export type OrderView = {
+    turn: number;
+    users: UserView[];
+}
+
+export type UserView = {
+    userId: string;
+}
+
+export type CurrentlyPlayingView = {
+    musicStreamerState: MusicStreamerState;
+    currentlyPlayingSong: string | null;
+}
+
+export type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';

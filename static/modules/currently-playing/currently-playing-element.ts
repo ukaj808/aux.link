@@ -1,19 +1,18 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
+import { MusicStreamerState } from "../interface";
+import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
+import { fromConnectingToDisconnected } from "./transitions/from-connecting-to-disconnecting";
 import { fromDisconnectedToConnecting } from "./transitions/from-disconnected-to-connecting";
 
-type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';
-type CurrentlyPlayingView = {
-    musicStreamerState: MusicStreamerState;
-    currentlyPlayingSong: string | null;
-}
-type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
+export type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
 
 export class CurrentlyPlayingElement {
 
   private el: HTMLElement;
   private xState: CurrentlyPlayingState;
   private roomMessageListener: RoomMessageListener;
+  private restClient: RestClient;
   private auxAudioPlayer: AuxAudioPlayer;
   private analyser: AnalyserNode;
   private listening: boolean;
@@ -27,7 +26,7 @@ export class CurrentlyPlayingElement {
   private buffer: Float32Array;
   private drawVisual?: number;
 
-  constructor(roomMessageListener: RoomMessageListener, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
+  constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
     const optEl = document.getElementById("currently-playing");
     if (!optEl) throw new Error('No currently playing element found');
     this.el = optEl;
@@ -77,6 +76,7 @@ export class CurrentlyPlayingElement {
     this.xState = 'Disconnected';
 
     this.listening = false;
+    this.restClient = restClient;
     this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
     this.analyser.fftSize = 256;
@@ -89,10 +89,12 @@ export class CurrentlyPlayingElement {
   private transitionTo(targetState: CurrentlyPlayingState) {
     switch (targetState) {
       case 'Disconnected':
-        this.allStatesToDisconnected();
+        if (this.xState === 'Connecting') { 
+          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.disconnectBtn, this.listening);
+        }
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          fromDisconnectedToConnecting(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+          fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
         } else {
           throw Error(`Invalid transition from ${this.xState} to ${targetState}`);
         }
