@@ -1,9 +1,10 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { MusicStreamerState, SongStartingEvent } from "../interface";
+import { MusicStreamerState, RoomView, SongStartingEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { fromConnectingToDisconnected } from "./transitions/from-connecting-to-disconnecting";
 import { fromConnectingToNotRunning } from "./transitions/from-connecting-to-not-running";
+import { fromConnectingToStreaming } from "./transitions/from-connecting-to-streaming";
 import { fromDisconnectedToConnecting } from "./transitions/from-disconnected-to-connecting";
 
 export type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
@@ -110,7 +111,7 @@ export class CurrentlyPlayingElement {
         }
       case 'Streaming':
         if (this.xState === 'Connecting') {
-          // fromConnectingToStreaming
+          fromConnectingToStreaming(this.description, data);
         } else if (this.xState === 'Polling') {
           // fromPolllingToStreaming
         }
