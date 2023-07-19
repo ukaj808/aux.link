@@ -1,14 +1,15 @@
 import { AuxAudioPlayer } from "../../aux-audio-player";
 
-export function fromConnectingToDisconnected(
+export function fromStreamingToDisconnected(
     auxAudioPlayer: AuxAudioPlayer, 
-    overlay: HTMLDivElement,
-    disconnectBtn: HTMLButtonElement,
+    overlay: HTMLDivElement, 
+    description: HTMLSpanElement,
+    disconnectBtn: HTMLButtonElement, 
     listeningFlag: boolean
-    ){
-
+    ) {
     auxAudioPlayer.stopListening();
     overlay.classList.remove("invisible");
+    description.classList.add("hidden");
     disconnectBtn.classList.add("hidden");
     listeningFlag = false;
 }

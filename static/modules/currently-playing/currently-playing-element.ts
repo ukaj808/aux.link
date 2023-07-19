@@ -3,11 +3,16 @@ import { MusicStreamerState, RoomView, SongStartingEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { AudioVisualizer } from "./audio-visualizer";
-import { fromConnectingToCountdown } from "./transitions/from-connecting-to-countdown";
-import { fromConnectingToDisconnected } from "./transitions/from-connecting-to-disconnecting";
-import { fromConnectingToNotRunning } from "./transitions/from-connecting-to-not-running";
-import { fromConnectingToStreaming } from "./transitions/from-connecting-to-streaming";
+import { fromConnectingToCountdown } from "./transitions/from-connecting/from-connecting-to-countdown";
+import { fromConnectingToDisconnected } from "./transitions/from-connecting/from-connecting-to-disconnecting";
+import { fromConnectingToNotRunning } from "./transitions/from-connecting/from-connecting-to-not-running";
+import { fromConnectingToStreaming } from "./transitions/from-connecting/from-connecting-to-streaming";
+import { fromCountdownToDisconnected } from "./transitions/from-countdown/from-countdown-to-disconnected";
+import { fromCountdownToPolling } from "./transitions/from-countdown/from-countdown-to-polling";
 import { fromDisconnectedToConnecting } from "./transitions/from-disconnected-to-connecting";
+import { fromNotRunningToDisconnected } from "./transitions/from-notrunning-to-disconnected";
+import { fromPollingToDisconnected } from "./transitions/from-polling-to-disconnected";
+import { fromStreamingToDisconnected } from "./transitions/from-streaming-to-disconnected";
 
 export type CurrentlyPlayingState = 'Connecting' | 'Disconnected' | MusicStreamerState;
 
@@ -89,23 +94,32 @@ export class CurrentlyPlayingElement {
     switch (targetState) {
       case 'Disconnected':
         if (this.xState === 'Connecting') { 
-          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.disconnectBtn, this.listening);
-        }
+          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+        } else if (this.xState === 'Streaming') {
+          fromStreamingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.description, this.disconnectBtn, this.listening);
+        } else if (this.xState === 'Polling') {
+          fromPollingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+        } else if (this.xState === 'Countdown') {
+          fromCountdownToDisconnected(this.auxAudioPlayer, this.overlayEl, this.countdownTimer, this.disconnectBtn, this.listening);
+        } else if (this.xState === 'NotRunning') {
+          fromNotRunningToDisconnected(this.auxAudioPlayer, this.overlayEl, this.description, this.disconnectBtn, this.listening);
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Connecting':
         if (this.xState === 'Disconnected') {
           fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
-        } 
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`); 
         break;
       case 'NotRunning':
         if (this.xState === 'Connecting') {
           fromConnectingToNotRunning(this.description);
-        }
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
+        break;
       case 'Streaming':
         if (this.xState === 'Connecting') {
           fromConnectingToStreaming(this.description, this.audioVisualizer, data);
         } else if (this.xState === 'Polling') {
-
+          fromPollingToStreaming();
         }
         break;
       case 'Countdown':
@@ -121,9 +135,9 @@ export class CurrentlyPlayingElement {
         break;
       case 'Polling':
         if (this.xState === 'Connecting') {
-          // fromConnectingToPolling
+          fromConnectingToPolling(this.loadingBars);
         } else if (this.xState === 'Countdown') {
-          // fromCountdownToPolling
+          fromCountdownToPolling(this.loadingBars);
         }
         break;
     }

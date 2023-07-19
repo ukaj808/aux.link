@@ -1,5 +1,5 @@
-import { RoomMessage, SongStartingEvent } from "../../interface";
-import { RoomMessageListener } from "../../room-message-listener";
+import { RoomMessage, SongStartingEvent } from "../../../interface";
+import { RoomMessageListener } from "../../../room-message-listener";
 
 export function fromConnectingToCountdown(countdownTimer: HTMLSpanElement, roomMessageListener: RoomMessageListener) {
     countdownTimer.innerHTML = '5';
