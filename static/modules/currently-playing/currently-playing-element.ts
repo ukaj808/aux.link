@@ -2,6 +2,8 @@ import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux
 import { MusicStreamerState, RoomView, SongStartingEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
+import { AudioVisualizer } from "./audio-visualizer";
+import { fromConnectingToCountdown } from "./transitions/from-connecting-to-countdown";
 import { fromConnectingToDisconnected } from "./transitions/from-connecting-to-disconnecting";
 import { fromConnectingToNotRunning } from "./transitions/from-connecting-to-not-running";
 import { fromConnectingToStreaming } from "./transitions/from-connecting-to-streaming";
@@ -16,6 +18,7 @@ export class CurrentlyPlayingElement {
   private roomMessageListener: RoomMessageListener;
   private restClient: RestClient;
   private auxAudioPlayer: AuxAudioPlayer;
+  private audioVisualizer: AudioVisualizer;
   private analyser: AnalyserNode;
   private listening: boolean;
   private audioCanvas: HTMLCanvasElement;
@@ -25,9 +28,6 @@ export class CurrentlyPlayingElement {
   private disconnectBtn: HTMLButtonElement
   private countdownTimer: HTMLSpanElement;
   private loadingBars: HTMLDivElement;
-  private canvasCtx: CanvasRenderingContext2D;
-  private buffer: Float32Array;
-  private drawVisual?: number;
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
     const optEl = document.getElementById("currently-playing");
@@ -37,11 +37,6 @@ export class CurrentlyPlayingElement {
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
     this.audioCanvas = audioCanvas;
-
-    const canvasCtx = this.audioCanvas.getContext("2d");
-    if (!canvasCtx) throw new Error('No canvas context found');
-    this.canvasCtx = canvasCtx;
-    this.canvasCtx.clearRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
 
     const overlayEl = document.getElementById("cp-overlay");
     if (!overlayEl) throw new Error('No overlay element found');
@@ -73,21 +68,18 @@ export class CurrentlyPlayingElement {
     this.roomMessageListener.subscribe('SongStartingEvent', (data) => {
       const songStartingEvent = data as SongStartingEvent;
       if (songStartingEvent.s === 5) {
-        this.transitionTo('Countdown');
-      } else if (songStartingEvent.s === 0) {
-        this.transitionTo('Polling');
-      }
-      this.countdownTimer.innerHTML = songStartingEvent.s.toString();
+        this.transitionTo('Countdown', this.roomMessageListener);
+      } 
     });
 
     this.xState = 'Disconnected';
+    this.audioVisualizer = new AudioVisualizer(analyser, audioCanvas);
 
     this.listening = false;
     this.restClient = restClient;
     this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
     this.analyser.fftSize = 256;
-    this.buffer = new Float32Array(this.analyser.frequencyBinCount);
 
     this.el.addEventListener("click", () => this.transitionTo('Connecting'));
     this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
@@ -111,14 +103,14 @@ export class CurrentlyPlayingElement {
         }
       case 'Streaming':
         if (this.xState === 'Connecting') {
-          fromConnectingToStreaming(this.description, data);
+          fromConnectingToStreaming(this.description, this.audioVisualizer, data);
         } else if (this.xState === 'Polling') {
-          // fromPolllingToStreaming
+
         }
         break;
       case 'Countdown':
         if (this.xState === 'Connecting') {
-          // fromConnectingToCountdown
+          fromConnectingToCountdown(this.countdownTimer, data);
         }
         else if (this.xState === 'Streaming') {
           // fromStreamingToCountdown
@@ -136,27 +128,6 @@ export class CurrentlyPlayingElement {
         break;
     }
     this.xState = targetState;
-  }
-
-  private draw() {
-    this.drawVisual = requestAnimationFrame(this.draw.bind(this));
-    this.analyser.getFloatFrequencyData(this.buffer);
-    this.canvasCtx.fillStyle = 'rgb(48, 49, 53)';
-    this.canvasCtx.fillRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
-
-    const barWidth = (this.audioCanvas.width / this.analyser.frequencyBinCount) * 2.5;
-    let barHeight;
-
-    let x = 0;
-
-    for (let i = 0; i < this.analyser.frequencyBinCount; i++) {
-      barHeight = this.buffer[i];
-
-      this.canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
-      this.canvasCtx.fillRect(x, this.audioCanvas.height - barHeight / 2, barWidth, barHeight);
-
-      x += barWidth + 1;
-    }
   }
 
 }
