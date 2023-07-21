@@ -1,11 +1,14 @@
 import { RoomMessage, SongStartingEvent } from "../../../interface";
 import { RoomMessageListener } from "../../../room-message-listener";
+import { AudioVisualizer } from "../../audio-visualizer";
 import { CurrentlyPlayingState } from "../../currently-playing-element";
 
-export function fromConnectingToCountdown(
-    countdownTimer: HTMLSpanElement, 
-    roomMessageListener: RoomMessageListener, 
-    transitionTo: (targetState: CurrentlyPlayingState) => void
+export function fromStreamingToCountdown(
+    audioVisualizer: AudioVisualizer, 
+    description: HTMLSpanElement, 
+    countdownTimer: HTMLSpanElement,
+    roomMessageListener: RoomMessageListener,
+    transitionTo: (tState: CurrentlyPlayingState) => void
     ) {
     const songStartingCallback = (event: RoomMessage) => {
         const songStartingEvent = event as SongStartingEvent;
@@ -15,7 +18,10 @@ export function fromConnectingToCountdown(
             transitionTo('Polling');
         }
     };
+
+    audioVisualizer.stop();
+    description.classList.add('hidden');
     countdownTimer.innerHTML = '5';
-    countdownTimer.classList.remove("hidden");
+    countdownTimer.classList.remove('hidden');
     roomMessageListener.subscribe('SongStartingEvent', songStartingCallback);
 }

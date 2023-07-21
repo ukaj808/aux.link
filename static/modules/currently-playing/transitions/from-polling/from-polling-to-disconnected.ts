@@ -1,4 +1,4 @@
-import { AuxAudioPlayer } from "../../aux-audio-player";
+import { AuxAudioPlayer } from "../../../aux-audio-player";
 
 export function fromPollingToDisconnected(
         auxAudioPlayer: AuxAudioPlayer, 

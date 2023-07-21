@@ -1,3 +1,3 @@
 function fromConnectingToPolling(loadingBars: HTMLDivElement) {
-  loadingBars.classList.remove('hidden');
+  // loadingBars.classList.remove('hidden');
 }
