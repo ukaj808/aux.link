@@ -1,5 +1,5 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { MusicStreamerState, RoomView, SongStartingEvent } from "../interface";
+import { MusicStreamerState, RoomView, SongStartingEvent, SongUploadedEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { AudioVisualizer } from "./audio-visualizer";
@@ -82,13 +82,20 @@ export class CurrentlyPlayingElement {
       } 
     });
 
+
+    this.auxAudioPlayer = auxAudioPlayer;
+
+    this.auxAudioPlayer.subscribe('STREAM_STARTING', (data) => {
+      const streamStartingEvent = data as StreamStartingEvent;
+      this.transitionTo('Streaming', streamStartingEvent);
+    });
+
     this.xState = 'Disconnected';
     this.transitionHistory = ['Disconnected'];
     this.audioVisualizer = new AudioVisualizer(analyser, audioCanvas);
 
     this.listening = false;
     this.restClient = restClient;
-    this.auxAudioPlayer = auxAudioPlayer;
     this.analyser = analyser;
     this.analyser.fftSize = 256;
 
@@ -125,8 +132,9 @@ export class CurrentlyPlayingElement {
         if (this.xState === 'Connecting') {
           fromConnectingToStreaming(this.description, this.audioVisualizer, data);
         } else if (this.xState === 'Polling') {
+          console.log('polling to streaming', data);
           fromPollingToStreaming(this.loadingBars, this.description, this.audioVisualizer, data);
-        }
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Countdown':
         if (this.xState === 'Connecting') {
@@ -135,17 +143,17 @@ export class CurrentlyPlayingElement {
         else if (this.xState === 'Streaming') {
           fromStreamingToCountdown(this.audioVisualizer, this.countdownTimer, this.description, this.roomMessageListener, this.transitionTo.bind(this));
         } else if (this.xState === 'Polling') {
-          fromPollingToCountdown(this.loadingBars, this.countdownTimer);
+          fromPollingToCountdown(this.loadingBars, this.countdownTimer, this.roomMessageListener, this.transitionTo.bind(this));
         } else if (this.xState === 'NotRunning') {
           fromNotRunningToCountdown(this.description, this.countdownTimer, this.roomMessageListener, this.transitionTo.bind(this));
-        }
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Polling':
         if (this.xState === 'Connecting') {
           fromConnectingToPolling(this.loadingBars);
         } else if (this.xState === 'Countdown') {
           fromCountdownToPolling(this.countdownTimer, this.loadingBars);
-        }
+        } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
     }
     this.xState = targetState;

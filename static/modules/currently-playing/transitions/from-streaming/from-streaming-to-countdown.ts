@@ -5,8 +5,8 @@ import { CurrentlyPlayingState } from "../../currently-playing-element";
 
 export function fromStreamingToCountdown(
     audioVisualizer: AudioVisualizer, 
-    description: HTMLSpanElement, 
     countdownTimer: HTMLSpanElement,
+    description: HTMLSpanElement, 
     roomMessageListener: RoomMessageListener,
     transitionTo: (tState: CurrentlyPlayingState) => void
     ) {
