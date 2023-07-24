@@ -321,7 +321,7 @@ h4 {
   width: 100%;
 }
 
-#cp-timer {
+.big-text {
   font-size: xx-large;
   color: var(--primary-fnt-color);
 }

@@ -137,7 +137,7 @@ export class AuxAudioPlayer {
     this.audioWorklet.disconnect(this.analyser);
     this.analyser.disconnect(this.audioContext.destination);
     this.audioWorklet = undefined;
-    this.audioContext.close();
+    this.audioContext.suspend();
   }
 
   private onWsWorkerEvent = async (event: MessageEvent<WsWorkerEvent>) => {
@@ -154,7 +154,6 @@ export class AuxAudioPlayer {
       }
       case 'WRITE_SONG_STARTED': {
         this.audioWorklet.port.postMessage({ type: event.data.type });
-        this.audioContext.resume();
         this.eventBus.publish('STREAM_STARTING', { type: 'STREAM_STARTING', title: 'dummy title' });
         break;
       }

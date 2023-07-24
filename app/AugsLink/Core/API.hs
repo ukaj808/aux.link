@@ -108,7 +108,7 @@ data Message = RoomEventMessage RoomEvent
 data RoomEvent = UserEnterEvent      RoomUser
   |              UserLeftEvent       UserId
   |              SongStartingEvent   Int
-  |              SongUploadedEvent
+  |              SongUploadedEvent   Text
 
 -- Message from server to user
 data ServerCommand = ServerWelcomeCommand UserId Bool
@@ -149,9 +149,10 @@ instance ToJSON RoomEvent where
        "type"        .= ("SongStartingEvent"  :: Text)
     ,  "s"      .= s
     ]
-  toJSON SongUploadedEvent = Aeson.object
+  toJSON (SongUploadedEvent songTitle) = Aeson.object
     [
        "type"        .= ("SongUploadedEvent"  :: Text)
+    ,  "title"       .= songTitle
     ]
 
 instance ToJSON ServerCommand where

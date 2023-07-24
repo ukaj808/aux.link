@@ -68,11 +68,11 @@ renderCurrentlyPlayingSection :: H.Html
 renderCurrentlyPlayingSection = 
   H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
-    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-1" $ do
+    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-2" $ do
       disconnectIconSvg
-    H.span ! A.id "cp-timer" ! A.class_ "countdown-timer hidden centered-abs z-1" $ "0"
-    H.span ! A.id "cp-desc" ! A.class_  "hidden centered-abs z-1" $ ""
-    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs z-1" $ do
+    H.span ! A.id "cp-timer" ! A.class_ "countdown-timer hidden centered-abs z-2 big-text" $ "0"
+    H.span ! A.id "cp-desc" ! A.class_  "hidden centered-abs z-2 big-text" $ ""
+    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs z-2" $ do
       H.div ! A.class_ "lds-facebook-md" $ do
         H.div ""
         H.div ""

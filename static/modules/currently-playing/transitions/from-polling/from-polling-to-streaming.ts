@@ -1,17 +1,18 @@
 import { StreamStartingEvent } from "../../../aux-audio-player";
+import { SongUploadedEvent } from "../../../interface";
 import { AudioVisualizer } from "../../audio-visualizer";
 
 export function fromPollingToStreaming(
     loadingBars: HTMLDivElement, 
     description: HTMLSpanElement, 
     audioVisualizer: AudioVisualizer, 
-    data: StreamStartingEvent
+    songUploadedEvent: SongUploadedEvent
     ) {
 
         loadingBars.classList.add("hidden");
         description.classList.remove("hidden");
         audioVisualizer.start();
 
-        description.innerText = data.title;
+        description.innerText = songUploadedEvent.title;
 
 }

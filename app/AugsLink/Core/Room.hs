@@ -41,17 +41,11 @@ data RoomState = RoomState
   , turn                         :: Int
   }
 
-instance Show RoomState where
-  show st = "RoomState { roomId = " ++ show (roomId st) ++ ", roomUsers = " ++ show (roomUsers st) ++ ", registryManage = " ++ ", mStreamer = " ++ ", mState = " ++ show (mState st) ++ ", creator = " ++ show (creator st) ++ ", currentSong = " ++ show (currentSong st) ++ ", order = " ++ show (order st) ++ ", turn = " ++ show (turn st) ++ "}"
-
 data UserSession = USession
   {
     conn :: WS.Connection
   , user :: User IO
   }
-
-instance Show UserSession where
-  show u = "user"
 
 initialRoomState :: RoomId -> RegistryManage -> MusicStreamer IO -> RoomState
 initialRoomState rId rsm musicStreamer = RoomState
@@ -117,7 +111,9 @@ nextSong stateVar = do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
       nextSong stateVar
     Just file -> do
-      publishToRoom st SongUploadedEvent
+      publishToRoom st $ SongUploadedEvent file
+      modifyMVar_ stateVar $ \st' -> do
+        return st'{mState=Streaming}
       stream (mStreamer st) (T.unpack file) (roomId st)
       modifyMVar_ stateVar $ \st'' -> do
         return st''{currentSong=Nothing}

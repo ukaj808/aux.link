@@ -84,6 +84,7 @@ class AuxWorkletProcessor extends AudioWorkletProcessor {
     this.buffersView.samplesRead[0] = this.buffersView.samplesRead[0] + totalSamplesProcessed;
 
     if (this.buffersView.samplesRead[0] > this._wsBuffersView.samplesWritten[0]) {
+      console.log("samples read: " + this.buffersView.samplesRead[0] + " samples written: " + this._wsBuffersView.samplesWritten[0]);
       console.log("Buffer underrun!");
     }
 

@@ -5,10 +5,12 @@ export function fromStreamingToDisconnected(
     auxAudioPlayer: AuxAudioPlayer, 
     audioVisualizer: AudioVisualizer,
     overlay: HTMLDivElement, 
+    overlayClickHandler: () => void,
     description: HTMLSpanElement,
     disconnectBtn: HTMLButtonElement, 
     listeningFlag: boolean
     ) {
+    overlay.addEventListener("click", overlayClickHandler);
     auxAudioPlayer.stopListening();
     audioVisualizer.stop();
     overlay.classList.remove("invisible");

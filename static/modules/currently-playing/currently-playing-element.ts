@@ -1,5 +1,5 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { MusicStreamerState, RoomView, SongStartingEvent, SongUploadedEvent } from "../interface";
+import { MusicStreamerState, RoomMessage, RoomView, SongStartingEvent, SongUploadedEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { AudioVisualizer } from "./audio-visualizer";
@@ -39,6 +39,21 @@ export class CurrentlyPlayingElement {
   private loadingBars: HTMLDivElement;
   private transitionHistory: CurrentlyPlayingState[];
 
+  private overlayClickHandler: () => void = () => this.transitionTo('Connecting');
+
+  private songStartingEventHandler: (roomEvent: RoomMessage) => void = (data) => {
+      const songStartingEvent = data as SongStartingEvent;  
+      if (songStartingEvent.s === 5) {
+        this.transitionTo('Countdown', this.roomMessageListener);
+      } 
+  }
+
+  private songUploadedEventHandler: (roomEvent: RoomMessage) => void = (data) => {
+    const songUploadedEvent = data as SongUploadedEvent;
+    this.transitionTo('Streaming', songUploadedEvent);
+  }
+  
+
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
     const optEl = document.getElementById("currently-playing");
     if (!optEl) throw new Error('No currently playing element found');
@@ -51,6 +66,7 @@ export class CurrentlyPlayingElement {
     const overlayEl = document.getElementById("cp-overlay");
     if (!overlayEl) throw new Error('No overlay element found');
     this.overlayEl = overlayEl as HTMLDivElement;
+    this.overlayEl.addEventListener("click", this.overlayClickHandler);
 
     const listenIcon = document.getElementById("listen-icon");
     if (!listenIcon) throw new Error('No listen icon element found');
@@ -75,19 +91,11 @@ export class CurrentlyPlayingElement {
 
     this.roomMessageListener = roomMessageListener;
 
-    this.roomMessageListener.subscribe('SongStartingEvent', (data) => {
-      const songStartingEvent = data as SongStartingEvent;
-      if (songStartingEvent.s === 5) {
-        this.transitionTo('Countdown', this.roomMessageListener);
-      } 
-    });
-
-
     this.auxAudioPlayer = auxAudioPlayer;
 
-    this.auxAudioPlayer.subscribe('STREAM_STARTING', (data) => {
-      const streamStartingEvent = data as StreamStartingEvent;
-      this.transitionTo('Streaming', streamStartingEvent);
+    this.roomMessageListener.subscribe('SongUploadedEvent', (data) => {
+      const songUploadedEvent = data as SongUploadedEvent;
+      this.transitionTo('Streaming', songUploadedEvent);
     });
 
     this.xState = 'Disconnected';
@@ -99,33 +107,31 @@ export class CurrentlyPlayingElement {
     this.analyser = analyser;
     this.analyser.fftSize = 256;
 
-    this.el.addEventListener("click", () => this.transitionTo('Connecting'));
-    this.disconnectBtn.addEventListener("click", () => this.transitionTo('Disconnected'));
   }
 
   private transitionTo(targetState: CurrentlyPlayingState, data?: any) {
     switch (targetState) {
       case 'Disconnected':
         if (this.xState === 'Connecting') { 
-          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Streaming') {
-          fromStreamingToDisconnected(this.auxAudioPlayer, this.audioVisualizer, this.overlayEl, this.description, this.disconnectBtn, this.listening);
+          fromStreamingToDisconnected(this.auxAudioPlayer, this.audioVisualizer, this.overlayEl, this.overlayClickHandler, this.description, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Polling') {
-          fromPollingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening);
+          fromPollingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Countdown') {
-          fromCountdownToDisconnected(this.auxAudioPlayer, this.overlayEl, this.countdownTimer, this.disconnectBtn, this.listening);
+          fromCountdownToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.countdownTimer, this.disconnectBtn, this.listening);
         } else if (this.xState === 'NotRunning') {
-          fromNotRunningToDisconnected(this.auxAudioPlayer, this.overlayEl, this.description, this.disconnectBtn, this.listening);
+          fromNotRunningToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.description, this.disconnectBtn, this.listening);
         } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
+          fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
         } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`); 
         break;
       case 'NotRunning':
         if (this.xState === 'Connecting') {
-          fromConnectingToNotRunning(this.description);
+          fromConnectingToNotRunning(this.roomMessageListener, this.songStartingEventHandler, this.description);
         } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Streaming':

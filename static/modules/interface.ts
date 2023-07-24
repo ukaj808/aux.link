@@ -93,7 +93,7 @@ export type ServerWelcomeCommand = {
 }
 
 export type SongUploadedEvent = {
-
+    title: string,
 }
 
 export type UserEnterEvent = {
