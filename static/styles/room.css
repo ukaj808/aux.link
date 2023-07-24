@@ -321,6 +321,11 @@ h4 {
   width: 100%;
 }
 
+#cp-timer {
+  font-size: xx-large;
+  color: var(--primary-fnt-color);
+}
+
 @keyframes lds-facebook {
   0% {
     top: 4px;

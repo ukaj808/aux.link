@@ -136,13 +136,13 @@ instance ToJSON RoomEvent where
   toJSON (UserEnterEvent u) = Aeson.object
     [
        "type"        .= ("UserEnterEvent" :: Text)
+    ,  "userId"      .= sanitizedUserId u
     ,  "userName"    .= userName u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object
     [
        "type"        .= ("UserLeftEvent"  :: Text)
-    ,  "channel"     .= ("Room" :: Text)
-    ,  "userId"      .= show uid
+    ,  "userId"      .= uid
     ]
   toJSON (SongStartingEvent s) = Aeson.object
     [
