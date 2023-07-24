@@ -41,11 +41,17 @@ data RoomState = RoomState
   , turn                         :: Int
   }
 
+instance Show RoomState where
+  show st = "RoomState { roomId = " ++ show (roomId st) ++ ", roomUsers = " ++ show (roomUsers st) ++ ", registryManage = " ++ ", mStreamer = " ++ ", mState = " ++ show (mState st) ++ ", creator = " ++ show (creator st) ++ ", currentSong = " ++ show (currentSong st) ++ ", order = " ++ show (order st) ++ ", turn = " ++ show (turn st) ++ "}"
+
 data UserSession = USession
   {
     conn :: WS.Connection
   , user :: User IO
   }
+
+instance Show UserSession where
+  show u = "user"
 
 initialRoomState :: RoomId -> RegistryManage -> MusicStreamer IO -> RoomState
 initialRoomState rId rsm musicStreamer = RoomState
@@ -215,17 +221,18 @@ handleIncomingMessages stateVar conn uid = do
 publishToAllBut :: RoomState -> UserId -> RoomEvent -> IO ()
 publishToAllBut rmSt uId e = do
   Map.foldrWithKey
-    (\uId' uSession _ -> do
-      when (uId' /= uId) $
-        safeSendTextData (conn uSession) uId' (RoomEventMessage e))
+    (\uId' uSession acc -> do
+        if uId' == uId then acc 
+        else
+          safeSendTextData (conn uSession) uId' (RoomEventMessage e) >> acc)
       (return ())
       (roomUsers rmSt)
 
 publishToRoom ::  RoomState -> RoomEvent -> IO ()
 publishToRoom rmSt e = do
   Map.foldrWithKey
-    (\uId uSession _ -> do
-      safeSendTextData (conn uSession) uId (RoomEventMessage e))
+    (\uId uSession acc -> do
+      safeSendTextData (conn uSession) uId (RoomEventMessage e) >> acc)
       (return ())
       (roomUsers rmSt)
 
