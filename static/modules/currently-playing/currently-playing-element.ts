@@ -6,6 +6,7 @@ import { AudioVisualizer } from "./audio-visualizer";
 import { fromConnectingToCountdown } from "./transitions/from-connecting/from-connecting-to-countdown";
 import { fromConnectingToDisconnected } from "./transitions/from-connecting/from-connecting-to-disconnecting";
 import { fromConnectingToNotRunning } from "./transitions/from-connecting/from-connecting-to-not-running";
+import { fromConnectingToPolling } from "./transitions/from-connecting/from-connecting-to-polling";
 import { fromConnectingToStreaming } from "./transitions/from-connecting/from-connecting-to-streaming";
 import { fromCountdownToDisconnected } from "./transitions/from-countdown/from-countdown-to-disconnected";
 import { fromCountdownToPolling } from "./transitions/from-countdown/from-countdown-to-polling";
@@ -113,20 +114,20 @@ export class CurrentlyPlayingElement {
     switch (targetState) {
       case 'Disconnected':
         if (this.xState === 'Connecting') { 
-          fromConnectingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening);
+          fromConnectingToDisconnected(this.roomMessageListener, this.auxAudioPlayer, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.overlayEl,  this.loadingBars, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Streaming') {
-          fromStreamingToDisconnected(this.auxAudioPlayer, this.audioVisualizer, this.overlayEl, this.overlayClickHandler, this.description, this.disconnectBtn, this.listening);
+          fromStreamingToDisconnected(this.roomMessageListener, this.auxAudioPlayer, this.audioVisualizer, this.overlayEl, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.description, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Polling') {
-          fromPollingToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening);
+          fromPollingToDisconnected(this.roomMessageListener, this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.loadingBars, this.disconnectBtn, this.listening);
         } else if (this.xState === 'Countdown') {
-          fromCountdownToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.countdownTimer, this.disconnectBtn, this.listening);
+          fromCountdownToDisconnected(this.roomMessageListener, this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.countdownTimer, this.disconnectBtn, this.listening);
         } else if (this.xState === 'NotRunning') {
-          fromNotRunningToDisconnected(this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.description, this.disconnectBtn, this.listening);
+          fromNotRunningToDisconnected(this.roomMessageListener, this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.description, this.disconnectBtn, this.listening);
         } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`);
         break;
       case 'Connecting':
         if (this.xState === 'Disconnected') {
-          fromDisconnectedToConnecting(this.xState, this.restClient, this.auxAudioPlayer, this.overlayEl, this.overlayClickHandler, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
+          fromDisconnectedToConnecting(this.restClient, this.auxAudioPlayer, this.roomMessageListener, this.overlayEl, this.overlayClickHandler, this.songStartingEventHandler, this.songUploadedEventHandler, this.loadingBars, this.disconnectBtn, this.listening, this.transitionTo.bind(this));
         } else throw new Error(`Unknown transition from ${this.xState} to ${targetState}`); 
         break;
       case 'NotRunning':
