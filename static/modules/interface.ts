@@ -80,7 +80,7 @@ export type AudioWorkletEvent = {
     type: "READ_SONG_STARTED" | "READ_SONG_FINISHED",
 }
 
-export type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "UserEnterEvent" | "UserLeftEvent";
+export type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "SongUploadTimeoutEvent" | "UserEnterEvent" | "UserLeftEvent";
 
 export type SongStartingEvent = {
     s: number,
@@ -96,6 +96,8 @@ export type SongUploadedEvent = {
     title: string,
 }
 
+export type SongUploadTimeoutEvent = {}
+
 export type UserEnterEvent = {
     userId: string,
     userName: string,
@@ -110,7 +112,7 @@ export type UserLeftEvent = {
     userId: string
 }
 
-export type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongStartingEvent) & { type: RoomMessageType };
+export type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongUploadTimeoutEvent | SongStartingEvent) & { type: RoomMessageType };
 
 export type AudioChunk = ArrayBuffer;
 

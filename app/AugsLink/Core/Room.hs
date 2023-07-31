@@ -109,6 +109,7 @@ nextSong stateVar = do
   case polled of
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
+      publishToRoom st SongUploadTimeoutEvent
       nextSong stateVar
     Just file -> do
       publishToRoom st $ SongUploadedEvent file

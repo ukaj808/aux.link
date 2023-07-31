@@ -30,6 +30,7 @@ export type AuxAudioPlayerEventType = 'STREAM_CONNECTED' | 'STREAM_STARTING' | '
 export type AuxAudioPlayerEvent = StreamConnectedEvent | StreamStartingEvent | AudioPlayingEvent | StreamFinishedEvent | AudioFinishedEvent;
 
 export class AuxAudioPlayer {
+  private running: boolean = false;
   private roomId: string;
   private status: AuxAudioPlayerStatus;
   private audioContext: AudioContext;
@@ -129,6 +130,7 @@ export class AuxAudioPlayer {
   }
 
   public stopListening() {
+    if (!this.running) return;
     if (this.wsWorker === undefined) throw new Error("Ws worker wasnt initialized");
     if (this.audioContext === undefined) throw new Error("Audio context wasnt initialized");
     if (this.audioWorklet === undefined) throw new Error("Audio worklet wasnt initialized");
@@ -149,6 +151,7 @@ export class AuxAudioPlayer {
         this.audioWorklet.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
         this.audioContext.resume();
+        this.running = true;
         this.eventBus.publish('STREAM_CONNECTED', { type: 'STREAM_CONNECTED' });
         break;
       }

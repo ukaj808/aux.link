@@ -6,6 +6,9 @@ export class EventBus<K, V> {
         if (!this.subscriptions.has(msgType)) {
             this.subscriptions.set(msgType, []);
         }
+        if (this.subscriptions.get(msgType)?.includes(callback)) {
+            return;
+        }
         this.subscriptions.get(msgType)!.push(callback);
     }
 
