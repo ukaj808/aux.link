@@ -147,6 +147,7 @@ export type UserView = {
 export type CurrentlyPlayingView = {
     musicState: MusicStreamerState;
     song: string | null;
+    countdown: string | null;
 }
 
 export type MusicStreamerState = 'Streaming' | 'Countdown' | 'Polling' | 'NotRunning';

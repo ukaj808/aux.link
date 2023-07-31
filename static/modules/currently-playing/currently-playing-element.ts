@@ -130,7 +130,9 @@ export class CurrentlyPlayingElement {
       showCountdown: ({event}) => {
         if (event.output) {
           const roomView = event.output as RoomView;
-          // todo this.countdownTimer.innerText = roomView.currentlyPlayingView.countdown.toString();
+          if (roomView.currentlyPlayingView.countdown) {
+            this.countdownTimer.innerText = roomView.currentlyPlayingView.countdown.toString();
+          }
         }
         this.countdownTimer.classList.remove('hidden');
       },

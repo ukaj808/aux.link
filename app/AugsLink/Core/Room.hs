@@ -39,6 +39,7 @@ data RoomState = RoomState
   , currentSong                  :: Maybe T.Text
   , order                        :: [UserId]
   , turn                         :: Int
+  , countdown                    :: Maybe Int
   }
 
 data UserSession = USession
@@ -59,6 +60,7 @@ initialRoomState rId rsm musicStreamer = RoomState
   , currentSong    = Nothing
   , order          = []
   , turn           = -1
+  , countdown      = Nothing
   }
 
 newRoom :: RoomId -> RegistryManage -> IO (Room IO)
@@ -94,6 +96,10 @@ nextSong stateVar = do
     return st{mState=Countdown}
 
   forM_ [5,4,3,2,1,0] $ \i -> do
+
+    modifyMVar_ stateVar $ \st -> do
+      return st{countdown=Just i}
+
     st' <- readMVar stateVar
     publishToRoom st' (SongStartingEvent i)
     threadDelay 1000000
@@ -189,6 +195,7 @@ viewRoomImpl stateVar = do
       CurrentlyPlaying{
         cpvSong   = currentSong roomState
       , cpvState  = mState roomState
+      , cpvCountdown = countdown roomState
       }
   ,  ov           =
       Order{
@@ -266,11 +273,11 @@ getNextUser st = (st{turn=turn'}, order st !! turn')
       turn' = (turn st + 1) `mod` length (order st)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ order _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ order _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
 
 getTurnUser :: RoomState -> UserId

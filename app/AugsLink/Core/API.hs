@@ -81,6 +81,7 @@ data CurrentlyPlayingView = CurrentlyPlaying
   {
      cpvSong   :: Maybe SongId
   ,  cpvState  :: MusicState
+  ,  cpvCountdown :: Maybe Int
   }
 
 -- A sanitized view of the room
@@ -184,8 +185,9 @@ instance ToJSON CurrentlyPlayingView where
   toJSON :: CurrentlyPlayingView -> Value
   toJSON cpv = Aeson.object
     [
-       "song"                .= cpvSong cpv
+       "song"       .= cpvSong cpv
     ,  "musicState" .= cpvState cpv
+    ,  "countdown"  .= cpvCountdown cpv
     ]
 
 instance ToJSON OrderView where
