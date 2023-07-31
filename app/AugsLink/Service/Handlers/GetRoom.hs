@@ -58,15 +58,15 @@ renderUser user =
 
 renderOrderSection :: OrderView -> H.Html 
 renderOrderSection ov = 
-  H.section ! A.id "order" ! H.dataAttribute "state" jsonOv ! A.class_ "default-margin flex-cell-sm" $ do
+  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-sm" $ do
     H.div ! A.class_"user-carousel" $ do
       forM_ (ovUsers ov) renderUser 
   where
     jsonOv = textValue $ pack $ show $ Aeson.encode ov
 
-renderCurrentlyPlayingSection :: H.Html
-renderCurrentlyPlayingSection = 
-  H.section ! A.id "currently-playing" ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
+renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
+renderCurrentlyPlayingSection cpv = 
+  H.section ! A.id "currently-playing"  ! H.dataAttribute "og-state" jsonCpv ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
     H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-2" $ do
       disconnectIconSvg
@@ -77,8 +77,9 @@ renderCurrentlyPlayingSection =
         H.div ""
         H.div ""
         H.div ""
-    H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ do
-      listenIconSvg ! A.id "listen-icon" ! A.class_ "centered-icon"
+    H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
+  where
+    jsonCpv = textValue $ pack $ show $ Aeson.encode cpv
 
 renderDropSection :: H.Html
 renderDropSection = 
@@ -102,7 +103,7 @@ renderRoomPage room = H.docTypeHtml $ do
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
       renderOrderSection            $ ov room
-      renderCurrentlyPlayingSection
+      renderCurrentlyPlayingSection $ cpv room
       renderDropSection
       H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
 

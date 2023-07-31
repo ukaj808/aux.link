@@ -1,5 +1,5 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { MusicStreamerState, RoomMessage, RoomView, SongStartingEvent, SongUploadTimeoutEvent, SongUploadedEvent } from "../interface";
+import { CurrentlyPlayingView, MusicStreamerState, RoomMessage, RoomView, SongStartingEvent, SongUploadTimeoutEvent, SongUploadedEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { AudioVisualizer } from "./audio-visualizer";
@@ -19,18 +19,18 @@ export class CurrentlyPlayingElement {
   private audioCanvas: HTMLCanvasElement;
   private overlayEl: HTMLDivElement;
   private description: HTMLSpanElement;
-  private listenIcon: HTMLElement;
   private disconnectBtn: HTMLButtonElement
   private countdownTimer: HTMLSpanElement;
   private loadingBars: HTMLDivElement;
+  private initialState: CurrentlyPlayingView;
 
   private machine = createMachine({
     id: 'currently-playing',
     initial: 'Disconnected',
     states: {
       Disconnected: {
-        exit: ['removeOverlay', 'showDisconnectButton'],
-        entry: ['showOverlay', 'hideDisconnectButton', 'disconnect'],
+        exit: ['removeOverlay', 'showDisconnectButton', 'unsubscribeFromSongStartingEvent'],
+        entry: ['showOverlay', 'hideDisconnectButton', 'disconnect', 'subscribeToSongStartingEvent', 'showCountdown'],
         on: {
           CONNECT: { target: 'Connecting' },
         },
@@ -76,8 +76,8 @@ export class CurrentlyPlayingElement {
         },
       },
       Countdown: {
-        entry: ['subscribeToSongStartingEvent', 'showCountdown'],
-        exit: ['unsubscribeFromSongStartingEvent', 'hideCountdown'],
+        entry: ['showCountdown'],
+        exit: ['hideCountdown'],
         on: {
           COUNTDOWN_FINISHED: 'Polling',
           DISCONNECT: { target: 'Disconnected' },
@@ -256,10 +256,6 @@ export class CurrentlyPlayingElement {
     if (!overlayEl) throw new Error('No overlay element found');
     this.overlayEl = overlayEl as HTMLDivElement;
 
-    const listenIcon = document.getElementById("listen-icon");
-    if (!listenIcon) throw new Error('No listen icon element found');
-    this.listenIcon = listenIcon;
-
     const disconnectBtn = document.getElementById("cp-disconnect-btn");
     if (!disconnectBtn) throw new Error('No disconnect button element found');
     this.disconnectBtn = disconnectBtn as HTMLButtonElement;
@@ -275,6 +271,10 @@ export class CurrentlyPlayingElement {
     const description = document.getElementById("cp-desc");
     if (!description) throw new Error('No description element found');
     this.description = description as HTMLSpanElement;
+
+    const initialState = optEl.getAttribute('data-og-state');
+    if (!initialState) throw new Error('No initial state found');
+    this.initialState = JSON.parse(initialState) as CurrentlyPlayingView;
 
     this.roomMessageListener = roomMessageListener;
 

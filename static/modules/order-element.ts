@@ -38,7 +38,7 @@ export class OrderElement {
       this.removeUserFromOrderCarousel(userLeftEvent.userId);
     });
 
-    const stateAttribute = el.getAttribute('data-state');
+    const stateAttribute = el.getAttribute('data-og-state');
     if (!stateAttribute) throw new Error('No state attribute found');
     console.log('stateAttribute', stateAttribute);
     console.log(JSON.parse(stateAttribute));
