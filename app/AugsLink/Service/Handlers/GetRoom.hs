@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module AugsLink.Service.Handlers.GetRoom
-  ( 
+  (
     roomHandler
   ) where
 
@@ -17,6 +17,7 @@ import qualified Text.Blaze.Svg11.Attributes as SVGA
 import qualified Data.Aeson                  as Aeson
 
 import AugsLink.Core.API
+import Data.Maybe (fromMaybe)
 
 musicIconSvg :: S.Svg
 musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" ! SVGA.id_ "Capa_1" ! SVGA.viewbox "0 0 98.121 98.121" ! SVGA.xmlSpace "preserve" $
@@ -49,46 +50,68 @@ disconnectIconSvg = S.docTypeSvg !  SVGA.viewbox "0 0 512 512" ! SVGA.viewbox "0
   S.path ! SVGA.d "M435.005,235.517c-9.032-33.694-39.686-58.53-76.23-58.53h-57.062v158.024h57.062c36.544,0,67.191-24.836,76.23-58.522H512v-40.973H435.005z"
 
 renderUser :: RoomUser -> H.Html
-renderUser user = 
+renderUser user =
   let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
   in
   H.div ! A.id suid ! A.class_ "user-carousel-cell" $ ""
 
 
-renderOrderSection :: OrderView -> H.Html 
-renderOrderSection ov = 
+renderOrderSection :: OrderView -> H.Html
+renderOrderSection ov =
   H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-sm" $ do
-    H.div ! A.class_"user-carousel" $ do
-      forM_ (ovUsers ov) renderUser 
+    H.div ! A.class_ "user-carousel" $ do
+      forM_ (ovUsers ov) renderUser
   where
     jsonOv = textValue $ pack $ show $ Aeson.encode ov
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
-renderCurrentlyPlayingSection cpv = 
-  H.section ! A.id "currently-playing"  ! H.dataAttribute "og-state" jsonCpv ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
+renderCurrentlyPlayingSection cpv =
+  H.section ! A.id "currently-playing"  
+  ! H.dataAttribute "state" musicStateAttribute
+  ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
+    H.div  ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
-    H.button ! A.id "cp-disconnect-btn" ! A.class_ "hidden top-right-abs small-btn borderless warn-btn z-2" $ do
-      disconnectIconSvg
-    H.span ! A.id "cp-timer" ! A.class_ "countdown-timer hidden centered-abs z-2 big-text" $ "0"
-    H.span ! A.id "cp-desc" ! A.class_  "hidden centered-abs z-2 big-text" $ ""
-    H.div ! A.id "cp-loading" ! A.class_ "hidden centered-abs z-2" $ do
+    H.button ! A.id "cp-connect-btn" ! A.class_ "top-right-abs small-btn borderless z-2" $ do
+      listenIconSvg
+    H.span ! A.id "cp-timer"   ! A.class_ timerClasses   $ timerText
+    H.span ! A.id "cp-desc"    ! A.class_ descClasses    $ descText
+    H.div  ! A.id "cp-loading" ! A.class_ loadingClasses $ do
       H.div ! A.class_ "lds-facebook-md" $ do
         H.div ""
         H.div ""
         H.div ""
-    H.div ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
   where
-    jsonCpv = textValue $ pack $ show $ Aeson.encode cpv
+    jsonCpv        = stringValue $ show $ Aeson.encode cpv
+    timerClasses   = ("centered-abs z-2 big-text" <> if cpvState cpv /= Countdown
+                                                     then (" hidden" :: AttributeValue)
+                                                     else "") :: AttributeValue
+    loadingClasses = ("centered-abs z-2"          <> if cpvState cpv /= Polling
+                                                     then (" hidden" :: AttributeValue)
+                                                     else "") :: AttributeValue
+    descClasses    = ("centered-abs z-2 big-text" <> if cpvState cpv /= Streaming && cpvState cpv /= NotRunning
+                                                     then (" hidden" :: AttributeValue)
+                                                     else "") :: AttributeValue
+    descText       = case cpvState cpv of
+                        NotRunning -> "Waiting for the creator to start the music..."
+                        Streaming  -> "Streaming"
+                        _          -> ""
+    songTitleAttribute = stringValue $ maybe "" show (cpvSong cpv)
+    musicStateAttribute = stringValue $ show $ cpvState cpv
+    timerDataAttribute = stringValue timerString
+    timerText      = preEscapedString timerString
+    timerString = if cpvState cpv == Countdown
+                      then maybe "n/a" show (cpvCountdown cpv)
+                      else ""
 
 renderDropSection :: H.Html
-renderDropSection = 
+renderDropSection =
   H.section ! A.id "drop"      ! A.class_ "full-flex frame centered flex-cell-lg default-margin secondary-theme"  $ do
       H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex frame centered column" $ do
         H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex frame centered column" $ do
           musicIconSvg
           H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
-          H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme" 
+          H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme"
 
 renderRoomPage :: RoomView -> H.Html
 renderRoomPage room = H.docTypeHtml $ do
@@ -110,14 +133,14 @@ renderRoomPage room = H.docTypeHtml $ do
 instance ToMarkup RoomView where
   toMarkup = renderRoomPage
 
-roomHandler :: Registry IO 
-  -> RoomId 
+roomHandler :: Registry IO
+  -> RoomId
   -> Handler (
-       Headers 
+       Headers
        '[
-         Header "Cross-Origin-Opener-Policy" Text, 
+         Header "Cross-Origin-Opener-Policy" Text,
          Header "Cross-Origin-Embedder-Policy" Text
-        ] 
+        ]
         RoomView
       )
 roomHandler registry rId = do
@@ -129,10 +152,10 @@ roomHandler registry rId = do
                Nothing -> error "Room does not exist"
   --  Maybe we need to hold lock on room somehow until result returned and confirmed. 
   roomView <- liftIO $ viewRoom rm
-  
-  return 
-    ( 
+
+  return
+    (
       addHeader "same-origin"       $
-      addHeader "credentialless"  
+      addHeader "credentialless"
       roomView
     )

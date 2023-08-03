@@ -40,8 +40,6 @@ export class OrderElement {
 
     const stateAttribute = el.getAttribute('data-og-state');
     if (!stateAttribute) throw new Error('No state attribute found');
-    console.log('stateAttribute', stateAttribute);
-    console.log(JSON.parse(stateAttribute));
 
     this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.orderCarouselEl);
     this.flkty = new Flickity( this.orderCarouselEl, {
