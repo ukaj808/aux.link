@@ -7,7 +7,6 @@ import { createMachine, fromPromise, interpret } from "xstate";
 
 export class CurrentlyPlayingElement {
 
-
   private el: HTMLElement;
   private canvasMachine: any;
   private listenMachine: any;
