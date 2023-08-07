@@ -67,13 +67,13 @@ renderOrderSection ov =
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv =
-  H.section ! A.id "currently-playing"  
+  H.section ! A.id "currently-playing"
   ! H.dataAttribute "state" musicStateAttribute
   ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
     H.div  ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
-    H.button ! A.id "cp-connect-btn" ! A.class_ "top-right-abs small-btn borderless z-2" $ do
-      listenIconSvg
+    H.span ! A.id "cp-status" ! A.class_ "top-left-abs medium-text z-2" $ "Disconnected"
+    H.button ! A.id "cp-connect-btn" ! A.class_ "top-right-abs borderless z-2" $ "Connect"
     H.span ! A.id "cp-timer"   ! A.class_ timerClasses   $ timerText
     H.span ! A.id "cp-desc"    ! A.class_ descClasses    $ descText
     H.div  ! A.id "cp-loading" ! A.class_ loadingClasses $ do
@@ -94,7 +94,7 @@ renderCurrentlyPlayingSection cpv =
                                                      else "") :: AttributeValue
     descText       = case cpvState cpv of
                         NotRunning -> "Waiting for the creator to start the music..."
-                        Streaming  -> "Streaming"
+                        Streaming  -> preEscapedText $ fromMaybe "" (cpvSong cpv)
                         _          -> ""
     songTitleAttribute = stringValue $ maybe "" show (cpvSong cpv)
     musicStateAttribute = stringValue $ show $ cpvState cpv

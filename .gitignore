@@ -2,5 +2,6 @@ dist-newstyle
 dist
 scratch.txt
 rooms
+tmp
 node_modules
 built

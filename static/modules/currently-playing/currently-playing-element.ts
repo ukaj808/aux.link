@@ -19,6 +19,7 @@ export class CurrentlyPlayingElement {
   private audioCanvas: HTMLCanvasElement;
   private overlayEl: HTMLDivElement;
   private description: HTMLSpanElement;
+  private status: HTMLSpanElement;
   private connectBtn: HTMLButtonElement
   private countdownTimer: HTMLSpanElement;
   private loadingBars: HTMLDivElement;
@@ -41,6 +42,10 @@ export class CurrentlyPlayingElement {
     const connectBtn = document.getElementById("cp-connect-btn");
     if (!connectBtn) throw new Error('No disconnect button element found');
     this.connectBtn = connectBtn as HTMLButtonElement;
+
+    const status = document.getElementById("cp-status");
+    if (!status) throw new Error('No status element found');
+    this.status = status as HTMLSpanElement;
 
     const countdownTimer = document.getElementById("cp-timer");
     if (!countdownTimer) throw new Error('No countdown timer element found');
@@ -76,7 +81,7 @@ export class CurrentlyPlayingElement {
     states: {
       NotRunning: {
         entry: ['showWaitingForCreator'],
-        exit: 'hideWaitingForCreator',
+        exit: ['hideWaitingForCreator'],
         on: {
           COUNTDOWN_STARTED:{ target: 'Countdown' }, 
         },
@@ -107,43 +112,19 @@ export class CurrentlyPlayingElement {
   }, 
   {
     actions: {
-      connect: () => {
-        this.auxAudioPlayer.startListening();
-      },
-      disconnect: () => {
-        this.auxAudioPlayer.stopListening();
-      },
-      removeOverlay: () => {
-        this.overlayEl.classList.add('invisible');
-      },
-      showOverlay: () => {
-        this.overlayEl.classList.remove('invisible');
-      },
       showLoading: () => {
         this.loadingBars.classList.remove('hidden');
       },
       hideLoading: () => {
         this.loadingBars.classList.add('hidden');
       }, 
-      showCountdown: ({event}) => {
-        if (event.output) {
-          const roomView = event.output as RoomView;
-          if (roomView.currentlyPlayingView.countdown) {
-            this.countdownTimer.innerText = roomView.currentlyPlayingView.countdown.toString();
-          }
-        }
+      showCountdown: () => {
         this.countdownTimer.classList.remove('hidden');
       },
       hideCountdown: () => {
         this.countdownTimer.classList.add('hidden');
       },
-      showSongTitle: ({event}) => {
-        if (event.output) {
-          const roomView = event.output as RoomView;
-          if (roomView.currentlyPlayingView.song) {
-            this.description.innerText = roomView.currentlyPlayingView.song;
-          }
-        }
+      showSongTitle: () => {
         this.description.classList.remove('hidden');
       },
       hideSongTitle: () => {
@@ -174,13 +155,13 @@ export class CurrentlyPlayingElement {
       Disconnected: {
         entry: ['disconnect'],
         on: {
-          CONNECT: 'Connected',
+          CONNECTION_TOGGLE: 'Connected',
         },
       },
       Connected: {
         entry: ['connect'],
         on: {
-          DISCONNECT: 'Disconnected',
+          CONNECTION_TOGGLE: 'Disconnected',
         },
       },
     },
@@ -189,11 +170,15 @@ export class CurrentlyPlayingElement {
     actions: {
       connect: () => {
         this.auxAudioPlayer.startListening();
-        // remove event listener; change button
+        this.status.innerText = "Connected";
+        this.connectBtn.innerText = "Disconnect";
+        this.overlayEl.classList.add('invisible');
       },
       disconnect: () => {
         this.auxAudioPlayer.stopListening();
-        // remove add listener; change button
+        this.status.innerText = "Disconnected";
+        this.connectBtn.innerText = "Connect";
+        this.overlayEl.classList.remove('invisible');
       },  
     },
   });
@@ -221,9 +206,17 @@ export class CurrentlyPlayingElement {
       }
     });
 
+    this.connectBtn.addEventListener('click', () => {
+      listenActor.send({ type: 'CONNECTION_TOGGLE' });
+    });
+
     canvasActor.subscribe((state) => {
       console.log('Canvas Actor', state);
     });
+
+    listenActor.subscribe((state) => {
+      console.log('Listen Actor', state);
+    })
 
     listenActor.start();
     canvasActor.start();

@@ -77,6 +77,12 @@ h4 {
   transform: translate(-50%, -50%);
 }
 
+.top-left-abs {
+  position: absolute;
+  top: 0;
+  left: 0; 
+}
+
 .top-right-abs {
   position: absolute;
   top: 0;
@@ -319,6 +325,11 @@ h4 {
 
 .audio-canvas-sm {
   width: 100%;
+}
+
+.medium-text {
+  font-size: medium;
+  color: var(--primary-fnt-color);
 }
 
 .big-text {
