@@ -28,6 +28,13 @@ import Data.UUID.V4
 
 type instance Connection IO = WS.PendingConnection
 
+data RoomState = 
+    Initializing RoomId RegistryManage (MusicStreamer IO)
+  | NotRunning   RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
+  | Countdown    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) Int
+  | Polling      RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
+  | Streaming    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) SongId
+
 data RoomState = RoomState
   {
     roomId                       :: RoomId
