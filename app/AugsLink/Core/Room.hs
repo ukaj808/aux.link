@@ -148,13 +148,6 @@ uploadSongImpl stateVar rId uId u = do
   else
     return False
 
-
-genTargetDir :: FilePath -> RoomId -> FilePath
-genTargetDir roomsPath rId = roomsPath </> T.unpack rId
-
-genTargetPath :: FilePath -> RoomId -> String -> FilePath
-genTargetPath roomsPath rId fileName =  genTargetDir roomsPath rId </> fileName
-
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
   conn <- WS.acceptRequest pend

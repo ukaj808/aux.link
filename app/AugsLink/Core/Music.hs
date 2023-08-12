@@ -21,6 +21,7 @@ import System.IO
 import Commons.Wav
 import Data.UUID
 import Data.UUID.V4
+import Control.Exception (bracket)
 
 type instance Connection IO = WS.PendingConnection
 
@@ -63,15 +64,21 @@ streamImpl :: MVar MusicStreamerState -> FilePath -> RoomId -> IO ()
 streamImpl stateVar file rId = do
   let fileName = takeBaseName file
   let fileExt  = takeExtension file
-  (fmtSubChunk, audioByteLength, handle) <- modifyMVar stateVar $ \st -> do
+  (fmtSubChunk, audioByteLength, handle, wavFile) <- modifyMVar stateVar $ \st -> do
     wavFile   <- convertToWav "ffmpeg" (roomPath st) fileName fileExt
     handle    <- openFile wavFile ReadMode
     (fmtSubChunk,  rawFmtSubChunk, audioByteLength) <- parseWavFile handle
     forM_ (streams st) $ \session -> do
       WS.sendBinaryData (conn session) rawFmtSubChunk
-    return (st{streams= Map.map (\session -> session{streamState=Consuming}) (streams st)}, (fmtSubChunk, audioByteLength, handle))
-
-  go fmtSubChunk handle audioByteLength
+    return (st{streams= Map.map (\session -> session{streamState=Consuming}) (streams st)}, (fmtSubChunk, audioByteLength, handle, wavFile))
+  
+  bracket 
+    (return ()) 
+    (\_ -> do
+       putStrLn wavFile
+       removeFile wavFile) 
+    (\_ -> do
+      go fmtSubChunk handle audioByteLength)
 
   modifyMVar_ stateVar $ \st -> do
     forM_ (streams st) $ \session -> do

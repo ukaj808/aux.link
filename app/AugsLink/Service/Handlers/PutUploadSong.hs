@@ -31,12 +31,14 @@ uploadHandler rr rId hUid mlt = do
             (Left _, Left _) -> throwError err400
             (Right _, Right _) -> throwError err400
             (Right fileData, Left _) -> do
+              liftIO $ putStrLn $ fdPayload fileData
               liftIO $ uploadSong room uId $
                 Upload {uploadName=fdFileName fileData, uploadTmp=fdPayload fileData}
             (Left _, Right url) -> do
               roomPath <- liftIO $ getRoomPath room
               withTempDirectory  roomPath "upload" $ \tmpDir -> do
                 (tmpPath, metadata) <- liftIO $ ytdlpDownload "yt-dlp" tmpDir url
+                liftIO $ putStrLn tmpPath
                 liftIO $ uploadSong room uId $
                   Upload {uploadName=ytdlpTitle metadata, uploadTmp=tmpPath}
 
