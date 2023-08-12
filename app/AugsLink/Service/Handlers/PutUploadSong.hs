@@ -2,7 +2,7 @@
 module AugsLink.Service.Handlers.PutUploadSong
   (
     uploadHandler
-  ) where 
+  ) where
 
 import Control.Monad.Cont
 import Servant
@@ -17,9 +17,9 @@ import Commons.YtDlp
 
 uploadHandler :: Registry IO -> RoomId -> Maybe UserId -> MultipartData Tmp -> Handler NoContent
 uploadHandler rr rId hUid mlt = do
-  case hUid of 
+  case hUid of
     Nothing -> throwError err401 { errBody = "No User Id provided" }
-    Just uId -> do 
+    Just uId -> do
       maybeRoom <- liftIO $ getRoom rr rId
       case maybeRoom of
         Nothing -> throwError err404
@@ -31,16 +31,15 @@ uploadHandler rr rId hUid mlt = do
             (Left _, Left _) -> throwError err400
             (Right _, Right _) -> throwError err400
             (Right fileData, Left _) -> do
-              liftIO $ uploadSong room uId $ 
+              liftIO $ uploadSong room uId $
                 Upload {uploadName=fdFileName fileData, uploadTmp=fdPayload fileData}
             (Left _, Right url) -> do
-              tmpDir <- liftIO $ createTempDirectory "tmp" (T.unpack rId)
-              (tmpPath, metadata) <- liftIO $ ytdlpDownload "yt-dlp" tmpDir url
-              res <- liftIO $ uploadSong room uId $ 
-                Upload {uploadName=ytdlpTitle metadata, uploadTmp=tmpPath}
-              liftIO $ removeDirectoryRecursive tmpDir
-              return res
-          
+              roomPath <- liftIO $ getRoomPath room
+              withTempDirectory  roomPath "upload" $ \tmpDir -> do
+                (tmpPath, metadata) <- liftIO $ ytdlpDownload "yt-dlp" tmpDir url
+                liftIO $ uploadSong room uId $
+                  Upload {uploadName=ytdlpTitle metadata, uploadTmp=tmpPath}
+
           if result
             then return NoContent
             else throwError err409

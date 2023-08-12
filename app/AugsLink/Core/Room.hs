@@ -25,15 +25,16 @@ import AugsLink.Core.Shared
 import AugsLink.Core.User
 import Data.UUID
 import Data.UUID.V4
+import System.FilePath
 
 type instance Connection IO = WS.PendingConnection
 
-data RoomState = 
-    Initializing RoomId RegistryManage (MusicStreamer IO)
-  | NotRunning   RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
-  | Countdown    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) Int
-  | Polling      RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
-  | Streaming    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) SongId
+--data RoomState = 
+ --   Initializing RoomId RegistryManage (MusicStreamer IO)
+ -- |  NotRunning   RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
+  -- | Countdown    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) Int
+  -- | Polling      RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int)
+  -- | Streaming    RoomId RegistryManage (MusicStreamer IO) Map.Map UserId UserSession UserId ([UserId], Int) SongId
 
 data RoomState = RoomState
   {
@@ -42,6 +43,7 @@ data RoomState = RoomState
   , registryManage               :: RegistryManage
   , mStreamer                    :: MusicStreamer IO
   , mState                       :: MusicState
+  , roomPath                     :: FilePath
   , creator                      :: Maybe UserId
   , currentSong                  :: Maybe T.Text
   , order                        :: [UserId]
@@ -55,14 +57,15 @@ data UserSession = USession
   , user :: User IO
   }
 
-initialRoomState :: RoomId -> RegistryManage -> MusicStreamer IO -> RoomState
-initialRoomState rId rsm musicStreamer = RoomState
+initialRoomState :: RoomId -> RegistryManage -> FilePath -> MusicStreamer IO -> RoomState
+initialRoomState rId rsm roomPath musicStreamer = RoomState
   {
     roomId         = rId
   , roomUsers      = Map.empty
   , registryManage = rsm
   , mStreamer  = musicStreamer
   , mState     = NotRunning
+  , roomPath = roomPath
   , creator        = Nothing
   , currentSong    = Nothing
   , order          = []
@@ -70,10 +73,10 @@ initialRoomState rId rsm musicStreamer = RoomState
   , countdown      = Nothing
   }
 
-newRoom :: RoomId -> RegistryManage -> IO (Room IO)
-newRoom rId registryManage = do
-  music    <- newMusicStreamer rId
-  stateVar <- newMVar $ initialRoomState rId registryManage music
+newRoom :: RoomId -> FilePath -> RegistryManage -> IO (Room IO)
+newRoom rId roomPath registryManage = do
+  music    <- newMusicStreamer roomPath
+  stateVar <- newMVar $ initialRoomState rId registryManage roomPath music
   return $ Room {
       enterRoom         = enterRoomImpl        stateVar
     , getUser           = getUserImpl          stateVar
@@ -138,7 +141,7 @@ uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload -> IO Bool
 uploadSongImpl stateVar rId uId u = do
   st <- readMVar stateVar
   if uId == getTurnUser st then do
-    copyFile (uploadTmp u) (genTargetPath rId $ T.unpack $ uploadName u)
+    copyFile (uploadTmp u) (roomPath st </> T.unpack (uploadName u))
     modifyMVar_ stateVar $ \st' -> do
       return st'{currentSong=Just $ uploadName u}
     return True
@@ -146,11 +149,11 @@ uploadSongImpl stateVar rId uId u = do
     return False
 
 
-genTargetDir :: RoomId -> FilePath
-genTargetDir rId = "./rooms/" ++ T.unpack rId
+genTargetDir :: FilePath -> RoomId -> FilePath
+genTargetDir roomsPath rId = roomsPath </> T.unpack rId
 
-genTargetPath :: RoomId -> String -> FilePath
-genTargetPath rId fileName =  genTargetDir rId ++ "/" ++ fileName
+genTargetPath :: FilePath -> RoomId -> String -> FilePath
+genTargetPath roomsPath rId fileName =  genTargetDir roomsPath rId </> fileName
 
 enterRoomImpl :: MVar RoomState -> Connection IO -> IO ()
 enterRoomImpl stateVar pend = do
@@ -280,11 +283,11 @@ getNextUser st = (st{turn=turn'}, order st !! turn')
       turn' = (turn st + 1) `mod` length (order st)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ order _ _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ _ order _ _) uId uSession =
   st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
 
 getTurnUser :: RoomState -> UserId

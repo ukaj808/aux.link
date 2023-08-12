@@ -11,6 +11,8 @@ data CLArgs =
     { publicAssetsPath      :: FilePath
     , homeViewPath    :: FilePath
     , audioWorkerPath :: FilePath
+    , roomsDir        :: FilePath
+    , roomsDirName    :: FilePath
     }
   deriving (Show)
 
@@ -19,6 +21,8 @@ parseOptions = CLArgs
     <$> parsePublicAssetsPath 
     <*> parseHomeViewPath
     <*> parseAudioWorkerPath
+    <*> parseRoomsDir
+    <*> parseRoomsDirName
 
 parsePublicAssetsPath :: Parser FilePath
 parsePublicAssetsPath =
@@ -42,6 +46,22 @@ parseAudioWorkerPath =
     [
       long "aw"
     , help "Path to audio worker script (js)"
+    ]
+
+parseRoomsDir :: Parser FilePath
+parseRoomsDir =
+  option str $ mconcat 
+    [
+      long "roomsDir"
+    , help "Path to the rooms directory"
+    ]
+
+parseRoomsDirName :: Parser FilePath
+parseRoomsDirName =
+  option str $ mconcat 
+    [
+      long "roomsDirName"
+    , help "Name of the rooms directory"
     ]
 
 getCLArgs :: IO CLArgs

@@ -34,15 +34,15 @@ data UserStreamSession = UserStreamSession
   }
 
 
-newtype MusicStreamerState = MusicState
+data MusicStreamerState = MusicState
   {
     streams        :: Map.HashMap UserId UserStreamSession
+  , roomPath       :: FilePath
   }
 
-newMusicStreamer :: RoomId -> IO (MusicStreamer IO)
-newMusicStreamer rId = do
-  stateVar <- newMVar $ MusicState Map.empty
-  createDirectoryIfMissing True ("./rooms/" ++ T.unpack rId)
+newMusicStreamer :: FilePath -> IO (MusicStreamer IO)
+newMusicStreamer roomPath = do
+  stateVar <- newMVar $ MusicState Map.empty roomPath
   return $ Music {
       connect             = listenImpl         stateVar
     , stream             = streamImpl         stateVar
@@ -63,13 +63,13 @@ streamImpl :: MVar MusicStreamerState -> FilePath -> RoomId -> IO ()
 streamImpl stateVar file rId = do
   let fileName = takeBaseName file
   let fileExt  = takeExtension file
-  wavFile   <- convertToWav "ffmpeg" ("./rooms/" ++ T.unpack rId) fileName fileExt
-  handle    <- openFile wavFile ReadMode
-  (fmtSubChunk,  rawFmtSubChunk, audioByteLength) <- parseWavFile handle
-  modifyMVar_ stateVar $ \st -> do
+  (fmtSubChunk, audioByteLength, handle) <- modifyMVar stateVar $ \st -> do
+    wavFile   <- convertToWav "ffmpeg" (roomPath st) fileName fileExt
+    handle    <- openFile wavFile ReadMode
+    (fmtSubChunk,  rawFmtSubChunk, audioByteLength) <- parseWavFile handle
     forM_ (streams st) $ \session -> do
       WS.sendBinaryData (conn session) rawFmtSubChunk
-    return st{streams= Map.map (\session -> session{streamState=Consuming}) (streams st)}
+    return (st{streams= Map.map (\session -> session{streamState=Consuming}) (streams st)}, (fmtSubChunk, audioByteLength, handle))
 
   go fmtSubChunk handle audioByteLength
 

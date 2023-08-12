@@ -14,7 +14,7 @@
   },
   "scripts": {
     "watch": "npm-watch",
-    "dev": "webpack && cabal run -- augslink-service --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js"
+    "dev": "webpack && cabal run -- augslink-service --roomsDir . --roomsDirName rooms --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.21.5",

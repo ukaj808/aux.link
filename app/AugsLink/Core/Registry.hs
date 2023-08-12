@@ -16,21 +16,24 @@ import qualified Data.HashMap.Lazy as Map
 import AugsLink.Core.API
 import AugsLink.Core.Room
 import AugsLink.Core.Shared
+import System.FilePath
 
-newtype RegistryState = RegistryState
+data RegistryState = RegistryState
   {
     rooms :: Map.HashMap RoomId (Room IO)
+  , roomsPath :: FilePath
   }
 
-initialRegistryState :: RegistryState
-initialRegistryState = RegistryState 
+initialRegistryState :: FilePath -> RegistryState
+initialRegistryState roomsPath = RegistryState 
   {
     rooms = Map.empty
+  , roomsPath = roomsPath
   }
 
-newRegistry :: IO (Registry IO)
-newRegistry = do
-  stateVar <- newMVar initialRegistryState
+newRegistry :: FilePath -> IO (Registry IO)
+newRegistry roomsPath = do
+  stateVar <- newMVar $ initialRegistryState roomsPath
   return $ Registry
     {
       numRooms   =
@@ -39,11 +42,12 @@ newRegistry = do
         Map.lookup rId . rooms <$> readMVar stateVar
     , createRoom = do
         rId       <- toText <$> nextRandom
-        room      <- newRoom rId $ RegistryManage {selfDestructCallback=deleteRoomImpl stateVar rId}
+        let roomPath = roomsPath </> unpack rId
+        createDirectory roomPath
+        room      <- newRoom rId roomPath RegistryManage {selfDestructCallback=deleteRoomImpl stateVar rId}
         roomCount <- modifyMVar stateVar $ \st -> do
           let rooms' = Map.insert rId room $ rooms st
           return (st{rooms =  rooms'}, Map.size rooms')
-        createDirectoryIfMissing True ("./rooms/" ++ unpack rId)
         print $ show roomCount ++ " rooms now after creating room " ++ unpack rId
         return rId
     , deleteRoom = deleteRoomImpl stateVar
@@ -53,6 +57,6 @@ deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
 deleteRoomImpl stateVar rId = do
   roomCount <- modifyMVar stateVar $ \st -> do
     let rooms' = Map.delete rId $ rooms st
+    removeDirectory (roomsPath st </> unpack rId)
     return (st{rooms = rooms'}, Map.size rooms')
-  removePathForcibly ("./rooms/" ++ unpack rId)
   print $ show roomCount ++ " rooms left after deleting room " ++ unpack rId

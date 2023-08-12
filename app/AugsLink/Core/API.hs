@@ -41,6 +41,7 @@ data Room m = Room
   ,  getMusic              ::                                           m (MusicStreamer m)
   ,  startMusic            ::  UserId                                -> m StartMusicResult
   ,  uploadSong            ::  UserId -> Upload                      -> m Bool
+  ,  getRoomPath           ::                                           m FilePath
   -- maybe package everyting into "Current RoomState" and return that?
   -- Maybe we need to queue up all the events while a new person is connecting (front end and backend), then process the queue
   }
