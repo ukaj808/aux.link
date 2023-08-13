@@ -41,15 +41,15 @@ renderUser :: Bool -> RoomUser ->H.Html
 renderUser isTurn user =
   let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
-      classes = ("square-cell" <> if isTurn then " turn" else "") :: AttributeValue
+      classes = ("square-cell tertiary-theme spaced-hz-li" <> if isTurn then " turn" else "") :: AttributeValue
   in
   H.li ! A.id suid ! A.class_ classes $ ""
 
 
 renderOrderSection :: OrderView -> H.Html
 renderOrderSection ov =
-  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-md" $ do
-    H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll" $ do
+  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-md secondary-theme" $ do
+    H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll frame" $ do
       zipWithM_
         (\user idx -> renderUser (turn idx) user)
         (ovUsers ov) 

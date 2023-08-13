@@ -203,6 +203,10 @@ h4 {
   z-index: 2;
 }
 
+.spaced-hz-li {
+  margin-left: 10px;
+}
+
 .song-queue-list {
   list-style-type: none;
   padding: 0;

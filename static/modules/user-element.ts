@@ -24,7 +24,7 @@ export class UserElement {
     } else {
       const userEl = document.createElement('li');
       userEl.id = userId;
-      userEl.className = 'square-cell';
+      userEl.classList.add('square-cell', 'tertiary-theme', 'spaced-hz-li');
       if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }
