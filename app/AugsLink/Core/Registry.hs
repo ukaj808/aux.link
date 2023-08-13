@@ -57,6 +57,6 @@ deleteRoomImpl :: MVar RegistryState -> RoomId -> IO ()
 deleteRoomImpl stateVar rId = do
   roomCount <- modifyMVar stateVar $ \st -> do
     let rooms' = Map.delete rId $ rooms st
-    removeDirectory (roomsPath st </> unpack rId)
+    removeDirectoryRecursive (roomsPath st </> unpack rId)
     return (st{rooms = rooms'}, Map.size rooms')
   print $ show roomCount ++ " rooms left after deleting room " ++ unpack rId

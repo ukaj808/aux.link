@@ -85,6 +85,7 @@ newRoom rId roomPath registryManage = do
     , getMusic          = getMusicImpl         stateVar
     , startMusic        = startMusicImpl       stateVar
     , uploadSong        = uploadSongImpl       stateVar rId
+    , getRoomPath       = return roomPath
     }
 
 startMusicImpl :: MVar RoomState -> UserId -> IO StartMusicResult
