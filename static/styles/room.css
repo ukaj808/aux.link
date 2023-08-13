@@ -110,6 +110,23 @@ h4 {
   justify-content: flex-start;
 }
 
+.horiz-list {
+  display: flex;
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.x-scroll {
+  overflow-x: auto;
+}
+
+.square-cell {
+  width: 50%;
+  width: 250px;
+  flex: 0 0 auto;
+}
+
 .overlay {
   position: absolute;
   top: 0;

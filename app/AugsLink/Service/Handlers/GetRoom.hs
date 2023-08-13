@@ -6,7 +6,6 @@ module AugsLink.Service.Handlers.GetRoom
 
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Text
 import Servant
 import Text.Blaze.Html5
 
@@ -15,6 +14,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import qualified Text.Blaze.Svg11            as S
 import qualified Text.Blaze.Svg11.Attributes as SVGA
 import qualified Data.Aeson                  as Aeson
+import qualified Data.Text                   as T
 
 import AugsLink.Core.API
 import Data.Maybe (fromMaybe)
@@ -37,33 +37,27 @@ musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" !
                         \c0.332-0.108,0.695-0.055,0.979,0.147c0.287,0.207,0.455,0.533,0.455,0.884v6.43\n\
                         \C57.379,51.188,57.008,51.158,56.623,51.158z"
 
-listenIconSvg :: S.Svg
-listenIconSvg = S.docTypeSvg ! SVGA.viewbox "0 0 24 24" $ do
-  S.path ! SVGA.d "M13.1807 11.8606C12.7807 11.8606 12.4207 11.6406 12.2507 11.2806L10.8007 8.39058L10.3807 9.17058C10.1507 9.60058 9.6907 9.87058 9.2007 9.87058H8.4707C8.0607 9.87058 7.7207 9.53058 7.7207 9.12058C7.7207 8.71058 8.0607 8.37058 8.4707 8.37058H9.1107L9.9007 6.91058C10.0907 6.57058 10.4707 6.34058 10.8307 6.36058C11.2207 6.36058 11.5707 6.59058 11.7507 6.93058L13.1807 9.79058L13.5207 9.10058C13.7507 8.64058 14.2007 8.36058 14.7207 8.36058H15.5307C15.9407 8.36058 16.2807 8.70058 16.2807 9.11058C16.2807 9.52058 15.9407 9.86058 15.5307 9.86058H14.8207L14.1107 11.2706C13.9307 11.6406 13.5807 11.8606 13.1807 11.8606Z"
-  S.path ! SVGA.d "M2.74982 18.6508C2.33982 18.6508 1.99982 18.3108 1.99982 17.9008V12.2008C1.94982 9.49078 2.95982 6.93078 4.83982 5.01078C6.71982 3.10078 9.23982 2.05078 11.9498 2.05078C17.4898 2.05078 21.9998 6.56078 21.9998 12.1008V17.8008C21.9998 18.2108 21.6598 18.5508 21.2498 18.5508C20.8398 18.5508 20.4998 18.2108 20.4998 17.8008V12.1008C20.4998 7.39078 16.6698 3.55078 11.9498 3.55078C9.63982 3.55078 7.49982 4.44078 5.90982 6.06078C4.30982 7.69078 3.45982 9.86078 3.49982 12.1808V17.8908C3.49982 18.3108 3.16982 18.6508 2.74982 18.6508Z"
-  S.path ! SVGA.d "M5.94 12.4492H5.81C3.71 12.4492 2 14.1592 2 16.2592V18.1392C2 20.2392 3.71 21.9492 5.81 21.9492H5.94C8.04 21.9492 9.75 20.2392 9.75 18.1392V16.2592C9.75 14.1592 8.04 12.4492 5.94 12.4492Z"
-  S.path ! SVGA.d "M18.19 12.4492H18.06C15.96 12.4492 14.25 14.1592 14.25 16.2592V18.1392C14.25 20.2392 15.96 21.9492 18.06 21.9492H18.19C20.29 21.9492 22 20.2392 22 18.1392V16.2592C22 14.1592 20.29 12.4492 18.19 12.4492Z"
-
-disconnectIconSvg :: S.Svg
-disconnectIconSvg = S.docTypeSvg !  SVGA.viewbox "0 0 512 512" ! SVGA.viewbox "0 0 512 512" ! SVGA.fill "currentColor" $ do
-  S.path ! SVGA.d "M210.287,176.988h-57.062c-36.544,0-67.206,24.836-76.238,58.53H0v40.973h76.987c9.04,33.686,39.702,58.522,76.238,58.522h57.062v-38.588h43.025v-80.84h-43.025V176.988z"
-  S.path ! SVGA.d "M435.005,235.517c-9.032-33.694-39.686-58.53-76.23-58.53h-57.062v158.024h57.062c36.544,0,67.191-24.836,76.23-58.522H512v-40.973H435.005z"
-
-renderUser :: RoomUser -> H.Html
-renderUser user =
+renderUser :: Bool -> RoomUser ->H.Html
+renderUser isTurn user =
   let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
+      classes = ("square-cell" <> if isTurn then " turn" else "") :: AttributeValue
   in
-  H.div ! A.id suid ! A.class_ "user-carousel-cell" $ ""
+  H.li ! A.id suid ! A.class_ classes $ ""
 
 
 renderOrderSection :: OrderView -> H.Html
 renderOrderSection ov =
-  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-sm" $ do
-    H.div ! A.class_ "user-carousel" $ do
-      forM_ (ovUsers ov) renderUser
+  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-md" $ do
+    H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll" $ do
+      zipWithM_
+        (\user idx -> renderUser (turn idx) user)
+        (ovUsers ov) 
+        [0..(length $ ovUsers ov)]
   where
-    jsonOv = textValue $ pack $ show $ Aeson.encode ov
+    jsonOv = textValue $ T.pack $ show $ Aeson.encode ov
+    turn idx | ovTurn ov == -1 = idx == 0
+             | otherwise       = idx == ovTurn ov
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv =
@@ -120,7 +114,6 @@ renderRoomPage room = H.docTypeHtml $ do
     H.meta   ! A.charset "UTF-8"
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
     H.script ! A.type_ "module"   ! A.src     "/public/room_bundle.js" $ ""
-    H.link   ! A.rel "stylesheet" ! A.href    "https://unpkg.com/flickity@2/dist/flickity.min.css"
     H.link   ! A.rel "stylesheet" ! A.href    "/public/room.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
@@ -128,7 +121,6 @@ renderRoomPage room = H.docTypeHtml $ do
       renderOrderSection            $ ov room
       renderCurrentlyPlayingSection $ cpv room
       renderDropSection
-      H.script ! A.src "https://unpkg.com/flickity@2/dist/flickity.pkgd.min.js" $ ""
 
 instance ToMarkup RoomView where
   toMarkup = renderRoomPage
@@ -138,8 +130,8 @@ roomHandler :: Registry IO
   -> Handler (
        Headers
        '[
-         Header "Cross-Origin-Opener-Policy" Text,
-         Header "Cross-Origin-Embedder-Policy" Text
+         Header "Cross-Origin-Opener-Policy" T.Text,
+         Header "Cross-Origin-Embedder-Policy" T.Text
         ]
         RoomView
       )

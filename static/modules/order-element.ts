@@ -1,5 +1,4 @@
-import Flickity from "flickity";
-import { UserElement, UserElementFactory } from "./user-element";
+import { UserElementFactory } from "./user-element";
 import { RestClient } from "./rest-client";
 import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
@@ -9,9 +8,8 @@ export class OrderElement {
 
   private el: HTMLElement;
   private roomMessageListener: RoomMessageListener;
-  private orderCarouselEl: Element;
+  private userQueueEl: HTMLOListElement;
   private userElementFactory: UserElementFactory;
-  private flkty: Flickity;
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {
 
@@ -19,9 +17,9 @@ export class OrderElement {
     if (!el) throw new Error('No order element found');
     this.el = el;
 
-    const optOrderCarouselEl = document.querySelector(".user-carousel");
-    if (!optOrderCarouselEl) throw new Error('No order carousel element found');
-    this.orderCarouselEl = optOrderCarouselEl;
+    const userQueueEl = document.getElementById("user-queue");
+    if (!userQueueEl) throw new Error('No user queue element found');
+    this.userQueueEl = userQueueEl as HTMLOListElement;
 
     this.roomMessageListener = roomMessageListener;
     this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
@@ -41,14 +39,7 @@ export class OrderElement {
     const stateAttribute = el.getAttribute('data-og-state');
     if (!stateAttribute) throw new Error('No state attribute found');
 
-    this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.orderCarouselEl);
-    this.flkty = new Flickity( this.orderCarouselEl, {
-      // options
-      cellAlign: 'left',
-      prevNextButtons: false,
-      pageDots: false,
-      contain: true
-    });
+    this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.userQueueEl);
   }
 
   public addThisUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
@@ -57,14 +48,14 @@ export class OrderElement {
   
   public addNewUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
     const userEl = this.userElementFactory.createNewUser(userId, userName, isCreator);
-    this.flkty.append(userEl.getEl());
+    this.userQueueEl.appendChild(userEl.getEl());
   }
 
   public removeUserFromOrderCarousel(userId: string) {
     const optUserCellEl = document.getElementById(userId);
     if (!optUserCellEl) throw new Error('No user cell element found');
     this.userElementFactory.removeUser(userId);
-    this.flkty.remove(optUserCellEl);
+    this.userQueueEl.removeChild(optUserCellEl);
   }
 
 }

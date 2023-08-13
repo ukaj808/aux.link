@@ -3,7 +3,7 @@ import { SvgFactory } from "./svg";
 
 
 export class UserElement {
-  private el: HTMLElement;
+  private el: HTMLLIElement;
   private userId: string;
   private isCreator: boolean;
   private restClient: RestClient;
@@ -18,19 +18,19 @@ export class UserElement {
     this.serverGenerated = serverGenerated;
 
     if (serverGenerated) {
-      const userEl = document.getElementById(userId);
+      const userEl = document.getElementById(userId) as HTMLLIElement;
       if (!userEl) throw new Error('No user element found');
       this.el = userEl;
     } else {
-      const userEl = document.createElement('div');
+      const userEl = document.createElement('li');
       userEl.id = userId;
-      userEl.className = 'user-carousel-cell';
+      userEl.className = 'square-cell';
       if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }
   }
 
-  public getEl(): HTMLElement {
+  public getEl(): HTMLLIElement {
     return this.el;
   }
 
@@ -63,11 +63,11 @@ export class UserElementFactory {
   private restClient: RestClient;
   private svgFactory: SvgFactory;
 
-  constructor(restClient: RestClient, svgFactory: SvgFactory, userCarouselEl: Element) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory, userLi: HTMLOListElement) {
     this.userElements = [];
     this.svgFactory = svgFactory;
     this.restClient = restClient;
-    Array.from(userCarouselEl.children).forEach((user) => {
+    Array.from(userLi.children).forEach((user) => {
       this.userElements.push(new UserElement(restClient, svgFactory, user.id, false, true));
     });
   }

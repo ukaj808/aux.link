@@ -94,7 +94,7 @@ startMusicImpl stateVar uId = do
   case (creator st, mState st) of
     (Nothing, _) -> return RoomStillCreating
     (_, Streaming) -> return AlreadyRunning
-    (Just cId, _) 
+    (Just cId, _)
       | cId /= uId -> return NotCreator
       | otherwise -> do
         _ <- forkIO $ nextSong stateVar
@@ -155,7 +155,7 @@ enterRoomImpl stateVar pend = do
   (_uId, suid)  <-
     modifyMVar stateVar $ \st -> do
       -- private user id
-      _uId     <-     toText <$> nextRandom    
+      _uId     <-     toText <$> nextRandom
       u        <-     newUser
       rUser    <-     getRoomUser u
       let st'  =      addUserToRoom st _uId (USession conn u)
@@ -192,8 +192,9 @@ leaveRoomImpl stateVar (_uId, suid) = do
 viewRoomImpl :: MVar RoomState -> IO RoomView
 viewRoomImpl stateVar = do
   roomState <- readMVar stateVar
-  let userSessions = Map.elems $ roomUsers roomState
-  users <- mapM (getRoomUser . user) userSessions
+  putStrLn $ "Current turn: " ++ show (turn roomState)
+  let orderedUserSessions = foldr (\uId -> (:) (roomUsers roomState Map.! uId)) [] (order roomState)
+  users <- mapM (getRoomUser . user) orderedUserSessions
   return $ RoomView {
     cpv =
       CurrentlyPlaying{
@@ -230,7 +231,7 @@ publishToAllBut :: RoomState -> UserId -> RoomEvent -> IO ()
 publishToAllBut rmSt uId e = do
   Map.foldrWithKey
     (\uId' uSession acc -> do
-        if uId' == uId then acc 
+        if uId' == uId then acc
         else
           safeSendTextData (conn uSession) uId' (RoomEventMessage e) >> acc)
       (return ())
