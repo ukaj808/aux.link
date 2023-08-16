@@ -369,3 +369,20 @@ h4 {
     height: 12px;
   }
 }
+
+#user-queue > li:first-of-type{
+  border: 2px solid gold;
+  animation: pulsate 2s infinite;
+}
+
+@keyframes pulsate {
+  0% {
+    border-color: gold;
+  }
+  50% {
+    border-color: transparent;
+  }
+  100% {
+    border-color: gold;
+  }
+}
