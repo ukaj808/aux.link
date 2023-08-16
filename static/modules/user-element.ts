@@ -5,13 +5,15 @@ import { SvgFactory } from "./svg";
 export class UserElement {
   private el: HTMLLIElement;
   private userId: string;
+  private hexColor: string;
   private isCreator: boolean;
   private restClient: RestClient;
   private svgFactory: SvgFactory;
   private serverGenerated: boolean;
 
-  constructor(restClient: RestClient, svgFactory: SvgFactory, userId: string, isCreator: boolean, serverGenerated: boolean) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory, userId: string, hexColor: string, isCreator: boolean, serverGenerated: boolean) {
     this.userId = userId;
+    this.hexColor = hexColor;
     this.isCreator = isCreator;
     this.restClient = restClient;
     this.svgFactory = svgFactory;
@@ -25,6 +27,9 @@ export class UserElement {
       const userEl = document.createElement('li');
       userEl.id = userId;
       userEl.classList.add('square-cell', 'tertiary-theme', 'spaced-hz-li');
+      userEl.style.backgroundColor = hexColor;
+      console.log('backgroundcolor', hexColor);
+      console.log('backgroundcolor', userEl.style);
       if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }
@@ -68,12 +73,14 @@ export class UserElementFactory {
     this.svgFactory = svgFactory;
     this.restClient = restClient;
     Array.from(userLi.children).forEach((user) => {
-      this.userElements.push(new UserElement(restClient, svgFactory, user.id, false, true));
+      const hexColor = user.getAttribute('data-hex-color');
+      if (!hexColor) throw new Error('No hex color found');
+      this.userElements.push(new UserElement(restClient, svgFactory, user.id, hexColor, false, true));
     });
   }
 
-  public createNewUser(userId: string, username: string, isCreator: boolean): UserElement {
-    const newUser = new UserElement(this.restClient, this.svgFactory, userId, isCreator, false);
+  public createNewUser(userId: string, username: string, hexColor: string, isCreator: boolean): UserElement {
+    const newUser = new UserElement(this.restClient, this.svgFactory, userId, hexColor, isCreator, false);
     this.userElements.push(newUser);
     return newUser;
   }

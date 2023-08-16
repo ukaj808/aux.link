@@ -72,10 +72,9 @@ data MusicState = Streaming | Countdown | Polling | NotRunning deriving (Show, E
 instance ToJSON MusicState
 
 
-data OrderView = Order
+newtype UserQueueView = UserQueue
   {
-     ovUsers :: [RoomUser]
-  ,  ovTurn  :: Int
+     uqvQueue :: [RoomUser]
   }
 
 data CurrentlyPlayingView = CurrentlyPlaying
@@ -89,13 +88,14 @@ data CurrentlyPlayingView = CurrentlyPlaying
 data RoomView = RoomView
   {
      cpv :: CurrentlyPlayingView
-  ,  ov  :: OrderView
+  ,  uqv  :: UserQueueView
   }
 
 data RoomUser = RoomUser
    {
       sanitizedUserId :: UserId
    ,  userName        :: UserName
+   ,  hexColor           :: Text
    }
 
 data AudioFile = AudioFile
@@ -114,7 +114,7 @@ data RoomEvent = UserEnterEvent      RoomUser
   |              SongUploadTimeoutEvent
 
 -- Message from server to user
-data ServerCommand = ServerWelcomeCommand UserId Bool
+data ServerCommand = ServerWelcomeCommand UserId Text Bool
   |                  ServerUploadSongCommand
 
 newtype UserEvent = UserAudioPrepared UserId
@@ -141,6 +141,7 @@ instance ToJSON RoomEvent where
        "type"        .= ("UserEnterEvent" :: Text)
     ,  "userId"      .= sanitizedUserId u
     ,  "userName"    .= userName u
+    ,  "hexColor"       .= hexColor u
     ]
   toJSON (UserLeftEvent uid) = Aeson.object
     [
@@ -164,10 +165,11 @@ instance ToJSON RoomEvent where
 
 instance ToJSON ServerCommand where
   toJSON :: ServerCommand -> Value
-  toJSON (ServerWelcomeCommand uId creator) = Aeson.object
+  toJSON (ServerWelcomeCommand uId hexColor creator) = Aeson.object
     [
        "type"        .= ("ServerWelcomeCommand" :: Text)
     ,  "userId"      .= uId
+    ,  "hexColor"    .= hexColor
     ,  "isCreator"   .= creator
     ]
   toJSON ServerUploadSongCommand = Aeson.object
@@ -191,12 +193,11 @@ instance ToJSON CurrentlyPlayingView where
     ,  "countdown"  .= cpvCountdown cpv
     ]
 
-instance ToJSON OrderView where
-  toJSON :: OrderView -> Value
-  toJSON ov = Aeson.object
+instance ToJSON UserQueueView where
+  toJSON :: UserQueueView -> Value
+  toJSON qv = Aeson.object
     [
-       "users"               .= ovUsers ov
-    ,  "turn"                .= ovTurn ov
+       "queue"               .= uqvQueue qv
     ]
 
 instance ToJSON RoomView where
@@ -204,5 +205,5 @@ instance ToJSON RoomView where
   toJSON rv = Aeson.object
     [
        "currentlyPlayingView"    .= cpv rv
-    ,  "orderView"               .= ov rv
+    ,  "queueView"               .= uqv rv
     ]

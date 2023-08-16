@@ -37,27 +37,24 @@ musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" !
                         \c0.332-0.108,0.695-0.055,0.979,0.147c0.287,0.207,0.455,0.533,0.455,0.884v6.43\n\
                         \C57.379,51.188,57.008,51.158,56.623,51.158z"
 
-renderUser :: Bool -> RoomUser ->H.Html
-renderUser isTurn user =
+renderUser :: RoomUser -> H.Html
+renderUser user =
   let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
-      classes = ("square-cell tertiary-theme spaced-hz-li" <> if isTurn then " turn" else "") :: AttributeValue
+      color = toValue $ hexColor user
+      bgcolor = toValue $ "background-color: " <> hexColor user <> ";"
+      classes = "square-cell tertiary-theme spaced-hz-li" :: AttributeValue
   in
-  H.li ! A.id suid ! A.class_ classes $ ""
+  H.li ! A.id suid ! A.class_ classes ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
 
 
-renderOrderSection :: OrderView -> H.Html
-renderOrderSection ov =
+renderUserQueueSection :: UserQueueView -> H.Html
+renderUserQueueSection uqv =
   H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-md secondary-theme" $ do
     H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll frame" $ do
-      zipWithM_
-        (\user idx -> renderUser (turn idx) user)
-        (ovUsers ov) 
-        [0..(length $ ovUsers ov)]
+      forM_ (uqvQueue uqv) renderUser
   where
-    jsonOv = textValue $ T.pack $ show $ Aeson.encode ov
-    turn idx | ovTurn ov == -1 = idx == 0
-             | otherwise       = idx == ovTurn ov
+    jsonOv = textValue $ T.pack $ show $ Aeson.encode uqv
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv =
@@ -118,7 +115,7 @@ renderRoomPage room = H.docTypeHtml $ do
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
-      renderOrderSection            $ ov room
+      renderUserQueueSection            $ uqv room
       renderCurrentlyPlayingSection $ cpv room
       renderDropSection
 

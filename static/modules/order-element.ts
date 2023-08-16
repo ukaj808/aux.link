@@ -24,12 +24,12 @@ export class OrderElement {
     this.roomMessageListener = roomMessageListener;
     this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
       const welcomeCommand = data as ServerWelcomeCommand;
-      this.addNewUserToOrderCarousel(welcomeCommand.userId, welcomeCommand.userName, welcomeCommand.isCreator);
+      this.addNewUserToOrderCarousel(welcomeCommand.userId, welcomeCommand.userName, welcomeCommand.hexColor, welcomeCommand.isCreator);
 
     });
     this.roomMessageListener.subscribe('UserEnterEvent', (data) => {
       const userEnterEvent = data as UserEnterEvent;
-      this.addNewUserToOrderCarousel(userEnterEvent.userId, userEnterEvent.userName);
+      this.addNewUserToOrderCarousel(userEnterEvent.userId, userEnterEvent.userName, userEnterEvent.hexColor);
     });
     this.roomMessageListener.subscribe('UserLeftEvent', (data) => {
       const userLeftEvent = data as UserLeftEvent;
@@ -42,12 +42,12 @@ export class OrderElement {
     this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.userQueueEl);
   }
 
-  public addThisUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
-    this.addNewUserToOrderCarousel(userId, userName, isCreator);
+  public addThisUserToOrderCarousel(userId: string, userName: string, hexColor: string, isCreator: boolean = false) {
+    this.addNewUserToOrderCarousel(userId, userName, hexColor, isCreator);
   }
   
-  public addNewUserToOrderCarousel(userId: string, userName: string, isCreator: boolean = false) {
-    const userEl = this.userElementFactory.createNewUser(userId, userName, isCreator);
+  public addNewUserToOrderCarousel(userId: string, userName: string, hexColor: string, isCreator: boolean = false) {
+    const userEl = this.userElementFactory.createNewUser(userId, userName, hexColor, isCreator);
     this.userQueueEl.appendChild(userEl.getEl());
   }
 

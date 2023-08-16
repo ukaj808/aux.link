@@ -46,8 +46,7 @@ data RoomState = RoomState
   , roomPath                     :: FilePath
   , creator                      :: Maybe UserId
   , currentSong                  :: Maybe T.Text
-  , order                        :: [UserId]
-  , turn                         :: Int
+  , queue                        :: [UserId]
   , countdown                    :: Maybe Int
   }
 
@@ -68,8 +67,7 @@ initialRoomState rId rsm roomPath musicStreamer = RoomState
   , roomPath = roomPath
   , creator        = Nothing
   , currentSong    = Nothing
-  , order          = []
-  , turn           = -1
+  , queue          = []
   , countdown      = Nothing
   }
 
@@ -141,7 +139,7 @@ nextSong stateVar = do
 uploadSongImpl :: MVar RoomState -> RoomId -> UserId -> Upload -> IO Bool
 uploadSongImpl stateVar rId uId u = do
   st <- readMVar stateVar
-  if uId == getTurnUser st then do
+  if uId == head (queue st) then do
     copyFile (uploadTmp u) (roomPath st </> T.unpack (uploadName u))
     modifyMVar_ stateVar $ \st' -> do
       return st'{currentSong=Just $ uploadName u}
@@ -162,7 +160,7 @@ enterRoomImpl stateVar pend = do
       let c = case creator st of
                Just existing -> Just existing
                Nothing       -> Just _uId
-      messageToUser   st' _uId (ServerWelcomeCommand _uId $ c == Just _uId)
+      messageToUser   st' _uId (ServerWelcomeCommand _uId (hexColor rUser) $ c == Just _uId)
       publishToAllBut st' _uId (UserEnterEvent rUser)
       return  (st'{creator=c}, (_uId, sanitizedUserId rUser))
   WS.withPingThread conn 30 (return ()) $
@@ -192,8 +190,7 @@ leaveRoomImpl stateVar (_uId, suid) = do
 viewRoomImpl :: MVar RoomState -> IO RoomView
 viewRoomImpl stateVar = do
   roomState <- readMVar stateVar
-  putStrLn $ "Current turn: " ++ show (turn roomState)
-  let orderedUserSessions = foldr (\uId -> (:) (roomUsers roomState Map.! uId)) [] (order roomState)
+  let orderedUserSessions = foldr (\uId -> (:) (roomUsers roomState Map.! uId)) [] (queue roomState)
   users <- mapM (getRoomUser . user) orderedUserSessions
   return $ RoomView {
     cpv =
@@ -202,10 +199,9 @@ viewRoomImpl stateVar = do
       , cpvState  = mState roomState
       , cpvCountdown = countdown roomState
       }
-  ,  ov           =
-      Order{
-        ovUsers = users
-      , ovTurn  = turn roomState
+  ,  uqv           =
+      UserQueue{
+        uqvQueue = users
       }
   }
 
@@ -273,17 +269,14 @@ pollSongIsUploaded stateVar retryAttempts = do
 
 -- Pure functions
 getNextUser :: RoomState -> (RoomState, UserId)
-getNextUser st = (st{turn=turn'}, order st !! turn')
-    where
-      turn' = (turn st + 1) `mod` length (order st)
+getNextUser st =
+  let (uId:rest) = queue st
+  in (st{queue=rest ++ [uId]}, head rest)
 
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ _ order _ _) uId uSession =
-  st{roomUsers = Map.insert uId uSession users, order=order++[uId]}
+addUserToRoom st@(RoomState _ users _ _ _ _ _ _ queue _) uId uSession =
+  st{roomUsers = Map.insert uId uSession users, queue=queue++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _ _ _) uId =
-  st{roomUsers= Map.delete uId users, order=filter (/= uId) $ order st}
-
-getTurnUser :: RoomState -> UserId
-getTurnUser st = order st !! turn st
+removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
+  st{roomUsers= Map.delete uId users, queue=filter (/= uId) $ queue st}

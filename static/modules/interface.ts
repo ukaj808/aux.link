@@ -89,6 +89,7 @@ export type SongStartingEvent = {
 export type ServerWelcomeCommand = {
     userId: string,
     userName: string,
+    hexColor: string,
     isCreator: boolean,
 }
 
@@ -101,6 +102,7 @@ export type SongUploadTimeoutEvent = {}
 export type UserEnterEvent = {
     userId: string,
     userName: string,
+    hexColor: string,
 }
 
 export type ServerUploadSongCommand = {}

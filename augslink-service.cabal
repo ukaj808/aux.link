@@ -21,7 +21,7 @@ executable augslink-service
     main-is:          Main.hs
 
     other-modules:      AugsLink.Core.API
-                      , AugsLink.Core.Model 
+                                            , AugsLink.Core.Model 
                       , AugsLink.Core.Music 
                       , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
@@ -51,6 +51,7 @@ executable augslink-service
                       , blaze-html
                       , blaze-svg
                       , bytestring
+                      , colour
                       , containers
                       , directory
                       , filepath
@@ -59,6 +60,7 @@ executable augslink-service
                       , http-media
                       , mtl
                       , optparse-applicative
+                      , palette
                       , process
                       , random 
                       , regex-posix
