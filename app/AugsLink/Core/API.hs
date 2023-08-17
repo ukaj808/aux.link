@@ -109,7 +109,9 @@ data Message = RoomEventMessage RoomEvent
 
 data RoomEvent = UserEnterEvent      RoomUser
   |              UserLeftEvent       UserId
-  |              SongStartingEvent   Int
+  |              MusicStartedEvent
+  |              NextInQueueEvent
+  |              CountingDownEvent   Int
   |              SongUploadedEvent   Text
   |              SongUploadTimeoutEvent
 
@@ -148,9 +150,17 @@ instance ToJSON RoomEvent where
        "type"        .= ("UserLeftEvent"  :: Text)
     ,  "userId"      .= uid
     ]
-  toJSON (SongStartingEvent s) = Aeson.object
+  toJSON MusicStartedEvent = Aeson.object
     [
-       "type"        .= ("SongStartingEvent"  :: Text)
+       "type"        .= ("MusicStartedEvent"  :: Text)
+    ]
+  toJSON NextInQueueEvent = Aeson.object
+    [
+       "type"        .= ("NextInQueueEvent"  :: Text)
+    ]
+  toJSON (CountingDownEvent s) = Aeson.object
+    [
+       "type"        .= ("CountingDownEvent"  :: Text)
     ,  "s"      .= s
     ]
   toJSON (SongUploadedEvent songTitle) = Aeson.object

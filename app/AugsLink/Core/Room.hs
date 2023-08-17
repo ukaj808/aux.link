@@ -95,6 +95,7 @@ startMusicImpl stateVar uId = do
     (Just cId, _)
       | cId /= uId -> return NotCreator
       | otherwise -> do
+        publishToRoom st MusicStartedEvent
         _ <- forkIO $ nextSong stateVar
         return StartMusicSuccess
 
@@ -110,7 +111,7 @@ nextSong stateVar = do
       return st{countdown=Just i}
 
     st' <- readMVar stateVar
-    publishToRoom st' (SongStartingEvent i)
+    publishToRoom st' (CountingDownEvent i)
     threadDelay 1000000
   st     <- readMVar stateVar
   nextUp <- modifyMVar stateVar $ \st' -> return $ getNextUser st'
@@ -125,6 +126,7 @@ nextSong stateVar = do
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
       publishToRoom st SongUploadTimeoutEvent
+      publishToRoom st NextInQueueEvent
       nextSong stateVar
     Just file -> do
       publishToRoom st $ SongUploadedEvent file
@@ -133,6 +135,7 @@ nextSong stateVar = do
       stream (mStreamer st) (T.unpack file) (roomId st)
       modifyMVar_ stateVar $ \st'' -> do
         return st''{currentSong=Nothing}
+      publishToRoom st NextInQueueEvent
       nextSong stateVar
 
 

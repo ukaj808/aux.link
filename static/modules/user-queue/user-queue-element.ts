@@ -1,10 +1,10 @@
 import { UserElementFactory } from "./user-element";
-import { RestClient } from "./rest-client";
-import { SvgFactory } from "./svg";
-import { RoomMessageListener } from "./room-message-listener";
-import { ServerWelcomeCommand, UserEnterEvent, UserLeftEvent } from "./interface";
+import { RestClient } from "../rest-client";
+import { SvgFactory } from "../svg";
+import { RoomMessageListener } from "../room-message-listener";
+import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "../interface";
 
-export class OrderElement {
+export class UserQueueElement {
 
   private el: HTMLElement;
   private roomMessageListener: RoomMessageListener;
@@ -35,6 +35,9 @@ export class OrderElement {
       const userLeftEvent = data as UserLeftEvent;
       this.removeUserFromOrderCarousel(userLeftEvent.userId);
     });
+    this.roomMessageListener.subscribe('NextInQueueEvent', (data) => {
+      this.removeAndPlaceFirstUserAtEndOfQueue();
+    });
 
     const stateAttribute = el.getAttribute('data-og-state');
     if (!stateAttribute) throw new Error('No state attribute found');
@@ -54,8 +57,14 @@ export class OrderElement {
   public removeUserFromOrderCarousel(userId: string) {
     const optUserCellEl = document.getElementById(userId);
     if (!optUserCellEl) throw new Error('No user cell element found');
-    this.userElementFactory.removeUser(userId);
     this.userQueueEl.removeChild(optUserCellEl);
+  }
+
+  private removeAndPlaceFirstUserAtEndOfQueue() {
+    const firstUserEl = this.userQueueEl.firstElementChild;
+    if (!firstUserEl) throw new Error('No first user element found');
+    this.userQueueEl.removeChild(firstUserEl);
+    this.userQueueEl.appendChild(firstUserEl);
   }
 
 }

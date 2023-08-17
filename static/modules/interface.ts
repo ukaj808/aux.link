@@ -80,11 +80,14 @@ export type AudioWorkletEvent = {
     type: "READ_SONG_STARTED" | "READ_SONG_FINISHED",
 }
 
-export type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "SongStartingEvent" | "SongUploadedEvent" | "SongUploadTimeoutEvent" | "UserEnterEvent" | "UserLeftEvent";
+export type RoomMessageType = "ServerWelcomeCommand" | "ServerUploadSongCommand" | "NextInQueueEvent" | "MusicStartedEvent" | "CountingDownEvent" | "SongUploadedEvent" | "SongUploadTimeoutEvent" | "UserEnterEvent" | "UserLeftEvent";
 
-export type SongStartingEvent = {
+export type CountingDownEvent = {
     s: number,
 }
+
+export type MusicStartedEvent = {}
+export type NextInQueueEvent = {}
 
 export type ServerWelcomeCommand = {
     userId: string,
@@ -114,7 +117,7 @@ export type UserLeftEvent = {
     userId: string
 }
 
-export type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongUploadTimeoutEvent | SongStartingEvent) & { type: RoomMessageType };
+export type RoomMessage = (ServerWelcomeCommand | ServerUploadSongCommand | UserEnterEvent | UserLeftEvent | SongUploadedEvent | SongUploadTimeoutEvent | CountingDownEvent | NextInQueueEvent | MusicStartedEvent) & { type: RoomMessageType };
 
 export type AudioChunk = ArrayBuffer;
 
@@ -122,7 +125,7 @@ export type EnqueueSongRequest = {
     priority: number,
 }
 
-export type AudioEvent = SongStartingEvent;
+export type AudioEvent = CountingDownEvent;
 
 export type Song = File | UrlUpload;
 

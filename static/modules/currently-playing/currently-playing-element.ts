@@ -1,5 +1,5 @@
 import { AuxAudioPlayer, AuxAudioPlayerEvent, StreamStartingEvent } from "../aux-audio-player";
-import { CurrentlyPlayingView, MusicStreamerState, RoomMessage, RoomView, SongStartingEvent, SongUploadTimeoutEvent, SongUploadedEvent } from "../interface";
+import { CurrentlyPlayingView, MusicStreamerState, RoomMessage, RoomView, CountingDownEvent, SongUploadTimeoutEvent, SongUploadedEvent } from "../interface";
 import { RestClient } from "../rest-client";
 import { RoomMessageListener } from "../room-message-listener";
 import { AudioVisualizer } from "./audio-visualizer";
@@ -196,12 +196,12 @@ export class CurrentlyPlayingElement {
       canvasActor.send({ type: 'SONG_UPLOADED' });
     });
 
-    this.roomMessageListener.subscribe('SongStartingEvent', (roomEvent: RoomMessage) => {
-      const songStartingEvent = roomEvent as SongStartingEvent;  
-      this.countdownTimer.innerText = songStartingEvent.s.toString();
-      if (songStartingEvent.s === 5) {
+    this.roomMessageListener.subscribe('CountingDownEvent', (roomEvent: RoomMessage) => {
+      const countingDownEvent = roomEvent as CountingDownEvent;  
+      this.countdownTimer.innerText = countingDownEvent.s.toString();
+      if (countingDownEvent.s === 5) {
         canvasActor.send({ type: 'COUNTDOWN_STARTED' });
-      } else if (songStartingEvent.s === 0) {
+      } else if (countingDownEvent.s === 0) {
         canvasActor.send({ type: 'COUNTDOWN_FINISHED' });
       }
     });

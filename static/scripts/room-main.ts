@@ -1,6 +1,6 @@
 import { AuxAudioPlayer } from "../modules/aux-audio-player";
 import { RoomMessageListener } from "../modules/room-message-listener";
-import { OrderElement } from "../modules/order-element";
+import { UserQueueElement } from "../modules/user-queue/user-queue-element";
 import { DropElement } from "../modules/drop-element"; 
 import { CurrentlyPlayingElement } from "../modules/currently-playing/currently-playing-element";
 import { RestClient } from "../modules/rest-client";
@@ -21,7 +21,7 @@ const svgFactory: SvgFactory = new SvgFactory();
 const loaderFactory: LoaderFactory = new LoaderFactory();
 const auxAudioPlayer: AuxAudioPlayer = new AuxAudioPlayer(roomId, audioContext, analyser, roomMessageListener);
 const restClient: RestClient = new RestClient(roomId, roomMessageListener);
-const orderElement: OrderElement = new OrderElement(roomMessageListener, restClient, svgFactory);
+const orderElement: UserQueueElement = new UserQueueElement(roomMessageListener, restClient, svgFactory);
 const currentlyPlayingElement: CurrentlyPlayingElement 
     = new CurrentlyPlayingElement(roomMessageListener, restClient, auxAudioPlayer, analyser);
 const dropElement: DropElement = new DropElement(roomMessageListener, restClient, loaderFactory, svgFactory);

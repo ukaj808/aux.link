@@ -1,5 +1,5 @@
-import { RestClient } from "./rest-client";
-import { SvgFactory } from "./svg";
+import { RestClient } from "../rest-client";
+import { SvgFactory } from "../svg";
 
 
 export class UserElement {
@@ -64,7 +64,7 @@ export class UserElement {
 }
 
 export class UserElementFactory {
-  private userElements: UserElement[];
+  private userElements: UserElement[]; //todo: Remove?
   private restClient: RestClient;
   private svgFactory: SvgFactory;
 
@@ -89,14 +89,6 @@ export class UserElementFactory {
     const optUser = this.userElements.find((user) => user.getUserId() === userId);
     if (!optUser) throw new Error('No user found');
     return optUser;
-  }
-
-  public removeUser(userId: string) {
-    const optUser = this.userElements.find((user) => { 
-      return user.getUserId() === userId 
-    });
-    if (!optUser) throw new Error('No user found');
-    this.userElements = this.userElements.filter((user) => user.getUserId() !== userId);
   }
 
 }
