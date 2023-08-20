@@ -210,14 +210,6 @@ export class CurrentlyPlayingElement {
       listenActor.send({ type: 'CONNECTION_TOGGLE' });
     });
 
-    canvasActor.subscribe((state) => {
-      console.log('Canvas Actor', state);
-    });
-
-    listenActor.subscribe((state) => {
-      console.log('Listen Actor', state);
-    })
-
     listenActor.start();
     canvasActor.start();
   }

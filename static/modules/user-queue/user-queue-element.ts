@@ -35,7 +35,9 @@ export class UserQueueElement {
       const userLeftEvent = data as UserLeftEvent;
       this.removeUserFromOrderCarousel(userLeftEvent.userId);
     });
+    console.log('subscribe to NextInQueueEvent');
     this.roomMessageListener.subscribe('NextInQueueEvent', (data) => {
+      console.log('NextInQueueEvent');
       this.removeAndPlaceFirstUserAtEndOfQueue();
     });
 

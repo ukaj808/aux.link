@@ -45,6 +45,7 @@ data RoomState = RoomState
   , mState                       :: MusicState
   , roomPath                     :: FilePath
   , creator                      :: Maybe UserId
+  , threadId                     :: Maybe ThreadId
   , currentSong                  :: Maybe T.Text
   , queue                        :: [UserId]
   , countdown                    :: Maybe Int
@@ -66,6 +67,7 @@ initialRoomState rId rsm roomPath musicStreamer = RoomState
   , mState     = NotRunning
   , roomPath = roomPath
   , creator        = Nothing
+  , threadId       = Nothing
   , currentSong    = Nothing
   , queue          = []
   , countdown      = Nothing
@@ -96,7 +98,9 @@ startMusicImpl stateVar uId = do
       | cId /= uId -> return NotCreator
       | otherwise -> do
         publishToRoom st MusicStartedEvent
-        _ <- forkIO $ nextSong stateVar
+        modifyMVar_ stateVar $ \st' -> do
+          threadId <- forkIO $ nextSong stateVar
+          return st'{threadId=Just threadId}
         return StartMusicSuccess
 
 nextSong  :: MVar RoomState -> IO ()
@@ -114,7 +118,7 @@ nextSong stateVar = do
     publishToRoom st' (CountingDownEvent i)
     threadDelay 1000000
   st     <- readMVar stateVar
-  nextUp <- modifyMVar stateVar $ \st' -> return $ getNextUser st'
+  let nextUp = head $ queue st
  -- Get the next user to play music
   messageToUser st nextUp ServerUploadSongCommand
 
@@ -122,9 +126,12 @@ nextSong stateVar = do
     return st'{mState=Polling}
 
   polled <- pollSongIsUploaded stateVar 10
+  -- refresh st var; users could have joined during polling... maybe should redo this
+  st     <- readMVar stateVar
   case polled of
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
+      -- st is stale here
       publishToRoom st SongUploadTimeoutEvent
       publishToRoom st NextInQueueEvent
       nextSong stateVar
@@ -134,7 +141,7 @@ nextSong stateVar = do
         return st'{mState=Streaming}
       stream (mStreamer st) (T.unpack file) (roomId st)
       modifyMVar_ stateVar $ \st'' -> do
-        return st''{currentSong=Nothing}
+        return st''{currentSong=Nothing, queue=tail $ queue st'' ++ [nextUp]}
       publishToRoom st NextInQueueEvent
       nextSong stateVar
 
@@ -187,7 +194,8 @@ leaveRoomImpl stateVar (_uId, suid) = do
      return st''
 
    st <- readMVar stateVar
-   when (Map.size (roomUsers st) == 0) $
+   when (Map.size (roomUsers st) == 0) $ do
+     forM_ (threadId st) killThread
      selfDestructCallback $ registryManage st
 
 viewRoomImpl :: MVar RoomState -> IO RoomView
@@ -270,16 +278,10 @@ pollSongIsUploaded stateVar retryAttempts = do
       pollSongIsUploaded stateVar (retryAttempts - 1)
     Just fileName  -> return $ Just fileName
 
--- Pure functions
-getNextUser :: RoomState -> (RoomState, UserId)
-getNextUser st =
-  let (uId:rest) = queue st
-  in (st{queue=rest ++ [uId]}, head rest)
-
 addUserToRoom :: RoomState -> UserId -> UserSession -> RoomState
-addUserToRoom st@(RoomState _ users _ _ _ _ _ _ queue _) uId uSession =
+addUserToRoom st@(RoomState _ users _ _ _ _ _ _ _ queue _) uId uSession =
   st{roomUsers = Map.insert uId uSession users, queue=queue++[uId]}
 
 removeUser :: RoomState -> UserId -> RoomState
-removeUser st@(RoomState _ users _ _ _ _ _ _ _ _) uId =
+removeUser st@(RoomState _ users _ _ _ _ _ _ _ _ _) uId =
   st{roomUsers= Map.delete uId users, queue=filter (/= uId) $ queue st}

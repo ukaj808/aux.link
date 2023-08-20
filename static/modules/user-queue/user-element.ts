@@ -28,8 +28,6 @@ export class UserElement {
       userEl.id = userId;
       userEl.classList.add('square-cell', 'tertiary-theme', 'spaced-hz-li');
       userEl.style.backgroundColor = hexColor;
-      console.log('backgroundcolor', hexColor);
-      console.log('backgroundcolor', userEl.style);
       if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }

@@ -12,7 +12,7 @@ export class RestClient {
     this.basePath = `/${roomId}`;
     this.roomMessageListener = roomMessageListener;
     this.roomMessageListener.subscribe("ServerWelcomeCommand", (data) => {
-      const welcomeCommand = data as ServerWelcomeCommand;
+            const welcomeCommand = data as ServerWelcomeCommand;
       this.setUserId(welcomeCommand.userId);
     });
   }
@@ -51,7 +51,7 @@ export class RestClient {
   }
 
   public uploadSong(song: Song): Promise<Response> {
-    if (!this.userId) throw new Error("No user id set");
+        if (!this.userId) throw new Error("No user id set");
     const formData = new FormData();
     if (song instanceof File) {
       formData.append("file", song);
