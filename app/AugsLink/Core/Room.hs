@@ -127,22 +127,22 @@ nextSong stateVar = do
 
   polled <- pollSongIsUploaded stateVar 10
   -- refresh st var; users could have joined during polling... maybe should redo this
-  st     <- readMVar stateVar
   case polled of
     Nothing -> do
       putStrLn $ "No song uploaded withing timeframe by user: " ++ show nextUp
-      -- st is stale here
-      publishToRoom st SongUploadTimeoutEvent
-      publishToRoom st NextInQueueEvent
+      modifyMVar_ stateVar $ \st' -> do
+        publishToRoom st' SongUploadTimeoutEvent
+        publishToRoom st' NextInQueueEvent
+        return st'{queue=tail $ queue st' ++ [nextUp]}
       nextSong stateVar
     Just file -> do
-      publishToRoom st $ SongUploadedEvent file
       modifyMVar_ stateVar $ \st' -> do
+        publishToRoom st' $ SongUploadedEvent file
         return st'{mState=Streaming}
       stream (mStreamer st) (T.unpack file) (roomId st)
-      modifyMVar_ stateVar $ \st'' -> do
-        return st''{currentSong=Nothing, queue=tail $ queue st'' ++ [nextUp]}
-      publishToRoom st NextInQueueEvent
+      modifyMVar_ stateVar $ \st' -> do
+        publishToRoom st' NextInQueueEvent
+        return st'{currentSong=Nothing, queue=tail $ queue st' ++ [nextUp]}
       nextSong stateVar
 
 
