@@ -58,6 +58,7 @@ executable augslink-service
                       , hashable
                       , heaps
                       , http-media
+                      , http-types
                       , mtl
                       , optparse-applicative
                       , palette

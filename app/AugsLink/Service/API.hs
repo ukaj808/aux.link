@@ -40,7 +40,7 @@ instance MimeRender JS StaticJs where
   mimeRender _ = unrawJs
 
 instance Servant.Accept JS where
-  contentType _ = "text" // "js" /: ("charset", "utf-8")
+  contentType _ = "text" // "javascript" /: ("charset", "utf-8")
 
 instance ToMarkup StaticHtml where
   toMarkup              = preEscapedToMarkup
@@ -64,30 +64,14 @@ type API =
         Get '[HTML] StaticHtml -- Home Page
         -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] NoContent) 
-   :<|> Capture "roomid" Text :> Get '[JSON, HTML] 
-     (
-       Headers 
-       '[
-         Header "Cross-Origin-Opener-Policy" Text, 
-         Header "Cross-Origin-Embedder-Policy" Text
-        ] 
-        RoomView
-      )
+   :<|> Capture "roomid" Text :> Get '[JSON, HTML] RoomView
    :<|> Capture "roomid" Text :> "ws"     :> WebSocketPending
    :<|> Capture "roomid" Text :> "music"  :> WebSocketPending
    :<|> Capture "roomid" Text :> Header "X-User-Id" Text :> "start"  :> PutNoContent
    :<|> Capture "roomId" Text :> Header "X-User-Id" Text :> "upload" :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
 
    :<|> "validate-url" :> ReqBody '[JSON] ValidateUrlRequest :> Post '[PlainText] Text
-   :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS]
-     (
-       Headers 
-       '[
-         Header "Cross-Origin-Opener-Policy" Text, 
-         Header "Cross-Origin-Embedder-Policy" Text
-        ] 
-        StaticJs
-      )
+   :<|> "public" :> "audio_socket_worker_bundle.js" :> Get '[JS] StaticJs
  
    -- maybe scrape request comes through websockets because there only passing a url...
    :<|> "public" :> Raw

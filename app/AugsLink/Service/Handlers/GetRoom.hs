@@ -124,14 +124,7 @@ instance ToMarkup RoomView where
 
 roomHandler :: Registry IO
   -> RoomId
-  -> Handler (
-       Headers
-       '[
-         Header "Cross-Origin-Opener-Policy" T.Text,
-         Header "Cross-Origin-Embedder-Policy" T.Text
-        ]
-        RoomView
-      )
+  -> Handler RoomView
 roomHandler registry rId = do
 
   possibleRoom <- liftIO $ getRoom registry rId
@@ -140,11 +133,4 @@ roomHandler registry rId = do
                Just r -> r
                Nothing -> error "Room does not exist"
   --  Maybe we need to hold lock on room somehow until result returned and confirmed. 
-  roomView <- liftIO $ viewRoom rm
-
-  return
-    (
-      addHeader "same-origin"       $
-      addHeader "credentialless"
-      roomView
-    )
+  liftIO $ viewRoom rm
