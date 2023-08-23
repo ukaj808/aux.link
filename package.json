@@ -1,5 +1,5 @@
 {
-  "name": "augslink-service",
+  "name": "augslink",
   "version": "1.0.0",
   "watch": {
     "dev": {
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "watch": "npm-watch",
-    "dev": "webpack && cabal run -- augslink-service --env local --roomsDir . --roomsDirName rooms --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js"
+    "dev": "webpack && cabal run -- augslink --env local --roomsDir . --roomsDirName rooms --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.21.5",
