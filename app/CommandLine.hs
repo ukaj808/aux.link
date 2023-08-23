@@ -2,13 +2,26 @@ module CommandLine
   ( 
     CLArgs(..)
   , getCLArgs
+  , Environment(..)
   ) where
 
 import Options.Applicative
+import Data.String
+
+data Environment = Local | Production
+  deriving (Show)
+
+instance IsString Environment where
+  fromString "local" = Local
+  fromString "production"  = Production
+  fromString _             = error "Invalid environment"
+
 
 data CLArgs =
   CLArgs
-    { publicAssetsPath      :: FilePath
+    { 
+      env             :: Environment
+    , publicAssetsPath      :: FilePath
     , homeViewPath    :: FilePath
     , audioWorkerPath :: FilePath
     , roomsDir        :: FilePath
@@ -18,11 +31,20 @@ data CLArgs =
 
 parseOptions :: Parser CLArgs
 parseOptions = CLArgs 
-    <$> parsePublicAssetsPath 
+    <$> parseEnv
+    <*> parsePublicAssetsPath 
     <*> parseHomeViewPath
     <*> parseAudioWorkerPath
     <*> parseRoomsDir
     <*> parseRoomsDirName
+
+parseEnv :: Parser Environment
+parseEnv =
+  option str $ mconcat 
+    [
+      long "env"
+    , help "Environment"
+    ]
 
 parsePublicAssetsPath :: Parser FilePath
 parsePublicAssetsPath =

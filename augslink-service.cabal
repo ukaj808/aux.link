@@ -79,6 +79,7 @@ executable augslink-service
                       , utf8-string
                       , wai
                       , warp
+                      , warp-tls
                       , websockets
 
     hs-source-dirs:   app
