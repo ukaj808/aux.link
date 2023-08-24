@@ -14,7 +14,11 @@
   },
   "scripts": {
     "watch": "npm-watch",
-    "dev": "webpack && cabal run -- augslink --env local --roomsDir . --roomsDirName rooms --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js"
+    "dev": "webpack && cabal run -- augslink --env local --roomsDir . --roomsDirName rooms --public dist --home views/home.html --aw dist/audio_socket_worker_bundle.js",
+    "build": "webpack && cabal build",
+    "clean": "rm -rf prod",
+    "install": "npm run clean && npm run build && mkdir -p prod/files && cp dist/* prod/files && cp dist-newstyle/build/x86_64-linux/ghc-9.2.7/augslink-0.1.0/x/augslink/build/augslink/augslink prod/files",
+    "package":"npm run install && tar -czvf prod/augslink.tar.gz prod/files"
   },
   "devDependencies": {
     "@babel/cli": "^7.21.5",

@@ -7,9 +7,6 @@ module.exports = {
   resolve: {
     extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
   },
-  externals: {
-    flickity: 'Flickity',
-  },
   module: {
     rules: [
       // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
