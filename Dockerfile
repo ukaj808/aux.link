@@ -1,3 +1,3 @@
 FROM haskell:9.2.7
-RUN cabal update && cabal build
+RUN npm run 
 ENTRYPOINT ["pandoc"]
