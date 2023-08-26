@@ -33,7 +33,7 @@ module.exports = {
     audio_worklet_processor: ['./static/scripts/aux-worklet-processor.ts'],
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist-static'),
     filename: '[name].bundle.js',
   },
    plugins: [

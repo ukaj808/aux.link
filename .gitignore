@@ -1,8 +1,5 @@
 dist-newstyle
-dist
+dist-static
 scratch.txt
-rooms
-tmp
+rooms*
 node_modules
-built
-prod
