@@ -47,8 +47,11 @@ module.exports = {
         {
           from: 'static/images/*.*',
           to: '[name][ext]',
-
         },
+        {
+          from: 'static/views/*.html',
+          to: '[name][ext]',
+        }
       ],
     }),
   ],

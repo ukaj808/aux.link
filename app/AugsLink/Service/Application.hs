@@ -5,7 +5,6 @@ import Servant
 
 import AugsLink.Core.API
 import AugsLink.Service.API
-import AugsLink.Service.Handlers.GetAudioWorker
 import AugsLink.Service.Handlers.GetHome
 import AugsLink.Service.Handlers.GetRoom
 import AugsLink.Service.Handlers.MusicWs
@@ -28,10 +27,9 @@ handlers opts rr =
   :<|> startHandler rr
   :<|> uploadHandler rr
   :<|> validateHandler
-  :<|> audioWorkerHandler opts
   :<|> publicHandler
   where
-    publicHandler = serveDirectoryWebApp $ publicAssetsPath opts
+    publicHandler = serveDirectoryWebApp $ staticAssetsPath opts
 
 middleware  :: Middleware
 middleware app req sendResponse =

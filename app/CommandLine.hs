@@ -21,69 +21,31 @@ data CLArgs =
   CLArgs
     { 
       env             :: Environment
-    , publicAssetsPath      :: FilePath
-    , homeViewPath    :: FilePath
-    , audioWorkerPath :: FilePath
-    , roomsDir        :: FilePath
-    , roomsDirName    :: FilePath
+    , staticAssetsPath      :: FilePath
     }
   deriving (Show)
 
 parseOptions :: Parser CLArgs
 parseOptions = CLArgs 
     <$> parseEnv
-    <*> parsePublicAssetsPath 
-    <*> parseHomeViewPath
-    <*> parseAudioWorkerPath
-    <*> parseRoomsDir
-    <*> parseRoomsDirName
+    <*> parseStaticAssetsPath 
 
 parseEnv :: Parser Environment
 parseEnv =
   option str $ mconcat 
     [
-      long "env"
+      long "environment"
+    , short 'e'
     , help "Environment"
     ]
 
-parsePublicAssetsPath :: Parser FilePath
-parsePublicAssetsPath =
+parseStaticAssetsPath :: Parser FilePath
+parseStaticAssetsPath =
   option str $ mconcat 
     [
-      long "public"
+      long "path-to-static-assets"
+    , short 'p'
     , help "Directory of the static files"
-    ]
-
-parseHomeViewPath :: Parser FilePath
-parseHomeViewPath =
-  option str $ mconcat 
-    [
-      long "home"
-    , help "Path to the home view (html)"
-    ]
-    
-parseAudioWorkerPath :: Parser FilePath
-parseAudioWorkerPath =
-  option str $ mconcat 
-    [
-      long "aw"
-    , help "Path to audio worker script (js)"
-    ]
-
-parseRoomsDir :: Parser FilePath
-parseRoomsDir =
-  option str $ mconcat 
-    [
-      long "roomsDir"
-    , help "Path to the rooms directory"
-    ]
-
-parseRoomsDirName :: Parser FilePath
-parseRoomsDirName =
-  option str $ mconcat 
-    [
-      long "roomsDirName"
-    , help "Name of the rooms directory"
     ]
 
 getCLArgs :: IO CLArgs

@@ -29,7 +29,6 @@ executable augslink
                       , AugsLink.Core.User 
                       , AugsLink.Service.API 
                       , AugsLink.Service.Application 
-                      , AugsLink.Service.Handlers.GetAudioWorker 
                       , AugsLink.Service.Handlers.GetHome 
                       , AugsLink.Service.Handlers.GetRoom 
                       , AugsLink.Service.Handlers.MusicWs 

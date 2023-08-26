@@ -13,8 +13,8 @@ main :: IO ()
 main = do
   clArgs       <- getCLArgs
   withTempDirectory
-    (roomsDir clArgs) 
-    (roomsDirName clArgs) 
+    "." 
+    "rooms"
     $ \roomsPath -> do
       roomRegistry <- newRegistry roomsPath
       case env clArgs of
