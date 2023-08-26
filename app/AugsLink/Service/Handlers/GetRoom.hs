@@ -110,7 +110,7 @@ renderRoomPage room = H.docTypeHtml $ do
     H.title "Room"
     H.meta   ! A.charset "UTF-8"
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
-    H.script ! A.type_ "module"   ! A.src     "/public/room_bundle.js" $ ""
+    H.script ! A.type_ "module"   ! A.src     "/public/room.bundle.js" $ ""
     H.link   ! A.rel "stylesheet" ! A.href    "/public/room.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do

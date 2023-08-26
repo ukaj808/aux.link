@@ -100,10 +100,10 @@ export class AuxAudioPlayer {
       samplesRead: new SharedArrayBuffer(4),
     }
 
-    this.wsWorker = new Worker('public/audio_socket_worker_bundle.js');
+    this.wsWorker = new Worker('public/audio_socket_worker.bundle.js');
     this.wsWorker.onmessage = this.onWsWorkerEvent;
 
-    await this.audioContext.audioWorklet.addModule('public/audio_worklet_processor_bundle.js');
+    await this.audioContext.audioWorklet.addModule('public/audio_worklet_processor.bundle.js');
 
     this.audioWorklet = new AudioWorkletNode(this.audioContext, 'audio-worklet-processor', 
       { 

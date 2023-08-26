@@ -1,7 +1,5 @@
 {
     "compilerOptions": {
-      "outDir": "./built",
-      "allowJs": true,
       // Target latest version of ECMAScript.
       "target": "esnext",
       // Search under node_modules for non-relative imports.
@@ -10,8 +8,6 @@
       "strict": true,
       // Import non-ES modules as default imports.
       "esModuleInterop": true,
-      // Ensure that .d.ts files are created by tsc, but not .js files
-      "declaration": true,
       // Ensure that Babel can safely transpile files in the TypeScript project
       "isolatedModules": true
     },

@@ -1,9 +1,0 @@
-1. Clean up
-  a. Organize imports in each file [X]
-  b. Adjust spacing where necesarry [X]
-  c. Identify duplicate code in Room and Registry module, then refactor [X]
-
-2. Finish Queue implementation
-  a.  Need a new name for this queue []
-  b. 'Remove' implementation []
-  c. 'Reorder' implementation []
