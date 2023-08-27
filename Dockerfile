@@ -1,18 +1,32 @@
 FROM haskell:9.2.7
 
-WORKDIR .
+## For pip > yt-dlp
+RUN apt-get update
+RUN apt-get install -y python3
+RUN curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py 
+RUN python3 get-pip.py
+RUN python3 -m pip install -U yt-dlp
 
-COPY . .
+## Install node 18
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+
+RUN apt-get install -y ffmpeg 
 
 RUN mkdir -p /opt/augslink
 
+WORKDIR /opt/augslink
+
+COPY . .
+
 RUN cabal update
+## Should cache!
+RUN cabal build --only-dependencies -j4
 RUN cabal install
-COPY dist-newstyle/x86_64-linux/ghc-9.2.7/augslink-0.1.0/x/augslink/build/augslink/augslink /opt/augslink
 
 RUN npm install
 RUN npm run build
-COPY dist /opt/augslink/dist-static
 
-CMD ["/opt/augslink/augslink", "-e", "prod", "-p", "dist-static"]
+# todo
+CMD ["augslink", "-e", "local", "-p", "dist-static"]
 EXPOSE 8080
