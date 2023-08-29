@@ -15,4 +15,4 @@ createHandler rr = do
   return $ addHeader (genLocation rId) NoContent
 
 genLocation :: RoomId -> Text
-genLocation = append (pack "http://localhost:8080/")
+genLocation = append (pack "/")

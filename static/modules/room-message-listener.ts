@@ -6,13 +6,19 @@ export class RoomMessageListener {
   private roomId: string;
   private ws: WebSocket | null = null;
   private eventBus: EventBus<RoomMessageType, RoomMessage> = new EventBus();
+  private host: string;
 
   constructor(roomId: string) {
     this.roomId = roomId;
+    if (window.location.host.includes('localhost')) {
+      this.host = 'localhost:8080';
+    } else {
+      this.host = window.location.host;
+    }
   }
 
   public start() {
-    this.ws = new WebSocket(`ws://localhost:8080/${this.roomId}/ws`);
+    this.ws = new WebSocket(`ws://${window.location.host}/${this.roomId}/ws`);
     this.ws.onmessage = this.process;
   }
 

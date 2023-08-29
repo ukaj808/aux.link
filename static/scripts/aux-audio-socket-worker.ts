@@ -80,8 +80,8 @@ const onWsMessage = (event: MessageEvent<AudioChunk>) => {
 
 };
 
-const connectToAudioSocket = (roomId: string) => {
-    ws = new WebSocket(`ws://localhost:8080/${roomId}/music`);
+const connectToAudioSocket = (roomId: string, host: string) => {
+    ws = new WebSocket(`ws://${host}/${roomId}/music`);
     ws.binaryType = 'arraybuffer';
     ws.addEventListener("message", onWsMessage); 
 }
@@ -108,7 +108,7 @@ self.onmessage = (messageEvent: MessageEvent<WsWorkerOpts>) => {
       samplesRead: new Int32Array(data._audioWorkletOwnedBuffers.samplesRead),
     }
 
-    connectToAudioSocket(data.roomId);
+    connectToAudioSocket(data.roomId, data.host);
 
     postMessage({ type: 'WS_WORKER_READY' });
   } 

@@ -15,6 +15,7 @@ export type FmtSubChunk = {
 export type WsWorkerOpts = {
     type: "INIT", 
     roomId: string, 
+    host: string,
     writeSharedBuffers: WriteSharedBuffers,
     buffers: WsBuffers,
     _audioWorkletOwnedBuffers: AudioWorkletBuffers,

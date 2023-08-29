@@ -43,6 +43,7 @@ export class AuxAudioPlayer {
   private writeSharedBuffers?: WriteSharedBuffers;
   private wsBuffers?: WsBuffers;
   private audioWorkletBuffers?: AudioWorkletBuffers;
+  private host: string;
   private eventBus: EventBus<AuxAudioPlayerEventType, AuxAudioPlayerEvent> = new EventBus();
 
   constructor(roomId: string, audioContext: AudioContext, analyser: AnalyserNode, roomMessageListener: RoomMessageListener) {
@@ -56,6 +57,11 @@ export class AuxAudioPlayer {
       const welcomeCommand = data as ServerWelcomeCommand;
       this.setUserId(welcomeCommand.userId);
     });
+    if (window.location.host.includes('localhost')) {
+      this.host = 'localhost:8080';
+    } else {
+      this.host = window.location.host;
+    }
   }
 
   public subscribe(msgType: AuxAudioPlayerEventType, callback: (event: AuxAudioPlayerEvent) => void) {
@@ -121,6 +127,7 @@ export class AuxAudioPlayer {
       const wsWorkerOpts: WsWorkerOpts = {
         type: "INIT", 
         roomId: this.roomId, 
+        host: window.location.host,
         writeSharedBuffers: this.writeSharedBuffers,
         buffers: this.wsBuffers,
         _audioWorkletOwnedBuffers: this.audioWorkletBuffers,
