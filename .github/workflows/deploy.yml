@@ -46,3 +46,14 @@ jobs:
         with:
           push: true
           tags: ukaj808/augs.link:latest
+
+      - name: Run image
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            docker stop augslink
+            docker remove augslink
+            docker run -v /opt/augslink/tls:/opt/augslink/tls --name augslink -dp 80:8080 ukaj808/augs.link:latest

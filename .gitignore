@@ -3,3 +3,4 @@ dist-static
 scratch.txt
 rooms*
 node_modules
+tls

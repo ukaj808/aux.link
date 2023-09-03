@@ -2,42 +2,21 @@ module CommandLine
   ( 
     CLArgs(..)
   , getCLArgs
-  , Environment(..)
   ) where
 
 import Options.Applicative
-import Data.String
-
-data Environment = Local | Production
-  deriving (Show)
-
-instance IsString Environment where
-  fromString "local" = Local
-  fromString "production"  = Production
-  fromString _             = error "Invalid environment"
 
 
-data CLArgs =
+newtype CLArgs =
   CLArgs
     { 
-      env             :: Environment
-    , staticAssetsPath      :: FilePath
+      staticAssetsPath      :: FilePath
     }
   deriving (Show)
 
 parseOptions :: Parser CLArgs
 parseOptions = CLArgs 
-    <$> parseEnv
-    <*> parseStaticAssetsPath 
-
-parseEnv :: Parser Environment
-parseEnv =
-  option str $ mconcat 
-    [
-      long "environment"
-    , short 'e'
-    , help "Environment"
-    ]
+    <$> parseStaticAssetsPath 
 
 parseStaticAssetsPath :: Parser FilePath
 parseStaticAssetsPath =

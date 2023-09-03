@@ -14,6 +14,7 @@ RUN apt-get install -y nodejs
 RUN apt-get install -y ffmpeg 
 
 RUN mkdir -p /opt/augslink
+RUN mkdir -p /opt/augslink/tls
 
 WORKDIR /opt/augslink
 
