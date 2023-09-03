@@ -29,5 +29,5 @@ RUN npm install
 RUN npm run build
 
 # todo
-CMD ["augslink", "-e", "local", "-p", "dist-static"]
+CMD ["augslink", "-p", "dist-static"]
 EXPOSE 8080
