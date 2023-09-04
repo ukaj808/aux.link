@@ -1,7 +1,6 @@
 module Main( main ) where
 
 import Network.Wai.Handler.Warp
-import Network.Wai.Handler.WarpTLS
 
 import AugsLink.Core.Registry
 import AugsLink.Service.Application
@@ -17,8 +16,6 @@ main = do
     "rooms"
     $ \roomsPath -> do
       roomRegistry <- newRegistry roomsPath
-      runTLS tlsOpts warOpts $ server clArgs roomRegistry
+      run port $ server clArgs roomRegistry
   where
     port = 8080
-    tlsOpts = tlsSettings "tls/warp.crt" "tls/warp.key"
-    warOpts = setPort port defaultSettings

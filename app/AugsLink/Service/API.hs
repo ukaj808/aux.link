@@ -65,7 +65,7 @@ type API =
         -- Create Room Button Click on Home Page -> Create Room -> Redirect to /room/<id>
    :<|> PostSeeOther '[PlainText] (Headers '[Header "Location" Text] NoContent) 
    :<|> Capture "roomid" Text :> Get '[JSON, HTML] RoomView
-   :<|> Capture "roomid" Text :> "wss"     :> WebSocketPending
+   :<|> Capture "roomid" Text :> "ws"     :> WebSocketPending
    :<|> Capture "roomid" Text :> "music"  :> WebSocketPending
    :<|> Capture "roomid" Text :> Header "X-User-Id" Text :> "start"  :> PutNoContent
    :<|> Capture "roomId" Text :> Header "X-User-Id" Text :> "upload" :> MultipartForm Tmp (MultipartData Tmp) :> PutNoContent
