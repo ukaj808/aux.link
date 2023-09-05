@@ -88,4 +88,4 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             docker compose -f /opt/augslink/docker-compose.prod.yml down
-            docker compose -f /opts/augslink/docker-compose.prod.yml up -d
+            docker compose -f /opt/augslink/docker-compose.prod.yml up -d
