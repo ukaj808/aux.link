@@ -49,6 +49,7 @@ jobs:
           tags: ukaj808/augs.link:latest
 
   run:
+    depends-on: deploy
     runs-on: ubuntu-latest
     steps:
 
