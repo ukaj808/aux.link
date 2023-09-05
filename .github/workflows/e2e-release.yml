@@ -6,6 +6,7 @@ on:
       - master  # Trigger the workflow on pushes to the master branch
 
 jobs:
+
   deploy:
     runs-on: ubuntu-latest
 
@@ -46,6 +47,7 @@ jobs:
         with:
           push: true
           tags: ukaj808/augs.link:latest
+
   run:
     runs-on: ubuntu-latest
     needs: deploy
