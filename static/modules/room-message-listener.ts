@@ -18,7 +18,7 @@ export class RoomMessageListener {
   }
 
   public start() {
-    this.ws = new WebSocket(`ws://${window.location.host}/${this.roomId}/ws`);
+    this.ws = new WebSocket(`wss://${window.location.host}/${this.roomId}/ws`);
     this.ws.onmessage = this.process;
   }
 

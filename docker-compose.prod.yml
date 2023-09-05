@@ -6,7 +6,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - vhost:/etc/nginx/vhost.d
+      - /opt/augslink/vhost.d:/etc/nginx/vhost.d
       - html:/usr/share/nginx/html
       - certs:/etc/nginx/certs
       - /var/run/docker.sock:/tmp/docker.sock:ro
@@ -28,10 +28,4 @@ services:
       - VIRTUAL_HOST=augs.link
       - LETSENCRYPT_HOST=augs.link
       - VIRTUAL_PORT=8080
-
-volumes:
-  conf:
-  vhost:
-  html:
-  certs:
-  acme:
+  
