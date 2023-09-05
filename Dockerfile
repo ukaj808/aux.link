@@ -12,7 +12,7 @@ RUN python3 get-pip.py
 RUN python3 -m pip install -U yt-dlp
 
 ## Install node 18
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs
 
 ## Install ffmpeg
