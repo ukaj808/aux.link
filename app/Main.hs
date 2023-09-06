@@ -6,6 +6,8 @@ import AugsLink.Core.Registry
 import AugsLink.Service.Application
 import CommandLine
 import System.IO.Temp (withTempDirectory)
+import Network.Wai.Handler.WarpTLS
+import Network.Wai.Middleware.ForceSSL
 
 
 main :: IO ()
@@ -16,6 +18,10 @@ main = do
     "rooms"
     $ \roomsPath -> do
       roomRegistry <- newRegistry roomsPath
-      run port $ server clArgs roomRegistry
+      runTLS tlsOpts warOpts $ 
+        forceSSL             $ 
+          server clArgs roomRegistry
   where
-    port = 8080
+    port = 8443
+    tlsOpts = tlsSettings "tls/warp.crt" "tls/warp.key"
+    warOpts = setPort port defaultSettings

@@ -53,40 +53,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v3
-
-      - name: Make augslink directory
+      - name: Pull latest and run
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            mkdir -p /opt/augslink
-
-      - name: Copy docker-compose.prod.yml to remote host
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          source: "docker-compose.prod.yml"
-          target: "/opt/augslink"
-
-      - name: Pull latest images
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            docker compose -f /opt/augslink/docker-compose.prod.yml pull
-      - name: Run 
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            docker compose -f /opt/augslink/docker-compose.prod.yml down
-            docker compose -f /opt/augslink/docker-compose.prod.yml up -d
+            docker pull ukaj808/augs.link:latest
+            docker run -d -p 80:8443 -v /etc/letsencrypt/archive/augs.link:/opt/augslink/tls ukaj808/augs.link:latest

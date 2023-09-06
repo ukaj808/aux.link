@@ -2,6 +2,7 @@ FROM haskell:9.2.7
 ENV NODE_MAJOR=20
 
 RUN mkdir -p /opt/augslink
+RUN mkdir -p /opt/augslink/tls
 
 WORKDIR /opt/augslink
 
@@ -42,4 +43,3 @@ RUN npm run build
 
 # todo
 CMD ["augslink", "-p", "dist-static"]
-EXPOSE 8080

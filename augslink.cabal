@@ -74,6 +74,7 @@ executable augslink
                       , uuid
                       , utf8-string
                       , wai
+                      , wai-extra
                       , warp
                       , warp-tls
                       , websockets
