@@ -61,4 +61,4 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             docker pull ukaj808/augs.link:latest
-            docker run -d -p 80:8443 -v /etc/letsencrypt/archive/augs.link:/opt/augslink/tls ukaj808/augs.link:latest
+            docker run -d -p 80:8443 -p 443:8443 --name augslink -v /etc/letsencrypt/archive/augs.link:/opt/augslink/tls ukaj808/augs.link:latest
