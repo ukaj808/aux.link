@@ -27,18 +27,9 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            echo "Upating apt-get"
             apt-get update -y
-            echo "Installing GHCUP dependencies"
             apt-get install -y build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
-            echo "Installing making temporary directory for GHCUP"
-            mkdir /opt/augslink/ghcup-tmp
-            echo "Exporting TMPDIR for ghcup memory issue"
-            export TMPDIR="/opt/augslink/ghcup-tmp"
-            echo $TMPDIR
             curl https://get-ghcup.haskell.org -sSf | sh
-            echo "Removing ghcup temporary directory"
-            rm -rf /opt/augslink/ghcup-tmp
             ghcup upgrade
             ghcup --version
     
