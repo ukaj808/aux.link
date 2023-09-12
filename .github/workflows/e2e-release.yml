@@ -20,7 +20,10 @@ jobs:
           script: |
             sudo apt-get update -y
             sudo apt-get install -y build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+            mkdir $HOME/ghcup-tmp
+            TMPDIR=$HOME/ghcup-tmp
             curl https://get-ghcup.haskell.org -sSf | sh
+            rm -rf $HOME/ghcup-tmp
             ghcup upgrade
             ghcup --version
     
