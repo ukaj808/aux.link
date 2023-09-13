@@ -1,4 +1,4 @@
-name: Deploy to Remote Host
+name: Deploy to Remote Alpine Linux Host
 
 on:
   push:
@@ -27,11 +27,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            apt-get update -y
-            apt-get install -y build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
-            curl https://get-ghcup.haskell.org -sSf | sh
-            ghcup upgrade
-            ghcup --version
+            apk update
+            apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
+            curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+            ~/.ghcup/bin/ghcup upgrade
+            ~/.ghcup/bin/ghcup --version
     
       
       - name: Install GHC 9.2.7
@@ -41,19 +41,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            ghcup install ghc 9.2.7
-            ghcup set ghc 9.2.7
-            ghc --version
-      
-      - name: Install Cabal (latest)
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          script: |
-            ghcup install cabal
-            cabal --version
+            ~/.ghcup/bin/ghcup install ghc 9.2.7
+            ~/.ghcup/bin/ghcup set ghc 9.2.7
       
       - name: Checkout code
         uses: actions/checkout@v4
