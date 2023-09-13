@@ -5,6 +5,9 @@ on:
     branches:
       - master  # Trigger the workflow on pushes to the master branch
 
+env: 
+  PATH: $HOME/.ghcup/bin:$PATH
+
 jobs:
 
   deploy:
@@ -30,8 +33,6 @@ jobs:
             apk update
             apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
             curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-            . "$HOME/.ghcup/env"
-            echo '. $HOME/.ghcup/env' >> "$HOME/.bashrc"
             ghcup upgrade
             ghcup --version
     
