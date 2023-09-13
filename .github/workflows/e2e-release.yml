@@ -30,8 +30,10 @@ jobs:
             apk update
             apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
             curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-            ~/.ghcup/bin/ghcup upgrade
-            ~/.ghcup/bin/ghcup --version
+            . "$HOME/.ghcup/env"
+            echo '. $HOME/.ghcup/env' >> "$HOME/.bashrc"
+            ghcup upgrade
+            ghcup --version
     
       
       - name: Install GHC 9.2.7
@@ -41,8 +43,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            ~/.ghcup/bin/ghcup install ghc 9.2.7
-            ~/.ghcup/bin/ghcup set ghc 9.2.7
+            ghcup install ghc 9.2.7
+            ghcup set ghc 9.2.7
       
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,3 +57,15 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           source: ./
           target: /opt/augslink/augslink
+      
+      - name: Build Executable
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd /opt/augslink/augslink
+            cabal update
+            cabal build
+            cabal install --overwrite-policy=always
