@@ -21,14 +21,14 @@ jobs:
             mkdir -p /opt/augslink
 
       - name: Install ghcup (always update too)
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@master
         env: 
           PATH: "$HOME/.ghcup/bin:$PATH"
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          envs: PATH,
+          envs: PATH
           script: |
             apk update
             apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
