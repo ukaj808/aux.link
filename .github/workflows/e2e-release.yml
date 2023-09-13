@@ -42,6 +42,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             ghcup install ghc 9.2.7
             ghcup set ghc 9.2.7
       
@@ -64,6 +65,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
             cabal update
             cabal build
