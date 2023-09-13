@@ -5,9 +5,6 @@ on:
     branches:
       - master  # Trigger the workflow on pushes to the master branch
 
-env: 
-  PATH: $HOME/.ghcup/bin:$PATH
-
 jobs:
 
   deploy:
@@ -25,10 +22,13 @@ jobs:
 
       - name: Install ghcup (always update too)
         uses: appleboy/ssh-action@v1.0.0
+        env: 
+          PATH: $HOME/.ghcup/bin:$PATH
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          envs: PATH
           script: |
             apk update
             apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
@@ -39,10 +39,13 @@ jobs:
       
       - name: Install GHC 9.2.7
         uses: appleboy/ssh-action@v1.0.0
+        env: 
+          PATH: $HOME/.ghcup/bin:$PATH
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          envs: PATH
           script: |
             ghcup install ghc 9.2.7
             ghcup set ghc 9.2.7
@@ -61,10 +64,13 @@ jobs:
       
       - name: Build Executable
         uses: appleboy/ssh-action@v1.0.0
+        env: 
+          PATH: $HOME/.ghcup/bin:$PATH
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          envs: PATH
           script: |
             cd /opt/augslink/augslink
             cabal update
