@@ -23,7 +23,7 @@ jobs:
       - name: Install ghcup (always update too)
         uses: appleboy/ssh-action@v1.0.0
         env: 
-          PATH: $HOME/.ghcup/bin:$PATH
+          PATH: "$HOME/.ghcup/bin:$PATH"
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -40,7 +40,7 @@ jobs:
       - name: Install GHC 9.2.7
         uses: appleboy/ssh-action@v1.0.0
         env: 
-          PATH: $HOME/.ghcup/bin:$PATH
+          PATH: "$HOME/.ghcup/bin:$PATH"
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -65,7 +65,7 @@ jobs:
       - name: Build Executable
         uses: appleboy/ssh-action@v1.0.0
         env: 
-          PATH: $HOME/.ghcup/bin:$PATH
+          PATH: "$HOME/.ghcup/bin:$PATH"
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
