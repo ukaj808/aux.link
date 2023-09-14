@@ -1,4 +1,4 @@
-name: Deploy to Remote Debian Linux Host
+name: Deploy to Remote Alpine Linux Host
 
 on:
   push:
@@ -30,6 +30,7 @@ jobs:
             apt-get update -y
             apt-get install -y build-essential curl libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
             curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+            export PATH="$HOME/.ghcup/bin:$PATH"
             ghcup upgrade
             ghcup --version
     
@@ -41,6 +42,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             ghcup install ghc 9.2.8
             ghcup set ghc 9.2.8
       
@@ -65,6 +67,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           command_timeout: 1h
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
             cabal update
             cabal build
@@ -77,6 +80,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
             npm install
             npm run build
@@ -88,5 +92,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
             augslink -p dist-static
