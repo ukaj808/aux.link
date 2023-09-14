@@ -68,8 +68,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            apt-get update
-            apt-get install -y python3-yt-dlp
+            sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+            sudo chmod a+rx /usr/local/bin/yt-dlp
       
       - name: install ffmpeg
         uses: appleboy/ssh-action@v1.0.0
