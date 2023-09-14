@@ -25,10 +25,10 @@ main = do
     "rooms"
     $ \roomsPath -> do
       roomRegistry <- newRegistry roomsPath
-      runTLS tlsOpts warOpts $
+      runTLS (tlsOpts (certificatePath clArgs) (privateKeyPath clArgs)) warOpts $
         forceSSL             $
           server clArgs roomRegistry
   where
     port = 8443
-    tlsOpts = (tlsSettings "tls/warp.crt" "tls/warp.key") { onInsecure = AllowInsecure }
+    tlsOpts crt privKey = (tlsSettings crt privKey) { onInsecure = AllowInsecure }
     warOpts = setPort port defaultSettings

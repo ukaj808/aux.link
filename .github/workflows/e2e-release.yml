@@ -18,7 +18,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            rm -rf /opt/augslink
             mkdir -p /opt/augslink
 
       - name: Install ghcup (always update too)
