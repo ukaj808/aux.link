@@ -7,7 +7,7 @@ module CommandLine
 import Options.Applicative
 
 
-newtype CLArgs =
+data CLArgs =
   CLArgs
     { 
       staticAssetsPath      :: FilePath
