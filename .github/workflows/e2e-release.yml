@@ -18,6 +18,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
+            rm -rf /opt/augslink
             mkdir -p /opt/augslink
 
       - name: Install ghcup (always update too)
@@ -92,7 +93,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           overwrite: true
           source: ./
-          target: /opt/augslink/augslink
+          target: /opt/augslink
       
       - name: Build Executable
         uses: appleboy/ssh-action@v1.0.0
@@ -103,7 +104,7 @@ jobs:
           command_timeout: 2h
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink/augslink
+            cd /opt/augslink
             cabal update
             cabal build
             cabal install --overwrite-policy=always
@@ -116,7 +117,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink/augslink
+            cd /opt/augslink
             npm install
             npm run build
       
@@ -128,5 +129,5 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink/augslink
+            cd /opt/augslink
             augslink -p dist-static -c /etc/letsencrypt/live/augs.link/fullchain.pem -k /etc/letsencrypt/live/augs.link/privkey.pem
