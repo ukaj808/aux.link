@@ -55,6 +55,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          overwrite: true
           source: ./
           target: /opt/augslink/augslink
       
