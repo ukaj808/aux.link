@@ -64,9 +64,33 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          command_timeout: 30m
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
             cabal update
             cabal build
             cabal install --overwrite-policy=always
+      
+      - name: Bundle static assets
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
+            cd /opt/augslink/augslink
+            npm install
+            npm run build
+      
+      - name: Run
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            export PATH="$HOME/.ghcup/bin:$PATH"
+            cd /opt/augslink/augslink
+            augslink -p dist-static
