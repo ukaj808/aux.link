@@ -65,7 +65,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          command_timeout: 30m
+          command_timeout: 1h
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
