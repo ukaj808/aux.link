@@ -28,7 +28,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             apk update
-            apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev perl tar xz
+            apk add binutils-gold curl gcc g++ gmp-dev libc-dev libffi-dev make musl-dev ncurses-dev zlib-dev perl tar xz
             curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
             export PATH="$HOME/.ghcup/bin:$PATH"
             ghcup upgrade
