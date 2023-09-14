@@ -129,4 +129,4 @@ jobs:
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink/augslink
-            augslink -p dist-static
+            augslink -p dist-static -c /etc/letsencrypt/live/augs.link/fullchain.pem -p /etc/letsencrypt/live/augs.link/privkey.pem
