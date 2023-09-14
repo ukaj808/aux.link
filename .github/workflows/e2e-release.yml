@@ -28,7 +28,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             apt-get update -y
-            apt-get install -y build-essential curl libfoo-dev libffi-dev libffi7 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
+            apt-get install -y build-essential curl libffi-dev libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5
             curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
             export PATH="$HOME/.ghcup/bin:$PATH"
             ghcup upgrade
