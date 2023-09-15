@@ -132,5 +132,5 @@ jobs:
             sudo cp -f augslink.service /etc/systemd/system/augslink.service
             sudo systemctl daemon-reload
             sudo systemctl enable augslink.service
-            sude systemctl stop augslink.service
+            sudo systemctl stop augslink.service
             sudo systemctl start augslink.service
