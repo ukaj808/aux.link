@@ -125,7 +125,7 @@ nextSong stateVar = do
   modifyMVar_ stateVar $ \st' -> do
     return st'{mState=Polling}
 
-  polled <- pollSongIsUploaded stateVar 10
+  polled <- pollSongIsUploaded stateVar 60
   -- refresh st var; users could have joined during polling... maybe should redo this
   case polled of
     Nothing -> do
