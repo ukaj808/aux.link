@@ -119,8 +119,8 @@ jobs:
             cd /opt/augslink
             npm install
             npm run build
-      
-      - name: Run
+
+      - name: Create systemd service and restart
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
@@ -129,4 +129,8 @@ jobs:
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
             cd /opt/augslink
-            augslink -p dist-static -c /etc/letsencrypt/live/augs.link/fullchain.pem -k /etc/letsencrypt/live/augs.link/privkey.pem
+            sudo cp -f augslink.service /etc/systemd/system/augslink.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable augslink.service
+            sude systemctl stop augslink.service
+            sudo systemctl start augslink.service

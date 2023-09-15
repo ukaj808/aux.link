@@ -1,0 +1,8 @@
+[Unit]
+Description=Augslink Web Server
+
+[Service]
+ExecStart=/root/.cabal/bin/augslink/augslink -p dist-static -c /etc/letsencrypt/live/augs.link/fullchain.pem -k /etc/letsencrypt/live/augs.link/privkey.pem
+WorkingDirectory=/opts/augslink
+User=root
+Group=root
