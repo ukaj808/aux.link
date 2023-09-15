@@ -105,7 +105,7 @@ export class CurrentlyPlayingElement {
         entry: ['showSongTitle', 'startVisualizer'],
         exit: ['hideSongTitle', 'stopVisualizer'],
         on: {
-          SONG_FINISHED: 'Countdown', 
+          COUNTDOWN_STARTED: 'Countdown', 
         },
       },
     },

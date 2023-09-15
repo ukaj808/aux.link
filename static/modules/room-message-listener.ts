@@ -32,6 +32,6 @@ export class RoomMessageListener {
 
   private process = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data) as RoomMessage;
-    this.eventBus.publish(data.type, data);
+        this.eventBus.publish(data.type, data);
   }
 }
