@@ -18,48 +18,56 @@ body {
 .user-1 {
   position: absolute;
   z-index: 3;
-  width: 50px;
-  height: 50px;
-  border-radius: 50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
   background-color: pink;
 }
 
 .user-2 {
   position: absolute;
   z-index: 2;
-  left: 10px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
   background-color: blue;
 }
 
 .user-3 {
   position: absolute;
   z-index: 1;
-  left: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
   background-color: green;
 }
 
 .users {
   flex: 1;
   display: flex;
-  justify-content: center;
 }
 
 .users-list {
   position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .room-id {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.room-id-text {
+  font-size: 5vw;
 }
 
 .drop-section {
-  flex: 1;
+  flex: 2;
   background-color: yellow;
 }
 
