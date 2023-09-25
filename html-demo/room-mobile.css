@@ -39,6 +39,14 @@ body {
   background-color: green;
 }
 
+.yellow {
+  background-color: yellow;
+}
+
+.black {
+  background-color: black;
+}
+
 .users {
   flex: 1;
   display: flex;
