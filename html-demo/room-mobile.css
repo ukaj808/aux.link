@@ -15,30 +15,27 @@ body {
   flex: 1;
 }
 
-.user-1 {
+.user {
   position: absolute;
-  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
   width: 200px;
   height: 200px;
   border-radius: 50%;
+}
+
+.pink {
   background-color: pink;
 }
 
-.user-2 {
-  position: absolute;
-  z-index: 2;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
+.blue {
   background-color: blue;
 }
 
-.user-3 {
-  position: absolute;
-  z-index: 1;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
+.green {
   background-color: green;
 }
 
@@ -50,9 +47,6 @@ body {
 .users-list {
   position: relative;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .room-id {
