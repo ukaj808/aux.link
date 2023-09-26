@@ -31,6 +31,8 @@ const shiftUserElements = (head) => {
 
 const updateView = (event) => {
     const transition = document.startViewTransition(() => shiftUserElements(usersList.firstElementChild));
+    transition.finished.then(() => {
+    });
 }
 
 setInitialPositions(usersList.firstElementChild, 0, usersList.children.length);

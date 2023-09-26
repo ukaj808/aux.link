@@ -27,6 +27,10 @@ body {
   border-radius: 50%;
 }
 
+.baton {
+  view-transition-name: user-slide;
+}
+
 .pink {
   background-color: pink;
 }
