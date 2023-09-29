@@ -1,3 +1,8 @@
+:root {
+  --distance-to-end-of-queue: 300px;
+  --distance-up-one-spot: -50px;
+}
+
 html {
   height: 100%;
   display: flex;
@@ -25,6 +30,28 @@ body {
   width: 200px;
   height: 200px;
   border-radius: 50%;
+}
+
+.moving-to-end {
+  animation-name: move-to-end;
+  animation-duration: 3s;
+}
+
+.moving-up-one {
+  animation-name: move-up-one;
+  animation-duration: 3s;
+}
+
+@keyframes move-up-one {
+  to {
+    transform: translateX(var(--distance-up-one-spot));
+  }
+}
+
+@keyframes move-to-end {
+  to {
+    transform: translateX(var(--distance-to-end-of-queue));
+  }
 }
 
 .baton {

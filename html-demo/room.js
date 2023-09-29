@@ -7,33 +7,44 @@ const setInitialPositions = (node, offset, zIndex) => {
     setInitialPositions(node.nextElementSibling, offset + 50, zIndex - 1);
 };
 
-const shiftUserElements = (head) => {
-    if (head === null) return;
-    const go = (node) => {
-        if (node === null) return;
-        if (node.nextElementSibling === null) {
-            const headPos = { left: head.style.left, zIndex: head.style.zIndex };
-            head.style.left = node.style.left;
-            head.style.zIndex = node.style.zIndex;
-            node.style.left = node.previousElementSibling.style.left;
-            node.style.zIndex = node.previousElementSibling.style.zIndex;
-            return headPos;
-        }
-       const headPos = go(node.nextElementSibling);
-       node.style.left = node.previousElementSibling.style.left;
-       node.style.zIndex = node.previousElementSibling.style.zIndex;
-       return headPos;
-    };
-    const headPos = go(head.nextElementSibling);
-    head.nextElementSibling.style.left = headPos.left;
-    head.nextElementSibling.style.zIndex = headPos.zIndex;
-}
+usersList.addEventListener('click', () => {
+    if (usersList.childElementCount < 2) return;
 
-const updateView = (event) => {
-    const transition = document.startViewTransition(() => shiftUserElements(usersList.firstElementChild));
-    transition.finished.then(() => {
+    const lastPos = { 
+        left: usersList.children[usersList.childElementCount-1].style.left,
+        zIndex: usersList.children[usersList.childElementCount-1].style.zIndex
+    }
+
+    const firstToLastAnimation = usersList.children[0].animate([
+        {
+            left: lastPos.left,
+            zIndex: lastPos.zIndex
+        }
+    ], 
+    {
+        duration: 2000,
     });
-}
+    firstToLastAnimation.commitStyles();
+
+    for (let i = 1; i < usersList.childElementCount; i++) {
+        const u1 = usersList.children[i];
+        const u2 = usersList.children[i-1]; // User ahead one position
+        const newPos = {
+            left: u2.style.left,
+            zIndex: u2.style.zIndex
+        };
+        const upOneAnimation = u1.animate([
+            {
+                left: newPos.left,
+                zIndex: newPos.zIndex
+            }
+        ], 
+        {
+            duration: 2000,
+        });
+        upOneAnimation.commitStyles();
+    }
+});
+
 
 setInitialPositions(usersList.firstElementChild, 0, usersList.children.length);
-usersList.addEventListener('click', updateView);
