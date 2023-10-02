@@ -17,15 +17,21 @@ usersList.addEventListener('click', () => {
 
     const firstToLastAnimation = usersList.children[0].animate([
         {
+            left: parseInt(lastPos.left) + 250 + 'px',
+            zIndex: lastPos.zIndex,
+            offset: 0.5
+        },
+        {
             left: lastPos.left,
             zIndex: lastPos.zIndex
         }
     ], 
     {
-        duration: 2000,
+        duration: 12000,
+        fill: 'forwards'
     });
-    firstToLastAnimation.commitStyles();
-
+    firstToLastAnimation.pause();
+    const oneUpAnimations = [];
     for (let i = 1; i < usersList.childElementCount; i++) {
         const u1 = usersList.children[i];
         const u2 = usersList.children[i-1]; // User ahead one position
@@ -40,10 +46,26 @@ usersList.addEventListener('click', () => {
             }
         ], 
         {
-            duration: 2000,
+            duration: 12000,
+            fill: 'forwards'
         });
-        upOneAnimation.commitStyles();
+        upOneAnimation.pause();
+        oneUpAnimations.push(upOneAnimation);
     }
+
+    // Play all animations
+    firstToLastAnimation.play();
+    oneUpAnimations.forEach(a => a.play());
+    Promise.all([firstToLastAnimation.finished, ...oneUpAnimations.map(a => a.finished)])
+        .then(() => {
+            firstToLastAnimation.commitStyles();
+            oneUpAnimations.forEach(a => a.commitStyles());
+            firstToLastAnimation.cancel();
+            oneUpAnimations.forEach(a => a.cancel());
+            const head = usersList.children[0];
+            head.remove();
+            usersList.appendChild(head);
+        });
 });
 
 
