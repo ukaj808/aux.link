@@ -1,10 +1,10 @@
 const usersList = document.querySelector('.users-list');
 
-const setInitialPositions = (node, offset, zIndex) => {
+const refreshPositions = (node, offset, zIndex) => {
     if (node === null) return;
     node.style.left = offset;
     node.style.zIndex = zIndex;
-    setInitialPositions(node.nextElementSibling, offset + 50, zIndex - 1);
+    refreshPositions(node.nextElementSibling, offset + 50, zIndex - 1);
 };
 
 usersList.addEventListener('click', () => {
@@ -15,21 +15,30 @@ usersList.addEventListener('click', () => {
         zIndex: usersList.children[usersList.childElementCount-1].style.zIndex
     }
 
-    const firstToLastAnimation = usersList.children[0].animate([
+    const moveToEndAndSomeAnimation = usersList.children[0].animate([
         {
             left: parseInt(lastPos.left) + 250 + 'px',
-            offset: 0.5
-        },
+            zIndex: parseInt(lastPos.zIndex) + 1
+        }
+    ], 
+    {
+        duration: 6000,
+        fill: 'forwards'
+    });
+    moveToEndAndSomeAnimation.pause();
+
+    const moveToLastPlaceAnimation = usersList.children[0].animate([
         {
             left: lastPos.left,
             zIndex: lastPos.zIndex
         }
     ], 
     {
-        duration: 2000,
+        duration: 6000,
         fill: 'forwards'
     });
-    firstToLastAnimation.pause();
+    moveToLastPlaceAnimation.pause();
+
     const oneUpAnimations = [];
     for (let i = 1; i < usersList.childElementCount; i++) {
         const u1 = usersList.children[i];
@@ -40,16 +49,11 @@ usersList.addEventListener('click', () => {
         };
         const upOneAnimation = u1.animate([
             {
-                offset: 0.5,
-                left: ((parseInt(newPos.left) + parseInt(u1.style.left)) / 2) + 'px',
-            },
-            {
                 left: newPos.left,
-                zIndex: newPos.zIndex
             }
         ], 
         {
-            duration: 2000,
+            duration: 6000,
             fill: 'forwards'
         });
         upOneAnimation.pause();
@@ -57,19 +61,27 @@ usersList.addEventListener('click', () => {
     }
 
     // Play all animations
-    firstToLastAnimation.play();
+    moveToEndAndSomeAnimation.play();
     oneUpAnimations.forEach(a => a.play());
-    Promise.all([firstToLastAnimation.finished, ...oneUpAnimations.map(a => a.finished)])
+    Promise.all([moveToEndAndSomeAnimation.finished, ...oneUpAnimations.map(a => a.finished)])
         .then(() => {
-            firstToLastAnimation.commitStyles();
-            oneUpAnimations.forEach(a => a.commitStyles());
-            firstToLastAnimation.cancel();
-            oneUpAnimations.forEach(a => a.cancel());
+
+            oneUpAnimations.forEach(a => {a.commitStyles(); a.cancel();});
+
             const head = usersList.children[0];
+
+            moveToEndAndSomeAnimation.commitStyles();
+            moveToEndAndSomeAnimation.cancel();
+
             head.remove();
             usersList.appendChild(head);
+
+            moveToLastPlaceAnimation.play();
+            moveToLastPlaceAnimation.finished.then(() => {
+                moveToLastPlaceAnimation.commitStyles();
+                moveToLastPlaceAnimation.cancel();
+            });
         });
 });
 
-
-setInitialPositions(usersList.firstElementChild, 0, usersList.children.length);
+refreshPositions(usersList.firstElementChild, 0, usersList.children.length);
