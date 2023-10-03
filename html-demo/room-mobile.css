@@ -86,6 +86,7 @@ body {
 .users-list {
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
 
 .room-id {

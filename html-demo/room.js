@@ -18,7 +18,6 @@ usersList.addEventListener('click', () => {
     const firstToLastAnimation = usersList.children[0].animate([
         {
             left: parseInt(lastPos.left) + 250 + 'px',
-            zIndex: lastPos.zIndex,
             offset: 0.5
         },
         {
@@ -27,7 +26,7 @@ usersList.addEventListener('click', () => {
         }
     ], 
     {
-        duration: 12000,
+        duration: 2000,
         fill: 'forwards'
     });
     firstToLastAnimation.pause();
@@ -41,12 +40,16 @@ usersList.addEventListener('click', () => {
         };
         const upOneAnimation = u1.animate([
             {
+                offset: 0.5,
+                left: ((parseInt(newPos.left) + parseInt(u1.style.left)) / 2) + 'px',
+            },
+            {
                 left: newPos.left,
                 zIndex: newPos.zIndex
             }
         ], 
         {
-            duration: 12000,
+            duration: 2000,
             fill: 'forwards'
         });
         upOneAnimation.pause();
