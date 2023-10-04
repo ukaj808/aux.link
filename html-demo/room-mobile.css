@@ -78,14 +78,33 @@ body {
   background-color: black;
 }
 
-.users {
-  flex: 1;
-  display: flex;
+.red {
+  background-color: red;
 }
 
-.users-list {
+.orange {
+  background-color: orange;
+}
+
+.gold {
+  background-color: gold;
+}
+
+.grey {
+  background-color: grey;
+}
+
+.purple {
+  background-color: purple;
+}
+
+.orange {
+  background-color: orange;
+}
+
+.users {
+  flex: 1;
   position: relative;
-  width: 100%;
   overflow: hidden;
 }
 

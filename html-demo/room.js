@@ -1,4 +1,4 @@
-const usersList = document.querySelector('.users-list');
+const usersList = document.querySelector('.users');
 
 const staggerUsers = (node, offset, zIndex) => {
     if (node === null) return;
