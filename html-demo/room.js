@@ -1,10 +1,10 @@
 const usersList = document.querySelector('.users-list');
 
-const refreshPositions = (node, offset, zIndex) => {
+const staggerUsers = (node, offset, zIndex) => {
     if (node === null) return;
     node.style.left = offset;
     node.style.zIndex = zIndex;
-    refreshPositions(node.nextElementSibling, offset + 50, zIndex - 1);
+    staggerUsers(node.nextElementSibling, offset + 50, zIndex - 1);
 };
 
 usersList.addEventListener('click', () => {
@@ -18,11 +18,10 @@ usersList.addEventListener('click', () => {
     const moveToEndAndSomeAnimation = usersList.children[0].animate([
         {
             left: parseInt(lastPos.left) + 250 + 'px',
-            zIndex: parseInt(lastPos.zIndex) + 1
         }
     ], 
     {
-        duration: 6000,
+        duration: 1000,
         fill: 'forwards'
     });
     moveToEndAndSomeAnimation.pause();
@@ -30,11 +29,10 @@ usersList.addEventListener('click', () => {
     const moveToLastPlaceAnimation = usersList.children[0].animate([
         {
             left: lastPos.left,
-            zIndex: lastPos.zIndex
         }
     ], 
     {
-        duration: 6000,
+        duration: 1000,
         fill: 'forwards'
     });
     moveToLastPlaceAnimation.pause();
@@ -53,7 +51,7 @@ usersList.addEventListener('click', () => {
             }
         ], 
         {
-            duration: 6000,
+            duration: 1000,
             fill: 'forwards'
         });
         upOneAnimation.pause();
@@ -67,11 +65,17 @@ usersList.addEventListener('click', () => {
         .then(() => {
 
             oneUpAnimations.forEach(a => {a.commitStyles(); a.cancel();});
-
-            const head = usersList.children[0];
-
             moveToEndAndSomeAnimation.commitStyles();
             moveToEndAndSomeAnimation.cancel();
+            const head = usersList.children[0];
+
+            // at this point, the left property should have been updated through the commitStyles() call
+            // but we still need to update the zIndex
+            head.style.zIndex = 0;
+            for (let i=1; i < usersList.childElementCount; i++) {
+                const u = usersList.children[i];
+                u.style.zIndex = parseInt(u.style.zIndex) + 1;
+            }
 
             head.remove();
             usersList.appendChild(head);
@@ -84,4 +88,4 @@ usersList.addEventListener('click', () => {
         });
 });
 
-refreshPositions(usersList.firstElementChild, 0, usersList.children.length);
+staggerUsers(usersList.firstElementChild, 0, usersList.children.length);
