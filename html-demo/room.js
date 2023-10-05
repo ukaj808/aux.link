@@ -16,7 +16,7 @@ const calcInitialOffset = () => {
     return offset;
 };
 
-usersList.addEventListener('click', () => {
+const runNextInLineAnimation = () => {
     if (usersList.childElementCount < 2) return;
 
     const lastPos = { 
@@ -80,7 +80,6 @@ usersList.addEventListener('click', () => {
 
             // at this point, the left property should have been updated through the commitStyles() call
             // but we still need to update the zIndex
-            head.style.zIndex = 0;
             for (let i=1; i < usersList.childElementCount; i++) {
                 const u = usersList.children[i];
                 u.style.zIndex = parseInt(u.style.zIndex) + 1;
@@ -88,6 +87,7 @@ usersList.addEventListener('click', () => {
 
             head.remove();
             usersList.appendChild(head);
+            head.style.zIndex = 0;
 
             moveToLastPlaceAnimation.play();
             moveToLastPlaceAnimation.finished.then(() => {
@@ -95,6 +95,8 @@ usersList.addEventListener('click', () => {
                 moveToLastPlaceAnimation.cancel();
             });
         });
-});
+};
 
-staggerUsers(usersList.firstElementChild, 0, usersList.children.length);
+usersList.addEventListener('click', runNextInLineAnimation);
+
+staggerUsers(usersList.firstElementChild, 0, usersList.children.length - 1);
