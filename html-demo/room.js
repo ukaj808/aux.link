@@ -2,9 +2,18 @@ const usersList = document.querySelector('.users');
 
 const staggerUsers = (node, offset, zIndex) => {
     if (node === null) return;
+    const calcOffset = 250 / usersList.children.length;
     node.style.left = offset;
     node.style.zIndex = zIndex;
-    staggerUsers(node.nextElementSibling, offset + 50, zIndex - 1);
+    const nextOffset = offset + calcOffset;
+    const nextZIndex = zIndex - 1;
+    staggerUsers(node.nextElementSibling, nextOffset, nextZIndex);
+};
+
+const calcInitialOffset = () => {
+    const users = usersList.wi
+    const offset = 100 / users;
+    return offset;
 };
 
 usersList.addEventListener('click', () => {
