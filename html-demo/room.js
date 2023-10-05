@@ -97,6 +97,11 @@ const runNextInLineAnimation = () => {
         });
 };
 
-usersList.addEventListener('click', runNextInLineAnimation);
+const isMobile = window.matchMedia('screen and (min-width:0px) and (max-width:1025px)').matches;
 
-staggerUsers(usersList.firstElementChild, 0, usersList.children.length - 1);
+if (isMobile) {
+    const offset = calcInitialOffset();
+    staggerUsers(usersList.firstElementChild, offset, usersList.children.length - 1);
+} else {
+
+}
