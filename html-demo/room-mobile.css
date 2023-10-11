@@ -10,14 +10,18 @@ html {
 
 body {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template:
+    "room-id      room-id      users        users"
+    "drop-section drop-section drop-section drop-section"
+    "music-player music-player music-player music-player";
+
 }
 
 .room-user-combo {
+  grid-area: room-user-combo;
   display: flex;
   background-color: white;
-  flex: 1;
 }
 
 .user {
@@ -104,11 +108,9 @@ body {
 .users {
   flex: 1;
   position: relative;
-  overflow: hidden;
 }
 
 .room-id {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -119,11 +121,11 @@ body {
 }
 
 .drop-section {
-  flex: 2;
+  grid-area: drop-section;
   background-color: yellow;
 }
 
 .music-player {
-  flex: 1;
+  grid-area: music-player;
   background-color: red;
 }
