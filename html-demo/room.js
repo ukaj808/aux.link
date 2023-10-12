@@ -11,8 +11,7 @@ const staggerUsers = (node, offset, zIndex) => {
 };
 
 const calcInitialOffset = () => {
-    const users = usersList.wi
-    const offset = 100 / users;
+    const offset = 100 / usersList.children.length;
     return offset;
 };
 

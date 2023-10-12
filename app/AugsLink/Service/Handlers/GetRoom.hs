@@ -47,10 +47,14 @@ renderUser user =
   in
   H.li ! A.id suid ! A.class_ classes ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
 
+renderRoomInfoSection :: H.Html
+renderRoomInfoSection =
+  H.section ! A.id "room-info-section" $ do
+    H.span $ "123123123"
 
 renderUserQueueSection :: UserQueueView -> H.Html
 renderUserQueueSection uqv =
-  H.section ! A.id "order" ! H.dataAttribute "og-state" jsonOv ! A.class_ "default-margin flex-cell-md secondary-theme" $ do
+  H.section ! A.id "user-section" ! H.dataAttribute "og-state" jsonOv $ do
     H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll frame" $ do
       forM_ (uqvQueue uqv) renderUser
   where
@@ -58,7 +62,7 @@ renderUserQueueSection uqv =
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv =
-  H.section ! A.id "currently-playing"
+  H.section ! A.id "music-player-section"
   ! H.dataAttribute "state" musicStateAttribute
   ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
     H.div  ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
@@ -97,7 +101,7 @@ renderCurrentlyPlayingSection cpv =
 
 renderDropSection :: H.Html
 renderDropSection =
-  H.section ! A.id "drop"      ! A.class_ "full-flex frame centered flex-cell-lg default-margin secondary-theme"  $ do
+  H.section ! A.id "drop-section" $ do
       H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex frame centered column" $ do
         H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex frame centered column" $ do
           musicIconSvg
@@ -111,13 +115,14 @@ renderRoomPage room = H.docTypeHtml $ do
     H.meta   ! A.charset "UTF-8"
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
     H.script ! A.type_ "module"   ! A.src     "/public/room.bundle.js" $ ""
-    H.link   ! A.rel "stylesheet" ! A.href    "/public/room.css"
+    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:0px) and (max-width:1025px)" ! A.href    "/public/room-mobile.css"
+    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-mobile.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
-    H.main ! A.id "room" ! A.class_ "full-flex frame column" $ do
-      renderUserQueueSection            $ uqv room
-      renderCurrentlyPlayingSection $ cpv room
-      renderDropSection
+    renderRoomInfoSection         
+    renderUserQueueSection        $ uqv room
+    renderCurrentlyPlayingSection $ cpv room
+    renderDropSection
 
 instance ToMarkup RoomView where
   toMarkup = renderRoomPage

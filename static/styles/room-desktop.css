@@ -7,17 +7,6 @@
     --warning-color: #ff0000;
 }
 
-html, body {
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    background-color: var(--primary-bg-color);
-}
-
-section {
-  position: relative;
-} 
-
 h4 {
   color: var(--primary-fnt-color);
 }
@@ -28,27 +17,6 @@ h4 {
 
 .hidden {
   display: none;
-}
-
-.full-flex {
-    height: 100%;
-    display: flex;
-    box-sizing: border-box;
-}
-
-.frame {
-  padding: 10px;
-}
-
-.flex-cell-sm {
-  flex: 1;
-}
-
-.flex-cell-md{
-  flex: 2;
-}
-.flex-cell-lg{
-  flex: 3;
 }
 
 .draggable {
