@@ -8,7 +8,7 @@ import { RoomMessageListener } from "./room-message-listener";
 import { Song } from "./interface";
 
 export class DropElement {
-    private el: HTMLDivElement;
+    private dropSectionEl: HTMLDivElement;
     private roomMessageListener: RoomMessageListener;
     private dropZoneEl: HTMLLabelElement;
     private dropZoneInputEl: HTMLInputElement;
@@ -22,9 +22,9 @@ export class DropElement {
     //private onContextMenuBound: (e: MouseEvent) => void;
 
     constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, loaderFactory: LoaderFactory, svgFactory: SvgFactory) {
-        const el = document.getElementById("drop");
-        if (!el) throw new Error('No drop element found');
-        this.el = el as HTMLDivElement;
+        const dropSectionEl = document.getElementById("drop-section");
+        if (!dropSectionEl) throw new Error('No drop element found');
+        this.dropSectionEl = dropSectionEl as HTMLDivElement;
 
         const dropZoneEl = document.getElementById("drop-zone");
         if (!dropZoneEl) throw new Error('No drop element found');

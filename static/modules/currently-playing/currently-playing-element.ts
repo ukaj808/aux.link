@@ -7,7 +7,7 @@ import { createMachine, fromPromise, interpret } from "xstate";
 
 export class CurrentlyPlayingElement {
 
-  private el: HTMLElement;
+  private musicPlayerSectionEl: HTMLElement;
   private canvasMachine: any;
   private listenMachine: any;
   private roomMessageListener: RoomMessageListener;
@@ -27,9 +27,9 @@ export class CurrentlyPlayingElement {
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, auxAudioPlayer: AuxAudioPlayer, analyser: AnalyserNode) {
 
-    const optEl = document.getElementById("currently-playing");
-    if (!optEl) throw new Error('No currently playing element found');
-    this.el = optEl;
+    const musicPlayerSectionEl = document.getElementById("music-player-section");
+    if (!musicPlayerSectionEl) throw new Error('No currently playing element found');
+    this.musicPlayerSectionEl = musicPlayerSectionEl;
 
     const audioCanvas = document.getElementById("audio-visualizer") as HTMLCanvasElement;
     if (!audioCanvas) throw new Error('No audio canvas element found');
@@ -59,7 +59,7 @@ export class CurrentlyPlayingElement {
     if (!description) throw new Error('No description element found');
     this.description = description as HTMLSpanElement;
 
-    const state = optEl.getAttribute('data-state');
+    const state = musicPlayerSectionEl.getAttribute('data-state');
     if (!state) throw new Error('No initial state found');
     this.initialState = state as MusicStreamerState;
 

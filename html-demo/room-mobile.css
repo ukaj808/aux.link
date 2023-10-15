@@ -12,24 +12,29 @@ body {
   flex: 1;
   display: grid;
   grid-template:
-    "room-id      room-id      users        users"
-    "drop-section drop-section drop-section drop-section"
-    "music-player music-player music-player music-player";
+    "room-user-combo"
+    "drop-section"
+    "music-player";
 
 }
 
 .room-user-combo {
-  grid-area: room-user-combo;
   display: flex;
   background-color: white;
 }
 
+.room-id-users {
+  grid-area: room-user-combo;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.users {
+  display: flex;
+}
+
 .user {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  margin: auto;
   width: 200px;
   height: 200px;
   border-radius: 50%;
@@ -103,11 +108,6 @@ body {
 
 .orange {
   background-color: orange;
-}
-
-.users {
-  flex: 1;
-  position: relative;
 }
 
 .room-id {

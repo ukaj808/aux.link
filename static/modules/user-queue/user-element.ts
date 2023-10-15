@@ -3,7 +3,7 @@ import { SvgFactory } from "../svg";
 
 
 export class UserElement {
-  private el: HTMLLIElement;
+  private el: HTMLDivElement;
   private userId: string;
   private hexColor: string;
   private isCreator: boolean;
@@ -20,11 +20,11 @@ export class UserElement {
     this.serverGenerated = serverGenerated;
 
     if (serverGenerated) {
-      const userEl = document.getElementById(userId) as HTMLLIElement;
+      const userEl = document.getElementById(userId) as HTMLDivElement;
       if (!userEl) throw new Error('No user element found');
       this.el = userEl;
     } else {
-      const userEl = document.createElement('li');
+      const userEl = document.createElement('div');
       userEl.id = userId;
       userEl.classList.add('square-cell', 'tertiary-theme', 'spaced-hz-li');
       userEl.style.backgroundColor = hexColor;
@@ -33,7 +33,7 @@ export class UserElement {
     }
   }
 
-  public getEl(): HTMLLIElement {
+  public getEl(): HTMLDivElement {
     return this.el;
   }
 
@@ -66,11 +66,11 @@ export class UserElementFactory {
   private restClient: RestClient;
   private svgFactory: SvgFactory;
 
-  constructor(restClient: RestClient, svgFactory: SvgFactory, userLi: HTMLOListElement) {
+  constructor(restClient: RestClient, svgFactory: SvgFactory, userSectionEl: HTMLElement) {
     this.userElements = [];
     this.svgFactory = svgFactory;
     this.restClient = restClient;
-    Array.from(userLi.children).forEach((user) => {
+    Array.from(userSectionEl.children).forEach((user) => {
       const hexColor = user.getAttribute('data-hex-color');
       if (!hexColor) throw new Error('No hex color found');
       this.userElements.push(new UserElement(restClient, svgFactory, user.id, hexColor, false, true));

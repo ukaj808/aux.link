@@ -1,31 +1,24 @@
 const usersList = document.querySelector('.users');
 
-const staggerUsers = (node, offset, zIndex) => {
+const staggerUsers = (node, zIndex) => {
     if (node === null) return;
-    const calcOffset = 250 / usersList.children.length;
-    node.style.left = offset;
+    node.style.marginLeft = -100;
     node.style.zIndex = zIndex;
-    const nextOffset = offset + calcOffset;
     const nextZIndex = zIndex - 1;
-    staggerUsers(node.nextElementSibling, nextOffset, nextZIndex);
-};
-
-const calcInitialOffset = () => {
-    const offset = 100 / usersList.children.length;
-    return offset;
+    staggerUsers(node.nextElementSibling, nextZIndex);
 };
 
 const runNextInLineAnimation = () => {
     if (usersList.childElementCount < 2) return;
 
     const lastPos = { 
-        left: usersList.children[usersList.childElementCount-1].style.left,
+        marginLeft: usersList.children[usersList.childElementCount-1].style.marginLeft,
         zIndex: usersList.children[usersList.childElementCount-1].style.zIndex
     }
 
     const moveToEndAndSomeAnimation = usersList.children[0].animate([
         {
-            left: parseInt(lastPos.left) + 250 + 'px',
+            marginLeft: parseInt(lastPos.marginLeft) + 250 + 'px',
         }
     ], 
     {
@@ -36,7 +29,7 @@ const runNextInLineAnimation = () => {
 
     const moveToLastPlaceAnimation = usersList.children[0].animate([
         {
-            left: lastPos.left,
+            marginLeft: lastPos.marginLeft,
         }
     ], 
     {
@@ -50,12 +43,12 @@ const runNextInLineAnimation = () => {
         const u1 = usersList.children[i];
         const u2 = usersList.children[i-1]; // User ahead one position
         const newPos = {
-            left: u2.style.left,
+            marginLeft: u2.style.marginLeft,
             zIndex: u2.style.zIndex
         };
         const upOneAnimation = u1.animate([
             {
-                left: newPos.left,
+                marginLeft: newPos.marginLeft,
             }
         ], 
         {
@@ -99,8 +92,7 @@ const runNextInLineAnimation = () => {
 const isMobile = window.matchMedia('screen and (min-width:0px) and (max-width:1025px)').matches;
 
 if (isMobile) {
-    const offset = calcInitialOffset();
-    staggerUsers(usersList.firstElementChild, offset, usersList.children.length - 1);
+    staggerUsers(usersList.firstElementChild.nextElementSibling, usersList.children.length - 1);
 } else {
 
 }

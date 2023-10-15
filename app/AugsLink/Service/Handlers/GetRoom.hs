@@ -45,7 +45,7 @@ renderUser user =
       bgcolor = toValue $ "background-color: " <> hexColor user <> ";"
       classes = "square-cell tertiary-theme spaced-hz-li" :: AttributeValue
   in
-  H.li ! A.id suid ! A.class_ classes ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
+  H.div ! A.id suid ! A.class_ classes ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
 
 renderRoomInfoSection :: H.Html
 renderRoomInfoSection =
@@ -55,8 +55,7 @@ renderRoomInfoSection =
 renderUserQueueSection :: UserQueueView -> H.Html
 renderUserQueueSection uqv =
   H.section ! A.id "user-section" ! H.dataAttribute "og-state" jsonOv $ do
-    H.ol ! A.id "user-queue" ! A.class_ "horiz-list full-flex x-scroll frame" $ do
-      forM_ (uqvQueue uqv) renderUser
+    forM_ (uqvQueue uqv) renderUser
   where
     jsonOv = textValue $ T.pack $ show $ Aeson.encode uqv
 
