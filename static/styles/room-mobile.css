@@ -7,28 +7,39 @@
     --warning-color: #ff0000;
 }
 
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
 body {
     display: grid;
-    grid-template:
-        "risec      risec      usec        usec" 1fr
-        "dropsec    dropsec    dropsec     dropsec" 3fr
-        "musec      musec      musec       musec" 3fr;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: 1fr 3fr 3fr;
+    grid-template-areas:
+        "risec      usec"
+        "dropsec    dropsec"
+        "musec      musec";
 }
 
 #room-info-section {
     grid-area: risec;
+    display: flex;
 }
 
 #user-section {
     grid-area: usec;
+    position: relative;
 }
 
 #drop-section {
     grid-area: dropsec;
+    display: flex;
 }
 
-#music-player {
+#music-player-section {
     grid-area: musec;
+    position: relative;
 }
 
 h4 {

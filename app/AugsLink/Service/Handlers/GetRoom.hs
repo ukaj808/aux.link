@@ -63,8 +63,7 @@ renderUserQueueSection uqv =
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
 renderCurrentlyPlayingSection cpv =
   H.section ! A.id "music-player-section"
-  ! H.dataAttribute "state" musicStateAttribute
-  ! A.class_ "full-flex centered flex-cell-lg default-margin secondary-theme" $ do
+  ! H.dataAttribute "state" musicStateAttribute $ do
     H.div  ! A.id "cp-overlay" ! A.class_ "overlay full-flex centered z-1" $ ""
     H.canvas ! A.id "audio-visualizer" ! A.class_ "full-abs z-0" $ ""
     H.span ! A.id "cp-status" ! A.class_ "top-left-abs medium-text z-2" $ "Disconnected"
@@ -104,7 +103,6 @@ renderDropSection =
   H.section ! A.id "drop-section" $ do
       H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex frame centered column" $ do
         H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex frame centered column" $ do
-          musicIconSvg
           H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
           H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme"
 
