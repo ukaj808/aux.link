@@ -43,9 +43,8 @@ renderUser user =
       uname = toMarkup $ userName user
       color = toValue $ hexColor user
       bgcolor = toValue $ "background-color: " <> hexColor user <> ";"
-      classes = "square-cell tertiary-theme spaced-hz-li" :: AttributeValue
   in
-  H.div ! A.id suid ! A.class_ classes ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
+  H.div ! A.id suid ! A.class_ "user" ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
 
 renderRoomInfoSection :: H.Html
 renderRoomInfoSection =

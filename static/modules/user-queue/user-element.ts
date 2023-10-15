@@ -26,9 +26,9 @@ export class UserElement {
     } else {
       const userEl = document.createElement('div');
       userEl.id = userId;
-      userEl.classList.add('square-cell', 'tertiary-theme', 'spaced-hz-li');
+      userEl.classList.add('user');
       userEl.style.backgroundColor = hexColor;
-      if (isCreator) this.addCreatorOverlay(userEl);
+      //if (isCreator) this.addCreatorOverlay(userEl);
       this.el = userEl;
     }
   }
@@ -39,25 +39,6 @@ export class UserElement {
 
   public getUserId(): string {
     return this.userId;
-  }
-
-  private addCreatorOverlay(userCellEl: HTMLElement) {
-    userCellEl.classList.add('pos-rel', 'full-flex', 'centered');
-
-    const overlayEl = document.createElement('div');
-    overlayEl.classList.add('overlay', 'full-flex', 'centered');
-
-    overlayEl.appendChild(this.svgFactory.generatePlayIcon());
-
-    overlayEl.onclick = () => {
-      this.restClient.startMusic().then(() => {
-        overlayEl.classList.add('invisible');
-      }).catch((err) => {
-        console.error("Error calling the start music api", err);
-      });
-    };
-
-    userCellEl.appendChild(overlayEl);
   }
 }
 
