@@ -101,10 +101,9 @@ renderCurrentlyPlayingSection cpv =
 renderDropSection :: H.Html
 renderDropSection =
   H.section ! A.id "drop-section" $ do
-      H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" ! A.class_ "full-width full-flex frame centered column" $ do
-        H.div ! A.id "drop-zone-empty-content-container" ! A.class_ "full-flex frame centered column" $ do
-          H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
-          H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme"
+      H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" $ do
+        H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
+        H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme"
 
 renderRoomPage :: RoomView -> H.Html
 renderRoomPage room = H.docTypeHtml $ do

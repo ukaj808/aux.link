@@ -14,32 +14,44 @@ html, body {
 
 body {
     display: grid;
-    grid-template-columns: 1fr 3fr;
-    grid-template-rows: 1fr 3fr 3fr;
+    grid-template-columns: 1fr 1.5fr;
+    grid-template-rows: 1fr 3fr 1fr;
     grid-template-areas:
         "risec      usec"
         "dropsec    dropsec"
         "musec      musec";
+    gap: 1em;
 }
 
 #room-info-section {
     grid-area: risec;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: antiquewhite;
 }
 
 #user-section {
     grid-area: usec;
     position: relative;
+    background-color: brown;
 }
 
 #drop-section {
     grid-area: dropsec;
-    display: flex;
+    background-color: darkslategray;
+}
+
+#drop-zone {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 #music-player-section {
     grid-area: musec;
     position: relative;
+    background-color: cornsilk;
 }
 
 h4 {
