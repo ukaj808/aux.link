@@ -43,7 +43,9 @@ body {
 }
 
 #drop-zone {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   height: 100%;
 }
@@ -52,6 +54,11 @@ body {
     grid-area: musec;
     position: relative;
     background-color: cornsilk;
+}
+
+#empty-drop-zone-text {
+  color: white;
+  font-size: 2em;
 }
 
 h4 {
