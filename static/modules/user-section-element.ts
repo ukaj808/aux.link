@@ -1,14 +1,12 @@
-import { UserElementFactory } from "./user-element";
-import { RestClient } from "../rest-client";
-import { SvgFactory } from "../svg";
-import { RoomMessageListener } from "../room-message-listener";
-import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "../interface";
+import { RestClient } from "./rest-client";
+import { SvgFactory } from "./svg";
+import { RoomMessageListener } from "./room-message-listener";
+import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "./interface";
 
 export class UserQueueElement {
 
   private userSectionEl: HTMLElement;
   private roomMessageListener: RoomMessageListener;
-  private userElementFactory: UserElementFactory;
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {
 
@@ -38,15 +36,20 @@ export class UserQueueElement {
     const stateAttribute = userSectionEl.getAttribute('data-og-state');
     if (!stateAttribute) throw new Error('No state attribute found');
 
-    this.userElementFactory = new UserElementFactory(restClient, svgFactory, this.userSectionEl);
-
-    this.staggerUsers(this.userSectionEl.firstElementChild as HTMLDivElement, 0, this.userSectionEl.childElementCount);
   }
-
   
   public addNewUserToLine(userId: string, userName: string, hexColor: string, isCreator: boolean = false) {
-    const userEl = this.userElementFactory.createNewUser(userId, userName, hexColor, isCreator);
-    this.userSectionEl.appendChild(userEl.getEl());
+    const userEl = document.createElement('div');
+    userEl.id = userId;
+    userEl.classList.add('user');
+    userEl.style.backgroundColor = hexColor;
+    const userAhead = this.userSectionEl.lastElementChild as HTMLDivElement;
+
+    // animation + commit styles
+
+    userEl.style.zIndex = '0';
+    userEl.style.left = userAhead ? (parseInt(userAhead.style.left) + 4).toString() + 'rem' : '0';
+    this.userSectionEl.appendChild(userEl);
   }
 
   public removeUserFromLine(userId: string) {

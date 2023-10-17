@@ -37,14 +37,17 @@ musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" !
                         \c0.332-0.108,0.695-0.055,0.979,0.147c0.287,0.207,0.455,0.533,0.455,0.884v6.43\n\
                         \C57.379,51.188,57.008,51.158,56.623,51.158z"
 
-renderUser :: RoomUser -> H.Html
-renderUser user =
+renderUser :: RoomUser -> Int -> Int -> H.Html
+renderUser user left zIndex =
   let suid  = toValue  $ sanitizedUserId user
       uname = toMarkup $ userName user
       color = toValue $ hexColor user
-      bgcolor = toValue $ "background-color: " <> hexColor user <> ";"
+      bgcolorAttr = toValue $ "background-color: " <> hexColor user <> ";"
+      leftAttr = toValue $ "left: " <> show left <> "px;"
+      zIndexAttr = toValue $ "z-index: " <> show zIndex <> ";"
+      style = bgcolorAttr <> leftAttr <> zIndexAttr
   in
-  H.div ! A.id suid ! A.class_ "user" ! H.dataAttribute "hex-color" color ! A.style bgcolor $ ""
+  H.div ! A.id suid ! A.class_ "user" ! H.dataAttribute "hex-color" color ! A.style style $ ""
 
 renderRoomInfoSection :: H.Html
 renderRoomInfoSection =
@@ -54,7 +57,10 @@ renderRoomInfoSection =
 renderUserQueueSection :: UserQueueView -> H.Html
 renderUserQueueSection uqv =
   H.section ! A.id "user-section" ! H.dataAttribute "og-state" jsonOv $ do
-    forM_ (uqvQueue uqv) renderUser
+    foldM_ (\(left, zIndex) user -> do
+      renderUser user left zIndex
+      return (left + 50, zIndex - 1)
+      ) (0, length $ uqvQueue uqv) $ uqvQueue uqv
   where
     jsonOv = textValue $ T.pack $ show $ Aeson.encode uqv
 

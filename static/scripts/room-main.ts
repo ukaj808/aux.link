@@ -1,6 +1,6 @@
 import { AuxAudioPlayer } from "../modules/aux-audio-player";
 import { RoomMessageListener } from "../modules/room-message-listener";
-import { UserQueueElement } from "../modules/user-queue/user-section-element";
+import { UserQueueElement } from "../modules/user-section-element";
 import { DropElement } from "../modules/drop-element"; 
 import { CurrentlyPlayingElement } from "../modules/currently-playing/currently-playing-element";
 import { RestClient } from "../modules/rest-client";
