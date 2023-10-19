@@ -45,8 +45,13 @@ export class UserQueueElement {
     userEl.style.backgroundColor = hexColor;
     const userAhead = this.userSectionEl.lastElementChild as HTMLDivElement;
 
-    // animation + commit styles
+    // reindex
+    for (let i=0; i < this.userSectionEl.childElementCount; i++) {
+        const u = this.userSectionEl.children[i] as HTMLDivElement;
+        u.style.zIndex = (parseInt(u.style.zIndex) + 1).toString();
+    }
 
+    // animation + commit styles
     userEl.style.zIndex = '0';
     userEl.style.left = userAhead ? (parseInt(userAhead.style.left) + 4).toString() + 'rem' : '0';
     this.userSectionEl.appendChild(userEl);
