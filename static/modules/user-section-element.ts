@@ -38,29 +38,109 @@ export class UserQueueElement {
 
   }
   
-  public addNewUserToLine(userId: string, userName: string, hexColor: string, isCreator: boolean = false) {
-    const userEl = document.createElement('div');
-    userEl.id = userId;
-    userEl.classList.add('user');
-    userEl.style.backgroundColor = hexColor;
-    const userAhead = this.userSectionEl.lastElementChild as HTMLDivElement;
+  public addNewUserToLine(userId: string, userName: string, hexColor: string, isCreator: boolean = false): Promise<void> {
 
-    // reindex
-    for (let i=0; i < this.userSectionEl.childElementCount; i++) {
-        const u = this.userSectionEl.children[i] as HTMLDivElement;
-        u.style.zIndex = (parseInt(u.style.zIndex) + 1).toString();
-    }
+    return new Promise((resolve) => {
 
-    // animation + commit styles
-    userEl.style.zIndex = '0';
-    userEl.style.left = userAhead ? (parseInt(userAhead.style.left) + 4).toString() + 'rem' : '0';
-    this.userSectionEl.appendChild(userEl);
+      // rezindex previous users
+      for (let i=0; i < this.userSectionEl.childElementCount; i++) {
+          const u = this.userSectionEl.children[i] as HTMLDivElement;
+          u.style.zIndex = (parseInt(u.style.zIndex) + 1).toString();
+      }
+
+      const userEl = document.createElement('div');
+      userEl.id = userId;
+      userEl.classList.add('user');
+      userEl.style.backgroundColor = hexColor;
+      userEl.style.zIndex = '0';
+      userEl.style.left = '2000px'; // wayyy off screen
+
+      const targetPosition = this.userSectionEl.lastElementChild as HTMLDivElement !== null 
+        ? parseInt((this.userSectionEl.lastElementChild as HTMLDivElement).style.left) + 50 + "px"
+        : '0px';
+
+      this.userSectionEl.appendChild(userEl);
+
+      const joinLineAnimation = userEl.animate([
+          {
+              left: targetPosition,
+          }
+        ], 
+        {
+          duration: 1000,
+          fill: 'forwards'
+        });
+
+        joinLineAnimation.finished.then(() => {
+          joinLineAnimation.commitStyles();
+          joinLineAnimation.cancel();
+          resolve();
+        });
+    });
+
   }
 
-  public removeUserFromLine(userId: string) {
-    const optUserCellEl = document.getElementById(userId);
-    if (!optUserCellEl) throw new Error('No user cell element found');
-    this.userSectionEl.removeChild(optUserCellEl);
+  public removeUserFromLine(userId: string): Promise<void> {
+    return new Promise((resolve) => {
+      const user = document.getElementById(userId);
+      if (!user) throw new Error('No user cell element found');
+
+      const userIndex = Array.from(this.userSectionEl.children).findIndex((el) => el.id === userId);
+
+      const leaveLineAnimation = user.animate([
+          {
+              left: '2000px',
+          }
+        ], 
+        {
+          duration: 1000,
+          fill: 'forwards'
+        });
+        leaveLineAnimation.pause();
+
+        const oneUpAnimations: Animation[] = [];
+        for (let i = userIndex + 1; i < this.userSectionEl.childElementCount; i++) {
+            const u1 = this.userSectionEl.children[i] as HTMLDivElement;
+            const u2 = this.userSectionEl.children[i-1] as HTMLDivElement; // User ahead one position
+            const newPos = {
+                left: u2.style.left,
+                zIndex: u2.style.zIndex
+            };
+            const upOneAnimation = u1.animate([
+                {
+                    left: newPos.left,
+                }
+            ], 
+            {
+                duration: 1000,
+                fill: 'forwards'
+            });
+            upOneAnimation.pause();
+            oneUpAnimations.push(upOneAnimation);
+        }
+
+        // Play all animations
+        leaveLineAnimation.play();
+        oneUpAnimations.forEach(a => a.play());
+        Promise.all([leaveLineAnimation.finished, ...oneUpAnimations.map(a => a.finished)])
+          .then(() => {
+              oneUpAnimations.forEach(a => {a.commitStyles(); a.cancel();});
+              leaveLineAnimation.commitStyles();
+              leaveLineAnimation.cancel();
+              user.remove();
+
+              for (let i=0,j=this.userSectionEl.childElementCount - 1; i < this.userSectionEl.childElementCount; i++,j--) {
+                  const u = this.userSectionEl.children[i] as HTMLDivElement;
+                  console.log(j);
+                  u.style.zIndex = j.toString();
+              }
+
+              resolve();
+
+          });
+      });
+
+
   }
 
   private removeAndPlaceFirstUserAtEndOfLine() {
@@ -70,29 +150,8 @@ export class UserQueueElement {
     this.userSectionEl.appendChild(firstUserEl);
   }
 
-  // Should only be run once in construction; staggering the users already in the room before you
-  private staggerUsers = (node: HTMLDivElement | null, offset: number, zIndex: number) => {
-    if (node === null) return;
-    const calcOffset = 8 / this.userSectionEl.childElementCount;
-    node.style.left = offset.toString() + 'rem';
-    node.style.zIndex = zIndex.toString();
-    const nextOffset = offset + calcOffset;
-    const nextZIndex = zIndex - 1;
-    this.staggerUsers(node.nextElementSibling as HTMLDivElement, nextOffset, nextZIndex);
-  };
-
-
-  private addNewUserToLineAnimation = (userEl: HTMLDivElement) =>{
-  // todo: Should be run on userEnter event; moving a element from outside the window, into the last position
-  };
-
-  private removeUserFromLineAnimation = (userEl: HTMLDivElement) => {
-    // todo: Should be run on userLeft event; moving an element outside the window and moving up the rest of the elements
-  };
-
-
   // Should be run on nextInQueue event
-  private runNextInLineAnimation = () => {
+  private nextInLine() {
     if (this.userSectionEl.childElementCount < 2) return;
     if (this.userSectionEl.firstElementChild === null) return;
     if (this.userSectionEl.lastElementChild === null) return;
@@ -105,7 +164,7 @@ export class UserQueueElement {
 
     const moveToEndAndSomeAnimation = this.userSectionEl.firstElementChild.animate([
         {
-            left: parseInt(lastPos.left) + 8 + 'rem',
+            left: parseInt(lastPos.left) + 100 + 'px',
         }
     ], 
     {
