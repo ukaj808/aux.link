@@ -60,7 +60,7 @@ renderUserQueueSection uqv =
     foldM_ (\(left, zIndex) user -> do
       renderUser user left zIndex
       return (left + 50, zIndex - 1)
-      ) (0, length $ uqvQueue uqv) $ uqvQueue uqv
+      ) (0, subtract (length $ uqvQueue uqv) 1) $ uqvQueue uqv
   where
     jsonOv = textValue $ T.pack $ show $ Aeson.encode uqv
 
