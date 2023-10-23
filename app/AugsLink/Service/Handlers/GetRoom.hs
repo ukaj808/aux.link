@@ -118,7 +118,7 @@ renderRoomPage room = H.docTypeHtml $ do
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
     H.script ! A.type_ "module"   ! A.src     "/public/room.bundle.js" $ ""
     H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:0px) and (max-width:1025px)" ! A.href    "/public/room-mobile.css"
-    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-mobile.css"
+    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-desktop.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     renderRoomInfoSection         

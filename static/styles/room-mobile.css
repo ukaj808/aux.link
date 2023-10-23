@@ -9,10 +9,15 @@
 
 html, body {
   margin: 0;
-  height: 100%;
+}
+
+html {
+  display: flex;
+  height: 100vh;
 }
 
 body {
+    flex: 1;
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     grid-template-rows: 125px 3fr .5fr;
@@ -21,6 +26,7 @@ body {
         "dropsec    dropsec"
         "musec      musec";
     gap: 1em;
+    padding: 1em;
 }
 
 #room-info-section {
