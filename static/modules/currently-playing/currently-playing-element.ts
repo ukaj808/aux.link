@@ -139,7 +139,7 @@ export class CurrentlyPlayingElement {
       },
       showWaitingForCreator: () => {
         this.description.classList.remove("hidden");
-        this.description.innerText = "Waiting for the creator to start the music...";
+        this.description.innerText = "";
       },
       hideWaitingForCreator: () => {
         this.description.classList.add("hidden");

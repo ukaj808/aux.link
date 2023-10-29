@@ -92,7 +92,7 @@ renderCurrentlyPlayingSection cpv =
                                                      then (" hidden" :: AttributeValue)
                                                      else "") :: AttributeValue
     descText       = case cpvState cpv of
-                        NotRunning -> "Waiting for the creator to start the music..."
+                        NotRunning -> ""
                         Streaming  -> preEscapedText $ fromMaybe "" (cpvSong cpv)
                         _          -> ""
     songTitleAttribute = stringValue $ maybe "" show (cpvSong cpv)
