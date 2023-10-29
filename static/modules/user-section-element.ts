@@ -10,7 +10,7 @@ export class UserQueueElement {
 
   private userSectionEl: HTMLElement;
   private roomMessageListener: RoomMessageListener;
-  private offset = 50;
+  private offset = 20;
   private endPositionPx: number;
 
   constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {

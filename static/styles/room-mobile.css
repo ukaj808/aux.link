@@ -20,13 +20,11 @@ body {
     flex: 1;
     display: grid;
     grid-template-columns: 1fr 1.5fr;
-    grid-template-rows: 125px 3fr .5fr;
+    grid-template-rows: 100px 5fr 1fr;
     grid-template-areas:
         "risec      usec"
         "dropsec    dropsec"
         "musec      musec";
-    gap: 1em;
-    padding: 1em;
 }
 
 #room-info-section {
@@ -34,13 +32,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: antiquewhite;
+    text-align: center;
+    font-size: 1.5rem;
+    line-height: 2rem;
 }
 
 #user-section {
     grid-area: usec;
     position: relative;
-    background-color: brown;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -49,7 +48,6 @@ body {
 
 #drop-section {
     grid-area: dropsec;
-    background-color: darkslategray;
 }
 
 #drop-zone {
@@ -63,7 +61,6 @@ body {
 #music-player-section {
     grid-area: musec;
     position: relative;
-    background-color: cornsilk;
 }
 
 #empty-drop-zone-text {
@@ -78,8 +75,8 @@ body {
   bottom: 0;
   margin: auto;
 
-  height: 100px;
-  width: 100px;
+  height: 40px;
+  width: 40px;
   border-radius: 50%;
 }
 

@@ -204,6 +204,7 @@ viewRoomImpl stateVar = do
   let orderedUserSessions = foldr (\uId -> (:) (roomUsers roomState Map.! uId)) [] (queue roomState)
   users <- mapM (getRoomUser . user) orderedUserSessions
   return $ RoomView {
+    rId = roomId roomState,
     cpv =
       CurrentlyPlaying{
         cpvSong   = currentSong roomState

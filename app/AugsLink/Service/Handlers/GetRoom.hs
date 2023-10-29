@@ -49,10 +49,10 @@ renderUser user left zIndex =
   in
   H.div ! A.id suid ! A.class_ "user" ! H.dataAttribute "hex-color" color ! A.style style $ ""
 
-renderRoomInfoSection :: H.Html
-renderRoomInfoSection =
+renderRoomInfoSection :: RoomId -> H.Html
+renderRoomInfoSection rId =
   H.section ! A.id "room-info-section" $ do
-    H.span $ "123123123"
+    H.span $ toMarkup $ "Room ID: " ++   take 5 (T.unpack rId) ++ " ..."
 
 renderUserQueueSection :: UserQueueView -> H.Html
 renderUserQueueSection uqv =
@@ -122,7 +122,7 @@ renderRoomPage room = H.docTypeHtml $ do
     H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-desktop.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
-    renderRoomInfoSection
+    renderRoomInfoSection         $ rId room
     renderUserQueueSection        $ uqv room
     renderCurrentlyPlayingSection $ cpv room
     renderDropSection

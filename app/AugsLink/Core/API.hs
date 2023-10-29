@@ -89,6 +89,7 @@ data RoomView = RoomView
   {
      cpv :: CurrentlyPlayingView
   ,  uqv  :: UserQueueView
+  ,  rId  :: RoomId
   }
 
 data RoomUser = RoomUser
