@@ -107,7 +107,7 @@ renderDropSection :: H.Html
 renderDropSection =
   H.section ! A.id "drop-section" $ do
       H.label ! A.id "drop-zone" ! A.contenteditable "true" ! A.for "drop-zone-input" $ do
-        H.span ! A.id "empty-drop-zone-text" $ "Click, Paste, or Drop audio files or links here!"
+        H.span ! A.id "drop-zone-title" $ "Queue"
         H.input ! A.type_ "file" ! A.id "drop-zone-input" ! A.accept "audio/*" ! A.style "display:none" ! A.multiple "multiple"
         H.input ! A.type_ "text" ! A.id "drop-zone-paste-hack" ! A.tabindex "-1" ! A.class_ "hidden-input secondary-theme"
 
