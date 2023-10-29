@@ -3,6 +3,9 @@ import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
 import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "./interface";
 
+// Animations in this class are based on the following recommendations from the W3C for
+// achieving animations whose effects should b applied indefinitely:
+// https://drafts.csswg.org/web-animations-1/#example-0307c584
 export class UserQueueElement {
 
   private userSectionEl: HTMLElement;
@@ -54,25 +57,20 @@ export class UserQueueElement {
     userEl.classList.add('user');
     userEl.style.backgroundColor = hexColor;
     userEl.style.zIndex = '0';
-    userEl.style.left = '100%';
+    userEl.style.left = '1000px';
 
     this.userSectionEl.appendChild(userEl);
 
-    const joinLineAnimation = userEl.animate([
+    userEl.style.left = this.endPositionPx + 'px';
+    userEl.animate([
       {
-        left: this.endPositionPx + 'px',
+        left: '1000px',
+        offset: 0,
       }
     ],
       {
         duration: 1000,
-        fill: 'forwards'
       });
-
-
-    joinLineAnimation.finished.then(() => {
-      joinLineAnimation.commitStyles();
-      joinLineAnimation.cancel();
-    });
 
     this.endPositionPx += this.offset;
 
@@ -84,50 +82,36 @@ export class UserQueueElement {
 
     const userIndex = Array.from(this.userSectionEl.children).findIndex((el) => el.id === userId);
 
-    const leaveLineAnimation = user.animate([
+    user.animate([
       {
-        left: '100%',
+        left: '1000px',
       }
     ],
       {
         duration: 1000,
-        fill: 'forwards'
-      });
-    leaveLineAnimation.pause();
+      }).finished.then(() => user.remove());
 
-    const oneUpAnimations: Animation[] = [];
-    for (let i = userIndex + 1; i < this.userSectionEl.childElementCount; i++) {
-      const u1 = this.userSectionEl.children[i] as HTMLDivElement;
-      const upOneAnimation = u1.animate([
+    for (let i = 0, j = this.userSectionEl.childElementCount - 1; i < this.userSectionEl.childElementCount; i++, j--) {
+      const u = this.userSectionEl.children[i] as HTMLDivElement;
+      if (i <= userIndex) {
+        u.style.zIndex = j.toString(); 
+        continue;
+      }
+      const newLeft = parseInt(u.style.left) - this.offset + 'px';
+      u.style.zIndex = j.toString();
+      const prevLeft = u.style.left;
+      u.style.left = newLeft;
+      u.animate([
         {
-          left: parseInt(u1.style.left) - this.offset + 'px',
+          left: prevLeft,
+          offset: 0,
         }
       ],
         {
           duration: 1000,
-          fill: 'forwards'
         });
-      upOneAnimation.pause();
-      oneUpAnimations.push(upOneAnimation);
     }
 
-    // Play all animations
-    leaveLineAnimation.play();
-    oneUpAnimations.forEach(a => a.play());
-    Promise.all([leaveLineAnimation.finished, ...oneUpAnimations.map(a => a.finished)])
-      .then(() => {
-        oneUpAnimations.forEach(a => { a.commitStyles(); a.cancel(); });
-        leaveLineAnimation.commitStyles();
-        leaveLineAnimation.cancel();
-        user.remove();
-
-        for (let i = 0, j = this.userSectionEl.childElementCount - 1; i < this.userSectionEl.childElementCount; i++, j--) {
-          const u = this.userSectionEl.children[i] as HTMLDivElement;
-          console.log(j);
-          u.style.zIndex = j.toString();
-        }
-
-      });
     this.endPositionPx -= this.offset;
   }
 

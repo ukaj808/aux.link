@@ -60,8 +60,9 @@ renderUserQueueSection uqv =
     foldM_ (\(left, zIndex) user -> do
       renderUser user left zIndex
       return (left + 50, zIndex - 1)
-      ) (0, subtract (length $ uqvQueue uqv) 1) $ uqvQueue uqv
+      ) (0, zIndexStart) $ uqvQueue uqv
   where
+    zIndexStart = subtract 1 $ length (uqvQueue uqv)
     jsonOv = textValue $ T.pack $ show $ Aeson.encode uqv
 
 renderCurrentlyPlayingSection :: CurrentlyPlayingView -> H.Html
@@ -121,7 +122,7 @@ renderRoomPage room = H.docTypeHtml $ do
     H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-desktop.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
-    renderRoomInfoSection         
+    renderRoomInfoSection
     renderUserQueueSection        $ uqv room
     renderCurrentlyPlayingSection $ cpv room
     renderDropSection
