@@ -39,15 +39,10 @@ musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" !
 
 renderUser :: RoomUser -> Int -> Int -> H.Html
 renderUser user left zIndex =
-  let suid  = toValue  $ sanitizedUserId user
-      uname = toMarkup $ userName user
-      color = toValue $ hexColor user
-      bgcolorAttr = toValue $ "background-color: " <> hexColor user <> ";"
-      leftAttr = toValue $ "left: " <> show left <> "px;"
-      zIndexAttr = toValue $ "z-index: " <> show zIndex <> ";"
-      style = bgcolorAttr <> leftAttr <> zIndexAttr
-  in
-  H.div ! A.id suid ! A.class_ "user" ! H.dataAttribute "hex-color" color ! A.style style $ ""
+  H.div ! A.id (toValue  $ sanitizedUserId user) ! A.class_ "user" ! 
+    H.dataAttribute "hex-color" (toValue $ hexColor user) ! 
+    H.dataAttribute "mobile-z-index" (toValue $ show zIndex) !
+    H.dataAttribute "mobile-left" (toValue $ show left) $ ""
 
 renderRoomInfoSection :: RoomId -> H.Html
 renderRoomInfoSection rId =
