@@ -3,7 +3,7 @@ import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
 import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "./interface";
 import { MutableStyleSheet } from "./stylesheet-manipulations";
-import { Rule } from "css";
+import { Declaration, Rule } from "css";
 
 // Animations in this class are based on the following recommendations from the W3C for
 // achieving animations whose effects should b applied indefinitely:
@@ -70,6 +70,8 @@ export class UserQueueElement {
         ],
       } 
 
+      this.mobileStyleSheet.put(userEl.id, mobileRule);
+
       // static style... storing in style attribute to indicate that
       userEl.style.backgroundColor = backgroundColor;
     });
@@ -85,17 +87,34 @@ export class UserQueueElement {
 
 
     // todo: rezindex previous users
-    Array.from(this.userSectionEl.children).forEach((u) => {
+    Array.from(this.userSectionEl.children).forEach((u, i) => {
       const userEl = u as HTMLDivElement;
+      const rule = this.mobileStyleSheet.get(userEl.id);
+      if (!rule) throw new Error('No rule found');
+      rule.declarations?.forEach((d, i) => {
+        const dec = d as Declaration;
+        if (dec.property === 'z-index') {
+          dec.value = i.toString();
+        }
+      });
     });
 
     const userEl = document.createElement('div');
     userEl.id = userId;
     userEl.style.backgroundColor = hexColor;
-    const userMobileRule = `#${userId} { z-index: 0; left: ${this.endPositionPx + (this.endPositionPx == 0 ? '' : 'px')}; }`;
-    const mobileRuleIndex = this.mobileStyleSheet.cssRules.length;
-    this.mobileStyleSheet.insertRule(userMobileRule, mobileRuleIndex);
-    userEl.setAttribute('data-mobile-rule-index', mobileRuleIndex.toString());
+    this.mobileStyleSheet.put(userId, {
+      selectors: ['#'+userId],
+      declarations: [
+        {
+          property: 'z-index',
+          value: '0',
+        },
+        {
+          property: 'left',
+          value: this.endPositionPx + (this.endPositionPx == 0 ? '' : 'px'),
+        },
+      ],
+    });
     userEl.classList.add('user');
 
     this.userSectionEl.appendChild(userEl);
@@ -128,28 +147,52 @@ export class UserQueueElement {
       {
         duration: 1000,
       }).finished.then(() => { 
-        this.mobileStyleSheet.deleteRule(parseInt(user.getAttribute('data-mobile-rule-index') as string));
+        this.mobileStyleSheet.delete(userId);
         user.remove();
       });
 
     for (let i = 0, j = this.userSectionEl.childElementCount - 1; i < this.userSectionEl.childElementCount; i++, j--) {
       const u = this.userSectionEl.children[i] as HTMLDivElement;
-      const mobileRuleIndex = parseInt(u.getAttribute('data-mobile-rule-index') as string);
-      const mobileRule = this.mobileStyleSheet.cssRules[mobileRuleIndex] as CSSStyleRule;
-      const prevLeft = mobileRule.style.left;
-      const newMobileRule = i <= userIndex ?
-        `#${u.id} { z-index: ${j.toString()}; left: ${prevLeft}; }` :
-        `#${u.id} { z-index: ${j.toString()}; left: ${parseInt(prevLeft) - this.offset + 'px'}; }`;
-      
+      const rule = this.mobileStyleSheet.get(u.id);
+      if (!rule) throw new Error('No rule found');
+      const prevLeft = rule.declarations?.find((d) => {
+        const dec = d as Declaration;
+        return dec.property === 'left';
+      });
+      if (!prevLeft) throw new Error('No left declaration found');
+      const newMobileRule: Rule = i <= userIndex ?
+        { 
+          selectors: ['#'+u.id],
+          declarations: [
+            {
+              property: 'z-index',
+              value: j.toString(),
+            },
+            {
+              property: 'left',
+              value: (prevLeft as Declaration).value,
+            },
+          ],
+        } :
+        {
+          selectors: ['#'+u.id],
+          declarations: [
+            {
+              property: 'z-index',
+              value: j.toString(),
+            },
+            {
+              property: 'left',
+              value: parseInt((prevLeft as Declaration).value as string) - this.offset + 'px',
+            },
+          ],
+        };
 
-      const newMobileRuleIndex = this.mobileStyleSheet.cssRules.length;
-      this.mobileStyleSheet.deleteRule(mobileRuleIndex);
-      this.mobileStyleSheet.insertRule(newMobileRule, newMobileRuleIndex);
-      u.setAttribute('data-mobile-rule-index', newMobileRuleIndex.toString());
+        this.mobileStyleSheet.put(u.id, newMobileRule);
 
         u.animate([
           {
-            left: prevLeft,
+            left: (prevLeft as Declaration).value,
             offset: 0,
           }
         ],
@@ -244,51 +287,5 @@ export class UserQueueElement {
       });
   };
   */
-
-  private updateUserPosition(userId: string, newPosition: { left: string, zIndex: string }) {
-    const user = document.getElementById(userId);
-    if (!user) throw new Error('No user element found');
-
-    const mobileRuleIndex = parseInt(user.getAttribute('data-mobile-rule-index') as string);
-
-    const newMobileRule = `#${userId} { z-index: ${newPosition.zIndex}; left: ${newPosition.left}; }`;
-
-    const newMobileRuleIndex = this.mobileStyleSheet.cssRules.length;
-
-    this.mobileStyleSheet.deleteRule(mobileRuleIndex);
-    this.mobileStyleSheet.insertRule(newMobileRule, newMobileRuleIndex);
-    user.setAttribute('data-mobile-rule-index', newMobileRuleIndex.toString());
-
-  }
-
-  private initClientSideUserPosition(userId: string, position: { left: string, zIndex: string }) {
-    const user = document.getElementById(userId);
-    if (!user) throw new Error('No user element found');
-
-    const mobileRule = `#${userId} { z-index: ${position.zIndex}; left: ${position.left}; }`;
-    const mobileRuleIndex = this.mobileStyleSheet.cssRules.length;
-
-    this.mobileStyleSheet.insertRule(mobileRule, mobileRuleIndex);
-    user.setAttribute('data-mobile-rule-index', mobileRuleIndex.toString());
-  };
-
-  private initSSRUserPosition(u: HTMLDivElement) {
-      const mobileZIndex = u.getAttribute('data-mobile-z-index');
-      if (!mobileZIndex) throw new Error('No zIndex attribute found');
-
-      const left = u.getAttribute('data-mobile-left');
-      if (!left) throw new Error('No left attribute found');
-
-      const backgroundColor = u.getAttribute('data-hex-color');
-      if (!backgroundColor) throw new Error('No backgroundColor attribute found');
-
-      u.style.backgroundColor = backgroundColor;
-
-      const mobileRule = `#${u.id} { z-index: ${mobileZIndex}; left: ${left}; }`;
-      const mobileRuleIndex = this.mobileStyleSheet.cssRules.length;
-
-      this.mobileStyleSheet.insertRule(mobileRule, mobileRuleIndex);
-      u.setAttribute('data-mobile-rule-index', mobileRuleIndex.toString());
-  }
 
 }

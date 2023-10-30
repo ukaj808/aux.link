@@ -27,6 +27,13 @@ export class MutableStyleSheet {
         return rule ? rule as Rule : undefined
     }
 
+    public delete(id: string) {
+        const index = this.getIndexOfRule(id);
+        if (index > -1) {
+          this.cssStyleSheet.deleteRule(index);
+        }
+    }
+
     private getIndexOfRule(id: string): number {
         return Array.from(this.cssStyleSheet.cssRules).findIndex((rule) => {
             if (rule instanceof CSSStyleRule) {
