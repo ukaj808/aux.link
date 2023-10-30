@@ -30,6 +30,9 @@
     "webpack-cli": "^5.1.1"
   },
   "dependencies": {
-    "sortablejs": "^1.15.0", "xstate": "^5.0.0-beta.13"
-  }  
+    "@types/css": "^0.0.35",
+    "css": "^3.0.0",
+    "sortablejs": "^1.15.0",
+    "xstate": "^5.0.0-beta.13"
+  }
 }

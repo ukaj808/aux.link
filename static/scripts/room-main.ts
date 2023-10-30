@@ -7,9 +7,13 @@ import { RestClient } from "../modules/rest-client";
 import { SvgFactory } from "../modules/svg";
 import { SongQueue } from "../modules/song-queue";
 import { LoaderFactory } from "../modules/loader";
+import { MutableStyleSheet } from "../modules/stylesheet-manipulations";
 
 let roomId: string    = location.pathname.substr(1);
 let listening: boolean = false;
+
+const mobileStyleSheet = new MutableStyleSheet(document.styleSheets[0]);
+const desktopStyleSheet = new MutableStyleSheet(document.styleSheets[1]);
 
 const roomMessageListener: RoomMessageListener = new RoomMessageListener(roomId);
 const audioContext = new AudioContext({
@@ -21,8 +25,9 @@ const svgFactory: SvgFactory = new SvgFactory();
 const loaderFactory: LoaderFactory = new LoaderFactory();
 const auxAudioPlayer: AuxAudioPlayer = new AuxAudioPlayer(roomId, audioContext, analyser, roomMessageListener);
 const restClient: RestClient = new RestClient(roomId, roomMessageListener);
-const orderElement: UserQueueElement = new UserQueueElement(roomMessageListener, restClient, svgFactory);
 const currentlyPlayingElement: CurrentlyPlayingElement 
     = new CurrentlyPlayingElement(roomMessageListener, restClient, auxAudioPlayer, analyser);
 const dropElement: DropElement = new DropElement(roomMessageListener, restClient, loaderFactory, svgFactory);
+const orderElement: UserQueueElement = new UserQueueElement(roomMessageListener, restClient, mobileStyleSheet, desktopStyleSheet);
+
 roomMessageListener.start();

@@ -2,6 +2,8 @@ import { RestClient } from "./rest-client";
 import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
 import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "./interface";
+import { MutableStyleSheet } from "./stylesheet-manipulations";
+import { Rule } from "css";
 
 // Animations in this class are based on the following recommendations from the W3C for
 // achieving animations whose effects should b applied indefinitely:
@@ -9,24 +11,19 @@ import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent 
 export class UserQueueElement {
 
   private userSectionEl: HTMLElement;
-  private mobileStyleSheet: CSSStyleSheet;
-  private desktopStyleSheet: CSSStyleSheet;
+  private mobileStyleSheet: MutableStyleSheet;
+  private desktopStyleSheet: MutableStyleSheet;
   private roomMessageListener: RoomMessageListener;
   private offset = 20;
   private endPositionPx: number;
 
-  constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, svgFactory: SvgFactory) {
+  constructor(roomMessageListener: RoomMessageListener, restClient: RestClient, mobileStyleSheet: MutableStyleSheet, desktopStyleSheet: MutableStyleSheet) {
 
     const userSectionEl = document.getElementById("user-section");
     if (!userSectionEl) throw new Error('No user section element found');
     this.userSectionEl = userSectionEl;
 
-    const mobileStyleSheet = Array.from(document.styleSheets).find((s) => (s.ownerNode as HTMLLinkElement)?.id === 'room-mobile-stylesheet');
-    if (!mobileStyleSheet) throw new Error('No mobile stylesheet element found');
     this.mobileStyleSheet = mobileStyleSheet;
-
-    const desktopStyleSheet = Array.from(document.styleSheets).find((s) => (s.ownerNode as HTMLLinkElement)?.id === 'room-desktop-stylesheet');
-    if (!desktopStyleSheet) throw new Error('No desktop stylesheet element found');
     this.desktopStyleSheet = desktopStyleSheet;
 
     this.roomMessageListener = roomMessageListener;
@@ -47,7 +44,35 @@ export class UserQueueElement {
     });
 
     // Pre-process server side rendered user elements and there stylesheet injections
-    Array.from(this.userSectionEl.children).forEach(u => this.initSSRUserPosition(u as HTMLDivElement));
+    Array.from(this.userSectionEl.children).forEach(u => {
+      const userEl = u as HTMLDivElement;
+
+      const mobileZIndex = userEl.getAttribute('data-mobile-z-index');
+      if (!mobileZIndex) throw new Error('No zIndex attribute found');
+
+      const left = userEl.getAttribute('data-mobile-left');
+      if (!left) throw new Error('No left attribute found');
+
+      const backgroundColor = userEl.getAttribute('data-hex-color');
+      if (!backgroundColor) throw new Error('No backgroundColor attribute found');
+
+      const mobileRule: Rule = {
+        selectors: ['#'+userEl.id],
+        declarations: [
+          {
+            property: 'z-index',
+            value: mobileZIndex,
+          },
+          {
+            property: 'left',
+            value: left,
+          },
+        ],
+      } 
+
+      // static style... storing in style attribute to indicate that
+      userEl.style.backgroundColor = backgroundColor;
+    });
 
     this.endPositionPx = this.userSectionEl.childElementCount * this.offset;
 
