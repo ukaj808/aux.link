@@ -163,7 +163,7 @@ enterRoomImpl stateVar pend = do
   (_uId, suid)  <-
     modifyMVar stateVar $ \st -> do
       -- private user id
-      _uId     <-     toText <$> nextRandom
+      _uId     <-     T.pack . ("X" ++) . toString <$> nextRandom
       u        <-     newUser
       rUser    <-     getRoomUser u
       let st'  =      addUserToRoom st _uId (USession conn u)

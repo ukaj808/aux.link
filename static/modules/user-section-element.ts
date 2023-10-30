@@ -9,6 +9,8 @@ import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent 
 export class UserQueueElement {
 
   private userSectionEl: HTMLElement;
+  private mobileStyleSheet: CSSStyleSheet;
+  private desktopStyleSheet: CSSStyleSheet;
   private roomMessageListener: RoomMessageListener;
   private offset = 20;
   private endPositionPx: number;
@@ -18,6 +20,14 @@ export class UserQueueElement {
     const userSectionEl = document.getElementById("user-section");
     if (!userSectionEl) throw new Error('No user section element found');
     this.userSectionEl = userSectionEl;
+
+    const mobileStyleSheet = Array.from(document.styleSheets).find((s) => (s.ownerNode as HTMLLinkElement)?.id === 'room-mobile-stylesheet');
+    if (!mobileStyleSheet) throw new Error('No mobile stylesheet element found');
+    this.mobileStyleSheet = mobileStyleSheet;
+
+    const desktopStyleSheet = Array.from(document.styleSheets).find((s) => (s.ownerNode as HTMLLinkElement)?.id === 'room-desktop-stylesheet');
+    if (!desktopStyleSheet) throw new Error('No desktop stylesheet element found');
+    this.desktopStyleSheet = desktopStyleSheet;
 
     this.roomMessageListener = roomMessageListener;
     this.roomMessageListener.subscribe('ServerWelcomeCommand', (data) => {
@@ -54,14 +64,15 @@ export class UserQueueElement {
 
     const userEl = document.createElement('div');
     userEl.id = userId;
-    userEl.classList.add('user');
     userEl.style.backgroundColor = hexColor;
-    userEl.style.zIndex = '0';
-    userEl.style.left = '1000px';
+    const userMobileRule = `#${userId} { z-index: 0; left: ${this.endPositionPx + (this.endPositionPx == 0 ? '' : 'px')}; }`;
+    const mobileRuleIndex = this.mobileStyleSheet.cssRules.length;
+    this.mobileStyleSheet.insertRule(userMobileRule, mobileRuleIndex);
+    userEl.setAttribute('data-mobile-rule-index', mobileRuleIndex.toString());
+    userEl.classList.add('user');
 
     this.userSectionEl.appendChild(userEl);
 
-    userEl.style.left = this.endPositionPx + 'px';
     userEl.animate([
       {
         left: '1000px',
@@ -89,27 +100,35 @@ export class UserQueueElement {
     ],
       {
         duration: 1000,
-      }).finished.then(() => user.remove());
+      }).finished.then(() => { 
+        this.mobileStyleSheet.deleteRule(parseInt(user.getAttribute('data-mobile-rule-index') as string));
+        user.remove();
+      });
 
     for (let i = 0, j = this.userSectionEl.childElementCount - 1; i < this.userSectionEl.childElementCount; i++, j--) {
       const u = this.userSectionEl.children[i] as HTMLDivElement;
-      if (i <= userIndex) {
-        u.style.zIndex = j.toString(); 
-        continue;
-      }
-      const newLeft = parseInt(u.style.left) - this.offset + 'px';
-      u.style.zIndex = j.toString();
-      const prevLeft = u.style.left;
-      u.style.left = newLeft;
-      u.animate([
-        {
-          left: prevLeft,
-          offset: 0,
-        }
-      ],
-        {
-          duration: 1000,
-        });
+      const mobileRuleIndex = parseInt(u.getAttribute('data-mobile-rule-index') as string);
+      const mobileRule = this.mobileStyleSheet.cssRules[mobileRuleIndex] as CSSStyleRule;
+      const prevLeft = mobileRule.style.left;
+      const newMobileRule = i <= userIndex ?
+        `#${u.id} { z-index: ${j.toString()}; left: ${prevLeft}; }` :
+        `#${u.id} { z-index: ${j.toString()}; left: ${parseInt(prevLeft) - this.offset + 'px'}; }`;
+      
+
+      const newMobileRuleIndex = this.mobileStyleSheet.cssRules.length;
+      this.mobileStyleSheet.deleteRule(mobileRuleIndex);
+      this.mobileStyleSheet.insertRule(newMobileRule, newMobileRuleIndex);
+      u.setAttribute('data-mobile-rule-index', newMobileRuleIndex.toString());
+
+        u.animate([
+          {
+            left: prevLeft,
+            offset: 0,
+          }
+        ],
+          {
+            duration: 1000,
+          });
     }
 
     this.endPositionPx -= this.offset;
@@ -188,5 +207,13 @@ export class UserQueueElement {
         });
       });
   };
+
+  private deleteRuleFromStyleSheet(stylesheet: CSSStyleSheet, userId: string) {
+    Array.from(stylesheet.cssRules).forEach((rule, index) => {
+      if ((rule as CSSStyleRule).selectorText === `#${userId}`) {
+        stylesheet.deleteRule(index);
+      }
+    });
+  }
 
 }

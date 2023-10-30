@@ -41,9 +41,6 @@ body {
 #user-section {
     grid-area: usec;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     overflow: hidden;
 }
 

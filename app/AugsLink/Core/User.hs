@@ -25,7 +25,7 @@ newtype UserState = UserState
 
 newUser :: IO (User IO)
 newUser = do
-  uuid <- toText <$> nextRandom
+  uuid <- T.pack . ("X" ++) . toString <$> nextRandom
   hex <- T.pack <$> ((sRGB24shows <$> randomCIELab) <*> pure "")
   stateVar <- newMVar $ UserState (RoomUser uuid uuid hex)
   return $ User {

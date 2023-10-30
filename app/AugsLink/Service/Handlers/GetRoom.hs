@@ -117,15 +117,15 @@ renderRoomPage room = H.docTypeHtml $ do
     H.title "Room"
     H.meta   ! A.charset "UTF-8"
     H.meta   ! A.name "viewport"  ! A.content "width=device-width, initial-scale=1.0"
-    H.script ! A.type_ "module"   ! A.src     "/public/room.bundle.js" $ ""
-    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:0px) and (max-width:1025px)" ! A.href    "/public/room-mobile.css"
-    H.link   ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-desktop.css"
+    H.link   ! A.id "room-mobile-stylesheet" ! A.rel "stylesheet" ! A.media "screen and (min-width:0px) and (max-width:1025px)" ! A.href    "/public/room-mobile.css"
+    H.link   ! A.id "room-desktop-stylesheet" ! A.rel "stylesheet" ! A.media "screen and (min-width:1025px)" ! A.href    "/public/room-desktop.css"
     H.link   ! A.rel "icon"       ! A.type_   "image/x-icon"            ! A.href "/public/favicon.ico"
   H.body $ do
     renderRoomInfoSection         $ rId room
     renderUserQueueSection        $ uqv room
     renderCurrentlyPlayingSection $ cpv room
     renderDropSection
+    H.script ! A.src     "/public/room.bundle.js" $ ""
 
 instance ToMarkup RoomView where
   toMarkup = renderRoomPage
