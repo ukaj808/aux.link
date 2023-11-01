@@ -1,4 +1,11 @@
-import css, { Declaration, Rule } from 'css';
+type Stylesheet = {
+    rules: IdRule[];
+}
+
+type IdRule = {
+    id: string;
+    declarations: Map<string, string>;
+}
 
 export class MutableStyleSheet {
 
@@ -8,23 +15,18 @@ export class MutableStyleSheet {
         this.cssStyleSheet = cssStyleSheet;
     }
 
-    public put(id: string, rule: Rule) {
+    public put(id: string, declarations: Map<string, string>) {
         const index = this.getIndexOfRule(id);
         if (index > -1) {
-          this.cssStyleSheet.deleteRule(index);
+            this.cssStyleSheet.deleteRule(index);
         }
-        this.cssStyleSheet.insertRule(css.stringify(rule));
+        const rule: IdRule = { id, declarations };
+        this.cssStyleSheet.insertRule(this.idRuleToValidCssRule(rule));
     }
 
-    public get(id: string): Rule | undefined {
-        const stylesheet = css.parse(this.snapshotOfStyleSheet());
-        if (stylesheet.stylesheet == null) throw new Error('No stylesheet found');
-        const rule = Array.from(stylesheet.stylesheet.rules).find((r) => {
-            const rule = r as Rule;
-            if (rule.selectors == null) return false;
-            return rule.selectors.length === 1 && rule.selectors[0] === '#'+id;
-        });
-        return rule ? rule as Rule : undefined
+    public get(id: string): IdRule | undefined {
+        const stylesheet = this.parseStyleSheet();
+        return stylesheet.rules.find((r) => r.id === id);
     }
 
     public delete(id: string) {
@@ -43,10 +45,37 @@ export class MutableStyleSheet {
         });
     }
 
-    private snapshotOfStyleSheet(): string {
-        return Array.from(this.cssStyleSheet.cssRules).reduce((acc, rule) => { 
-            return rule.cssText + acc;
-        }, '');
+    private parseStyleSheet(): Stylesheet {
+        return {
+            rules: Array.from(this.cssStyleSheet.cssRules).reduce((acc, rule) => {
+                if (rule instanceof CSSStyleRule) {
+                    const parseResult = this.isSingleIdRule(rule.selectorText);
+                    if (parseResult.valid) {
+                        const declarations = Array.from(rule.style).reduce((acc, property) => {
+                            return acc.set(property, rule.style.getPropertyValue(property));
+                        }, new Map<string, string>());
+                        return acc.concat({ id: parseResult.id, declarations });
+                    }
+                }
+                return acc;
+            }, [] as IdRule[])
+        }
+    }
+
+    private isSingleIdRule(selectorText: string): { valid: boolean, id: string } {
+        if (selectorText.startsWith('#')) {
+            const r = [...selectorText.substring(1, selectorText.length)].reduce((acc, char) => {
+                return { valid: acc.valid && char !== ',' && char !== ' ', id: acc.id + char }
+            }, { valid: true, id: "" });
+            return r;
+        }
+        return { valid: false, id: "" };
+    }
+
+    private idRuleToValidCssRule(idRule: IdRule): string {
+        return `#${idRule.id} { ${Array.from(idRule.declarations).reduce((acc, [property, value]) => {
+            return `${acc} ${property}: ${value};`;
+        }, '')} }`;
     }
 
 }

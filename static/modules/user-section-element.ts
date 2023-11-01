@@ -56,21 +56,13 @@ export class UserQueueElement {
       const backgroundColor = userEl.getAttribute('data-hex-color');
       if (!backgroundColor) throw new Error('No backgroundColor attribute found');
 
-      const mobileRule: Rule = {
-        selectors: ['#'+userEl.id],
-        declarations: [
-          {
-            property: 'z-index',
-            value: mobileZIndex,
-          },
-          {
-            property: 'left',
-            value: left,
-          },
-        ],
-      } 
+      const declarations = new Map<string, string>([
+        ['z-index', mobileZIndex],
+        ['left', left],
 
-      this.mobileStyleSheet.put(userEl.id, mobileRule);
+      ]); 
+
+      this.mobileStyleSheet.put(userEl.id, declarations);
 
       // static style... storing in style attribute to indicate that
       userEl.style.backgroundColor = backgroundColor;
@@ -87,34 +79,27 @@ export class UserQueueElement {
 
 
     // todo: rezindex previous users
-    Array.from(this.userSectionEl.children).forEach((u, i) => {
-      const userEl = u as HTMLDivElement;
-      const rule = this.mobileStyleSheet.get(userEl.id);
-      if (!rule) throw new Error('No rule found');
-      rule.declarations?.forEach((d, i) => {
-        const dec = d as Declaration;
-        if (dec.property === 'z-index') {
-          dec.value = i.toString();
+    for (let i = 0, j = this.userSectionEl.childElementCount; i < this.userSectionEl.childElementCount; i++, j--) {
+      const userEl = this.userSectionEl.children[i] as HTMLDivElement;
+      const idRule = this.mobileStyleSheet.get(userEl.id);
+      if (!idRule) throw new Error('No rule found');
+      const updatedDeclarations = new Map(Array.from(idRule.declarations).map(([k, v]) => {
+        if (k === 'z-index') {
+          return [k, j.toString()];
         }
-      });
-    });
+        return [k, v];
+      }));
+      this.mobileStyleSheet.put(userEl.id, updatedDeclarations);
+    }
 
     const userEl = document.createElement('div');
     userEl.id = userId;
     userEl.style.backgroundColor = hexColor;
-    this.mobileStyleSheet.put(userId, {
-      selectors: ['#'+userId],
-      declarations: [
-        {
-          property: 'z-index',
-          value: '0',
-        },
-        {
-          property: 'left',
-          value: this.endPositionPx + (this.endPositionPx == 0 ? '' : 'px'),
-        },
-      ],
-    });
+    const declarations = new Map<string, string>([
+      ['z-index', '0'],
+      ['left', this.endPositionPx + (this.endPositionPx == 0 ? '' : 'px')],
+    ]);
+    this.mobileStyleSheet.put(userId, declarations);
     userEl.classList.add('user');
 
     this.userSectionEl.appendChild(userEl);
@@ -155,44 +140,25 @@ export class UserQueueElement {
       const u = this.userSectionEl.children[i] as HTMLDivElement;
       const rule = this.mobileStyleSheet.get(u.id);
       if (!rule) throw new Error('No rule found');
-      const prevLeft = rule.declarations?.find((d) => {
-        const dec = d as Declaration;
-        return dec.property === 'left';
-      });
+      const prevLeft = Array.from(rule.declarations).find(([k, v]) => {
+        return k === 'left';
+      })?.[1];
       if (!prevLeft) throw new Error('No left declaration found');
-      const newMobileRule: Rule = i <= userIndex ?
-        { 
-          selectors: ['#'+u.id],
-          declarations: [
-            {
-              property: 'z-index',
-              value: j.toString(),
-            },
-            {
-              property: 'left',
-              value: (prevLeft as Declaration).value,
-            },
-          ],
-        } :
-        {
-          selectors: ['#'+u.id],
-          declarations: [
-            {
-              property: 'z-index',
-              value: j.toString(),
-            },
-            {
-              property: 'left',
-              value: parseInt((prevLeft as Declaration).value as string) - this.offset + 'px',
-            },
-          ],
-        };
+      const newDeclaration: Map<string, string> = i <= userIndex ?
+        new Map([
+            ['z-index', j.toString()],
+            ['left', prevLeft]])
+        :
+        new Map([
+          ['z-index', j.toString()],
+          ['left', parseInt(prevLeft) - this.offset + 'px'],
+        ]);
 
-        this.mobileStyleSheet.put(u.id, newMobileRule);
+        this.mobileStyleSheet.put(u.id, newDeclaration);
 
         u.animate([
           {
-            left: (prevLeft as Declaration).value,
+            left: prevLeft,
             offset: 0,
           }
         ],
