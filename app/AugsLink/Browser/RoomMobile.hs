@@ -9,9 +9,11 @@ styles :: Css
 styles = do 
   (html <> body) ?
     do
-      margin (px 0) (px 0) (px 0) (px 0)
+      margin nil nil nil nil
   html ?
+    do
     display flex
+    height (vh 100)
   body ? 
     do
       display grid
@@ -19,7 +21,7 @@ styles = do
       flexShrink 1
       gridTemplateColumns [fr 1, fr 1.5]
       "grid-template-rows" -: "100px 5fr 1fr"
-      "grid-template-area" -: "\"risec usec\" \"dropsec dropsec\" \"musec musec\""
+      "grid-template-areas" -: "\"risec usec\" \"dropsec dropsec\" \"musec musec\""
   "#room-info-section" ?
     do
       "grid-area" -: "risec"
@@ -61,9 +63,9 @@ styles = do
   ".user" ?
     do
       position absolute
-      top (px 0)
-      left (px 0)
-      bottom (px 0)
+      top nil
+      left nil
+      bottom nil
       margin auto auto auto auto
       height (px 40)
       width (px 40)

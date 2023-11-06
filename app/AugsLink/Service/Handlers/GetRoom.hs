@@ -20,7 +20,7 @@ import AugsLink.Core.API
 import Data.Maybe (fromMaybe)
 import qualified Clay as CSS
 import qualified AugsLink.Browser.RoomMobile as RoomMobile
-import qualified AugsLink.Browser.RoomMobile as RoomDesktop
+import qualified AugsLink.Browser.RoomDesktop as RoomDesktop
 
 
 musicIconSvg :: S.Svg
