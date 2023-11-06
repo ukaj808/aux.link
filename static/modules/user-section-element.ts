@@ -1,9 +1,7 @@
 import { RestClient } from "./rest-client";
-import { SvgFactory } from "./svg";
 import { RoomMessageListener } from "./room-message-listener";
 import { ServerWelcomeCommand, CountingDownEvent, UserEnterEvent, UserLeftEvent } from "./interface";
 import { MutableStyleSheet } from "./stylesheet-manipulations";
-import { Declaration, Rule } from "css";
 
 // Animations in this class are based on the following recommendations from the W3C for
 // achieving animations whose effects should b applied indefinitely:

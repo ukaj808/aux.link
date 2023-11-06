@@ -11,9 +11,8 @@ import { MutableStyleSheet } from "../modules/stylesheet-manipulations";
 
 let roomId: string    = location.pathname.substr(1);
 let listening: boolean = false;
-
-const mobileStyleSheet = new MutableStyleSheet(document.styleSheets[0]);
-const desktopStyleSheet = new MutableStyleSheet(document.styleSheets[1]);
+const mobileStyleSheet = new MutableStyleSheet((document.getElementById('room-mobile-stylesheet') as HTMLLinkElement).sheet!);
+const desktopStyleSheet = new MutableStyleSheet((document.getElementById('room-desktop-stylesheet') as HTMLLinkElement).sheet!);
 
 const roomMessageListener: RoomMessageListener = new RoomMessageListener(roomId);
 const audioContext = new AudioContext({
