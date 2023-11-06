@@ -17,8 +17,10 @@ executable augslink
     import:           warnings
     main-is:          Main.hs
 
-    other-modules:      AugsLink.Core.API
-                                            , AugsLink.Core.Model 
+    other-modules:      AugsLink.Browser.RoomDesktop
+                      , AugsLink.Browser.RoomMobile
+                      , AugsLink.Core.API
+                      , AugsLink.Core.Model 
                       , AugsLink.Core.Music 
                       , AugsLink.Core.Registry 
                       , AugsLink.Core.Room 
@@ -47,6 +49,7 @@ executable augslink
                       , blaze-html
                       , blaze-svg
                       , bytestring
+                      , clay
                       , colour
                       , containers
                       , directory

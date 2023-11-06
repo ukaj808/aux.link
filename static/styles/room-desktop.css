@@ -50,8 +50,6 @@ body {
   margin: auto;
 }
 
-#83ed1135-2f1f-4b4c-bfa2-03aa6fe31700 { background-color: #00dcff; z-index: 0; left: 0px; }
-
 #drop-section {
   grid-area: dropsec;
   background-color: darkslategray;
