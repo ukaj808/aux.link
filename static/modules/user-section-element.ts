@@ -48,19 +48,20 @@ export class UserQueueElement {
       const mobileZIndex = userEl.getAttribute('data-mobile-z-index');
       if (!mobileZIndex) throw new Error('No zIndex attribute found');
 
-      const left = userEl.getAttribute('data-mobile-left');
-      if (!left) throw new Error('No left attribute found');
+      const mobileLeft = userEl.getAttribute('data-mobile-left');
+      if (!mobileLeft) throw new Error('No left attribute found');
+
+      const desktopTop = userEl.getAttribute('data-desktop-top');
+      if (!desktopTop) throw new Error('No top attribute found');
 
       const backgroundColor = userEl.getAttribute('data-hex-color');
       if (!backgroundColor) throw new Error('No backgroundColor attribute found');
 
-      const declarations = new Map<string, string>([
+      this.mobileStyleSheet.put(userEl.id, new Map([
         ['z-index', mobileZIndex],
-        ['left', left],
-
-      ]); 
-
-      this.mobileStyleSheet.put(userEl.id, declarations);
+        ['left', mobileLeft],
+      ]));
+      this.desktopStyleSheet.put(userEl.id, new Map([['top', desktopTop]]));
 
       // static style... storing in style attribute to indicate that
       userEl.style.backgroundColor = backgroundColor;
@@ -75,12 +76,12 @@ export class UserQueueElement {
 
   public addNewUserToLine(userId: string, userName: string, hexColor: string) {
 
-
-    // todo: rezindex previous users
+    // Rezindex all users in mobile
     for (let i = 0, j = this.userSectionEl.childElementCount; i < this.userSectionEl.childElementCount; i++, j--) {
       const userEl = this.userSectionEl.children[i] as HTMLDivElement;
       const idRule = this.mobileStyleSheet.get(userEl.id);
       if (!idRule) throw new Error('No rule found');
+      // declarations are read only, so we need to create a new map
       const updatedDeclarations = new Map(Array.from(idRule.declarations).map(([k, v]) => {
         if (k === 'z-index') {
           return [k, j.toString()];
