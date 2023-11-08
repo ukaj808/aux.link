@@ -1,10 +1,11 @@
 import { MutableStyleSheet } from "./stylesheet-manipulations";
 
 type ResponsiveQueueAnimationStyleOptions = {
-    orientation: string;
+    orientation: "horizontal" | "vertical";
     spaceBetweenElements: number;
     elementWidth: number; // or element height?
     stylesheet: MutableStyleSheet;
+    media: MediaQueryList
 };
 
 type ResponsiveQueueAnimationOptions = {
@@ -101,12 +102,15 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
 
             opts.queue.appendChild(el);
 
+            const mediaMatch = opts.styleOptions.find((styleOpts) => styleOpts.media.matches);
+            if (!mediaMatch) throw new Error("None of the stylesheets match the current media query");
+
+            const keyframe = mediaMatch.orientation === "horizontal" ?
+                { left: "1000px", offset: 0 } : { bottom: "1000px", offset: 0 };
+
             const enterAnimation = el.animate(
                 [
-                    {
-                        left: "1000px", // should I pass this in?
-                        offset: 0,
-                    },
+                    keyframe
                 ],
                 {
                     duration: 10000,
@@ -118,7 +122,40 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
             });
 
         },
-        leave: (id: string) => { },
+        leave: (id: string) => { 
+            const { el, index } = (Array.from(opts.queue.children) as HTMLElement[]).reduce((acc, el, index) => {
+                if (el.id === id) {
+                    return { el, index };
+                }
+                return acc;
+            }, { el: (undefined as HTMLElement | undefined), index: -1 });
+            if (!el) throw new Error(`No element found with id ${id}`);
+
+            // todo
+            const mediaMatch = opts.styleOptions.find((styleOpts) => styleOpts.media.matches);
+            if (!mediaMatch) throw new Error("None of the stylesheets match the current media query");
+            const keyframe = mediaMatch.orientation === "horizontal" ?
+                { left: "1000px", offset: 0 } : { bottom: "1000px", offset: 0 };
+
+            const leaveAnimation = el.animate(
+                [
+                    keyframe
+                ],
+                {
+                  duration: 1000,
+                }
+              );
+              const i = runningAnimations.push(leaveAnimation);
+              leaveAnimation.finished.then(() => {
+                opts.styleOptions.forEach((styleOpts) => styleOpts.stylesheet.delete(id));
+                el.remove();
+                runningAnimations.splice(i, 1);
+              });
+
+              // todo
+
+            
+        },
         cycle: () => { },
         cancel: () => { },
     }
