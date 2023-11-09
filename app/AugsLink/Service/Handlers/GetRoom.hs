@@ -45,9 +45,9 @@ renderUser :: RoomUser -> Int -> Int -> Int -> H.Html
 renderUser user mobileLeft mobileZIndex desktopTop =
   H.div ! A.id (toValue  $ sanitizedUserId user) ! A.class_ "user" ! 
     H.dataAttribute "hex-color" (toValue $ hexColor user) ! 
-    H.dataAttribute "desktop-top" (toValue $ show desktopTop ++ "px") !
-    H.dataAttribute "mobile-z-index" (toValue $ show mobileZIndex) !
-    H.dataAttribute "mobile-left" (toValue $ show mobileLeft ++ "px") $ ""
+    H.dataAttribute "top" (toValue $ show desktopTop ++ "px") !
+    H.dataAttribute "z-index" (toValue $ show mobileZIndex) !
+    H.dataAttribute "left" (toValue $ show mobileLeft ++ "px") $ ""
 
 renderRoomInfoSection :: RoomId -> H.Html
 renderRoomInfoSection rId =

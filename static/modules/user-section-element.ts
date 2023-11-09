@@ -7,6 +7,7 @@ import {
   UserLeftEvent,
 } from "./interface";
 import { MutableStyleSheet } from "./stylesheet-manipulations";
+import { ResponsiveQueueAnimationManager, responsiveQueueAnimationManager } from "./responsive-queue-animation";
 
 // Animations in this class are based on the following recommendations from the W3C for
 // achieving animations whose effects should b applied indefinitely:
@@ -17,9 +18,9 @@ export class UserQueueElement {
   private desktopStyleSheet: MutableStyleSheet;
   private roomMessageListener: RoomMessageListener;
   private offset = 20;
-  private endPositionPx: number;
   private mediaQueryList: MediaQueryList;
   private runningAnimations: Animation[] = [];
+  private usersAnimationManager: ResponsiveQueueAnimationManager;
 
   constructor(
     roomMessageListener: RoomMessageListener,
@@ -66,95 +67,41 @@ export class UserQueueElement {
       this.runningAnimations.forEach((a) => a.finish());
     });
 
-    // Pre-process server side rendered user elements and there stylesheet injections
-    Array.from(this.userSectionEl.children).forEach((u) => {
-      const userEl = u as HTMLDivElement;
 
-      const mobileZIndex = userEl.getAttribute("data-mobile-z-index");
-      if (!mobileZIndex) throw new Error("No zIndex attribute found");
-
-      const mobileLeft = userEl.getAttribute("data-mobile-left");
-      if (!mobileLeft) throw new Error("No left attribute found");
-
-      const desktopTop = userEl.getAttribute("data-desktop-top");
-      if (!desktopTop) throw new Error("No top attribute found");
-
-      const backgroundColor = userEl.getAttribute("data-hex-color");
-      if (!backgroundColor)
-        throw new Error("No backgroundColor attribute found");
-
-      this.mobileStyleSheet.put(
-        userEl.id,
-        new Map([
-          ["z-index", mobileZIndex],
-          ["left", mobileLeft],
-        ])
-      );
-      this.desktopStyleSheet.put(userEl.id, new Map([["top", desktopTop]]));
-
-      // static style... storing in style attribute to indicate that
-      userEl.style.backgroundColor = backgroundColor;
-    });
-
-    this.endPositionPx = this.userSectionEl.childElementCount * this.offset;
+    this.usersAnimationManager = responsiveQueueAnimationManager({
+      queue: this.userSectionEl,
+      childElementType: "div",
+      childElementClassName: "user",
+      styleOptions: [
+        {
+          orientation: "horizontal",
+          spaceBetweenElements: -20,
+          elementWidth: 40,
+          elementHeight: -1,
+          stylesheet: this.mobileStyleSheet,
+          media: window.matchMedia(
+            "screen and (min-width:0px) and (max-width:1025px)"),
+        },
+        {
+          orientation: "vertical",
+          spaceBetweenElements: 10,
+          elementHeight: 100,
+          elementWidth: -1,
+          stylesheet: this.desktopStyleSheet,
+          media: window.matchMedia("screen and (min-width:1025px)")
+        },
+      ],
+    })
 
     const stateAttribute = userSectionEl.getAttribute("data-og-state");
     if (!stateAttribute) throw new Error("No state attribute found");
   }
 
   public addNewUserToLine(userId: string, userName: string, hexColor: string) {
-    // Rezindex all users in mobile
-    for (
-      let i = 0, j = this.userSectionEl.childElementCount;
-      i < this.userSectionEl.childElementCount;
-      i++, j--
-    ) {
-      const userEl = this.userSectionEl.children[i] as HTMLDivElement;
-      const idRule = this.mobileStyleSheet.get(userEl.id);
-      if (!idRule) throw new Error("No rule found");
-      // declarations are read only, so we need to create a new map
-      const updatedDeclarations = new Map(
-        Array.from(idRule.declarations).map(([k, v]) => {
-          if (k === "z-index") {
-            return [k, j.toString()];
-          }
-          return [k, v];
-        })
-      );
-      this.mobileStyleSheet.put(userEl.id, updatedDeclarations);
-    }
-
-    const userEl = document.createElement("div");
-    userEl.id = userId;
-    userEl.style.backgroundColor = hexColor;
-    const declarations = new Map<string, string>([
-      ["z-index", "0"],
-      ["left", this.endPositionPx + (this.endPositionPx == 0 ? "" : "px")],
+    const styles = new Map<string, string>([
+      ["background-color", hexColor],
     ]);
-    this.mobileStyleSheet.put(userId, declarations);
-    userEl.classList.add("user");
-
-    this.userSectionEl.appendChild(userEl);
-
-    const enterAnimation = userEl.animate(
-      [
-        {
-          left: "1000px",
-          offset: 0,
-        },
-      ],
-      {
-        duration: 10000,
-      }
-    );
-    enterAnimation.finished.then(() => {
-      this.runningAnimations = this.runningAnimations.filter(
-        (a) => a !== enterAnimation
-      );
-    });
-    this.runningAnimations.push(enterAnimation);
-
-    this.endPositionPx += this.offset;
+    this.usersAnimationManager.enter(userId, styles);
   }
 
   public removeUserFromLine(userId: string) {
@@ -228,7 +175,6 @@ export class UserQueueElement {
       });
     }
 
-    this.endPositionPx -= this.offset;
   }
 
   // Should be run on nextInQueue event

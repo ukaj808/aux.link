@@ -1,28 +1,29 @@
 import { MutableStyleSheet } from "./stylesheet-manipulations";
 
-type ResponsiveQueueAnimationStyleOptions = {
+export type ResponsiveQueueAnimationStyleOptions = {
     orientation: "horizontal" | "vertical";
     spaceBetweenElements: number;
-    elementWidth: number; // or element height?
     stylesheet: MutableStyleSheet;
     media: MediaQueryList
+    elementWidth: number;
+    elementHeight: number;
 };
 
-type ResponsiveQueueAnimationOptions = {
+export type ResponsiveQueueAnimationOptions = {
     queue: HTMLElement;
     childElementType: keyof HTMLElementTagNameMap;
     childElementClassName: string;
     styleOptions: ResponsiveQueueAnimationStyleOptions[];
 }
 
-type ResponsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOptions) => {
-    enter: (id: string) => void;
+export type ResponsiveQueueAnimationManager = {
+    enter: (id: string, styles?: Map<string, string>) => void;
     leave: (id: string) => void;
     cycle: () => void;
     cancel: () => void;
 };
 
-const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) => {
+export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOptions): ResponsiveQueueAnimationManager => {
     const runningAnimations: Animation[] = [];
     const endPositions = opts.styleOptions.map(() => 0); 
 
@@ -58,7 +59,7 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
     });
 
     return {
-        enter: (id: string) => {
+        enter: (id: string, styles?: Map<string, string>) => {
             // 1. if stacking, rezindex previous elements 
             opts.styleOptions.forEach((styleOpts) => {
                 const stacking = styleOpts.spaceBetweenElements < 0;
@@ -80,24 +81,30 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
             el.id = id;
             el.classList.add(opts.childElementClassName); // need to pass this class in somehow; it must align with the orientation restraints!!
 
+            if (styles) {
+                styles.forEach((value, key) => {
+                    el.style.setProperty(key, value);
+                });
+            }
+
             opts.styleOptions.forEach((styleOpts, i) => {
                 const declarations = new Map<string, string>();
                 const stacking = styleOpts.spaceBetweenElements < 0;
                 if (stacking) {
                     declarations.set("z-index", "0");
                 }
-                const endPosition = endPositions[i] + styleOpts.spaceBetweenElements + styleOpts.elementWidth;
+                const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
                 switch (styleOpts.orientation) {
                     case "horizontal":
-                        declarations.set("left", endPosition + "px");
+                        declarations.set("left", endPositions[i] + "px");
                         break;
                     case "vertical":
-                        declarations.set("top", endPosition + "px");
+                        declarations.set("top", endPositions[i] + "px");
                         break;
                 
                 }
                 styleOpts.stylesheet.put(el.id, declarations);
-                endPositions[i] = endPosition;
+                endPositions[i] = endPositions[i] + styleOpts.spaceBetweenElements + elementDimension;
             });
 
             opts.queue.appendChild(el);
@@ -106,14 +113,14 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
             if (!mediaMatch) throw new Error("None of the stylesheets match the current media query");
 
             const keyframe = mediaMatch.orientation === "horizontal" ?
-                { left: "1000px", offset: 0 } : { bottom: "1000px", offset: 0 };
+                { left: "1000px", offset: 0 } : { top: "1000px", offset: 0 };
 
             const enterAnimation = el.animate(
                 [
                     keyframe
                 ],
                 {
-                    duration: 10000,
+                    duration: 1000,
                 }
             );
             const index = runningAnimations.push(enterAnimation);
@@ -135,7 +142,7 @@ const responsiveQueueAnimationManager: ResponsiveQueueAnimationManager = (opts) 
             const mediaMatch = opts.styleOptions.find((styleOpts) => styleOpts.media.matches);
             if (!mediaMatch) throw new Error("None of the stylesheets match the current media query");
             const keyframe = mediaMatch.orientation === "horizontal" ?
-                { left: "1000px", offset: 0 } : { bottom: "1000px", offset: 0 };
+                { left: "1000px", offset: 0 } : { top: "1000px", offset: 0 };
 
             const leaveAnimation = el.animate(
                 [
