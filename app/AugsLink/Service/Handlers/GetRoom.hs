@@ -43,11 +43,12 @@ musicIconSvg = S.docTypeSvg ! SVGA.class_ "centered-icon" ! SVGA.version "1.1" !
 
 renderUser :: RoomUser -> Int -> Int -> Int -> H.Html
 renderUser user mobileLeft mobileZIndex desktopTop =
-  H.div ! A.id (toValue  $ sanitizedUserId user) ! A.class_ "user" ! 
-    H.dataAttribute "hex-color" (toValue $ hexColor user) ! 
+  H.div ! A.id (toValue  $ sanitizedUserId user) ! A.class_ "user" ! A.style uStyle ! 
     H.dataAttribute "top" (toValue $ show desktopTop ++ "px") !
     H.dataAttribute "z-index" (toValue $ show mobileZIndex) !
     H.dataAttribute "left" (toValue $ show mobileLeft ++ "px") $ ""
+  where
+    uStyle = toValue $ "background-color: " ++ T.unpack (hexColor user) ++ ";"
 
 renderRoomInfoSection :: RoomId -> H.Html
 renderRoomInfoSection rId =

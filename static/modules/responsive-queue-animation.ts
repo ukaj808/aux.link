@@ -5,6 +5,7 @@ export type ResponsiveQueueAnimationStyleOptions = {
     spaceBetweenElements: number;
     stylesheet: MutableStyleSheet;
     media: MediaQueryList
+    startingTailPosition: number;
     elementWidth: number;
     elementHeight: number;
 };
@@ -25,7 +26,7 @@ export type ResponsiveQueueAnimationManager = {
 
 export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOptions): ResponsiveQueueAnimationManager => {
     const runningAnimations: Animation[] = [];
-    const endPositions = opts.styleOptions.map(() => 0); 
+    const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition); 
 
     // 1. Initially set the position of each element in the queue
     //    based on the orientation of the queue and the space between.
@@ -54,6 +55,9 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                     declarations.set("top", dataTop);
                     break;
             }
+            tailPositions[j] = tailPositions[j] + styleOpts.spaceBetweenElements + (
+                styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight
+            );
             styleOpts.stylesheet.put(el.id, declarations);
         });
     });
@@ -96,15 +100,15 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                 const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
                 switch (styleOpts.orientation) {
                     case "horizontal":
-                        declarations.set("left", endPositions[i] + "px");
+                        declarations.set("left", tailPositions[i] + "px");
                         break;
                     case "vertical":
-                        declarations.set("top", endPositions[i] + "px");
+                        declarations.set("top", tailPositions[i] + "px");
                         break;
                 
                 }
                 styleOpts.stylesheet.put(el.id, declarations);
-                endPositions[i] = endPositions[i] + styleOpts.spaceBetweenElements + elementDimension;
+                tailPositions[i] = tailPositions[i] + styleOpts.spaceBetweenElements + elementDimension;
             });
 
             opts.queue.appendChild(el);

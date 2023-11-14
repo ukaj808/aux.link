@@ -78,6 +78,7 @@ export class UserQueueElement {
           spaceBetweenElements: -20,
           elementWidth: 40,
           elementHeight: -1,
+          startingTailPosition: 0,
           stylesheet: this.mobileStyleSheet,
           media: window.matchMedia(
             "screen and (min-width:0px) and (max-width:1025px)"),
@@ -87,6 +88,7 @@ export class UserQueueElement {
           spaceBetweenElements: 10,
           elementHeight: 100,
           elementWidth: -1,
+          startingTailPosition: 10,
           stylesheet: this.desktopStyleSheet,
           media: window.matchMedia("screen and (min-width:1025px)")
         },
