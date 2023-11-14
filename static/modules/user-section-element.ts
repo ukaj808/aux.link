@@ -107,76 +107,7 @@ export class UserQueueElement {
   }
 
   public removeUserFromLine(userId: string) {
-    const user = document.getElementById(userId);
-    if (!user) throw new Error("No user cell element found");
-
-    const userIndex = Array.from(this.userSectionEl.children).findIndex(
-      (el) => el.id === userId
-    );
-
-    const leaveAnimation = user.animate(
-      [
-        {
-          left: "1000px",
-        },
-      ],
-      {
-        duration: 1000,
-      }
-    );
-    leaveAnimation.finished.then(() => {
-      this.mobileStyleSheet.delete(userId);
-      user.remove();
-      this.runningAnimations = this.runningAnimations.filter(
-        (a) => a !== leaveAnimation
-      );
-    });
-    this.runningAnimations.push(leaveAnimation);
-
-    for (
-      let i = 0, j = this.userSectionEl.childElementCount - 1;
-      i < this.userSectionEl.childElementCount;
-      i++, j--
-    ) {
-      const u = this.userSectionEl.children[i] as HTMLDivElement;
-      const rule = this.mobileStyleSheet.get(u.id);
-      if (!rule) throw new Error("No rule found");
-      const prevLeft = Array.from(rule.declarations).find(([k, v]) => {
-        return k === "left";
-      })?.[1];
-      if (!prevLeft) throw new Error("No left declaration found");
-      const newDeclaration: Map<string, string> =
-        i <= userIndex
-          ? new Map([
-              ["z-index", j.toString()],
-              ["left", prevLeft],
-            ])
-          : new Map([
-              ["z-index", j.toString()],
-              ["left", parseInt(prevLeft) - this.offset + "px"],
-            ]);
-
-      this.mobileStyleSheet.put(u.id, newDeclaration);
-
-      const moveUpAnimation = u.animate(
-        [
-          {
-            left: prevLeft,
-            offset: 0,
-          },
-        ],
-        {
-          duration: 1000,
-        }
-      );
-      this.runningAnimations.push(moveUpAnimation);
-      moveUpAnimation.finished.then(() => {
-        this.runningAnimations = this.runningAnimations.filter(
-          (a) => a !== moveUpAnimation
-        );
-      });
-    }
-
+    this.usersAnimationManager.leave(userId);
   }
 
   // Should be run on nextInQueue event

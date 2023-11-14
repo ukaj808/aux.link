@@ -24,9 +24,27 @@ export type ResponsiveQueueAnimationManager = {
     cancel: () => void;
 };
 
+
 export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOptions): ResponsiveQueueAnimationManager => {
     const runningAnimations: Animation[] = [];
-    const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition); 
+    const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition);
+    const rezindex = () => {
+        opts.styleOptions.forEach((styleOpts) => {
+            const stacking = styleOpts.spaceBetweenElements < 0;
+            if (stacking) {
+                for (
+                    let i = 0, j = opts.queue.childElementCount;
+                    i < opts.queue.childElementCount;
+                    i++, j--
+                ) {
+                    const el = opts.queue.children[i] as HTMLElement;
+                    const declarations = new Map(styleOpts.stylesheet.get(el.id)?.declarations);
+                    declarations.set("z-index", j.toString());
+                    styleOpts.stylesheet.put(el.id, declarations);
+                }
+            }
+        });
+    };
 
     // 1. Initially set the position of each element in the queue
     //    based on the orientation of the queue and the space between.
@@ -65,21 +83,7 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
     return {
         enter: (id: string, styles?: Map<string, string>) => {
             // 1. if stacking, rezindex previous elements 
-            opts.styleOptions.forEach((styleOpts) => {
-                const stacking = styleOpts.spaceBetweenElements < 0;
-                if (stacking) {
-                    for (
-                        let i = 0, j = opts.queue.childElementCount;
-                        i < opts.queue.childElementCount;
-                        i++, j--
-                    ) {
-                        const el = opts.queue.children[i] as HTMLElement;
-                        const declarations = new Map(styleOpts.stylesheet.get(el.id)?.declarations);
-                        declarations.set("z-index", j.toString());
-                        styleOpts.stylesheet.put(el.id, declarations);
-                    }
-                }
-            });
+            rezindex();
 
             const el = document.createElement(opts.childElementType);
             el.id = id;
@@ -105,7 +109,7 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                     case "vertical":
                         declarations.set("top", tailPositions[i] + "px");
                         break;
-                
+
                 }
                 styleOpts.stylesheet.put(el.id, declarations);
                 tailPositions[i] = tailPositions[i] + styleOpts.spaceBetweenElements + elementDimension;
@@ -133,7 +137,7 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
             });
 
         },
-        leave: (id: string) => { 
+        leave: (id: string) => {
             const { el, index } = (Array.from(opts.queue.children) as HTMLElement[]).reduce((acc, el, index) => {
                 if (el.id === id) {
                     return { el, index };
@@ -153,19 +157,49 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                     keyframe
                 ],
                 {
-                  duration: 1000,
+                    duration: 1000,
                 }
-              );
-              const i = runningAnimations.push(leaveAnimation);
-              leaveAnimation.finished.then(() => {
+            );
+            const i = runningAnimations.push(leaveAnimation);
+            leaveAnimation.finished.then(() => {
                 opts.styleOptions.forEach((styleOpts) => styleOpts.stylesheet.delete(id));
                 el.remove();
                 runningAnimations.splice(i, 1);
-              });
+            });
 
-              // todo
+            Array.from(opts.queue.children).slice(index + 1)
+                .forEach((c) => {
+                    const el = c as HTMLElement;
+                    opts.styleOptions.forEach((styleOpts, i) => {
+                        const declarations = new Map(styleOpts.stylesheet.get(el.id)?.declarations);
+                        const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
+                        const prevPosition = declarations.get(styleOpts.orientation === "horizontal" ? "left" : "top");
+                        if (!prevPosition) throw new Error("No previous position found");
+                        const newPosition = parseInt(prevPosition) - styleOpts.spaceBetweenElements - elementDimension;
+                        declarations.set(styleOpts.orientation === "horizontal" ? "left" : "top", newPosition + "px");
+                        styleOpts.stylesheet.put(el.id, declarations);
+                        tailPositions[i] = tailPositions[i] - styleOpts.spaceBetweenElements - elementDimension;
 
-            
+                        const moveUpAnimation = el.animate(
+                            [
+                                {
+                                    [styleOpts.orientation === "horizontal" ? "left" : "top"]: prevPosition,
+                                    offset: 0,
+                                },
+                            ],
+                            {
+                                duration: 1000,
+                            }
+                        );
+                        const j = runningAnimations.push(moveUpAnimation);
+                        moveUpAnimation.finished.then(() => {
+                            runningAnimations.splice(j, 1);
+                        });
+                    });
+                });
+
+
+
         },
         cycle: () => { },
         cancel: () => { },
