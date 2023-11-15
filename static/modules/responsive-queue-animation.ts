@@ -26,8 +26,12 @@ export type ResponsiveQueueAnimationManager = {
 
 
 export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOptions): ResponsiveQueueAnimationManager => {
-    const runningAnimations: Animation[] = [];
+    let runningAnimations: Animation[] = [];
     const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition);
+    let animationCount = 0;
+
+    // @ts-ignore
+    window.myFunc = () => console.log(runningAnimations);
     const rezindex = () => {
         opts.styleOptions.forEach((styleOpts) => {
             const stacking = styleOpts.spaceBetweenElements < 0;
@@ -123,17 +127,20 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
             const keyframe = mediaMatch.orientation === "horizontal" ?
                 { left: "1000px", offset: 0 } : { top: "1000px", offset: 0 };
 
+            const animationId = (animationCount++).toString(); 
             const enterAnimation = el.animate(
                 [
                     keyframe
                 ],
                 {
                     duration: 1000,
+                    id: animationId,
                 }
             );
-            const index = runningAnimations.push(enterAnimation);
+
             enterAnimation.finished.then(() => {
-                runningAnimations.splice(index, 1);
+                runningAnimations = runningAnimations.filter((a) => a.id !== animationId);
+                console.log('log')
             });
 
         },
@@ -150,21 +157,23 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
             const mediaMatch = opts.styleOptions.find((styleOpts) => styleOpts.media.matches);
             if (!mediaMatch) throw new Error("None of the stylesheets match the current media query");
             const keyframe = mediaMatch.orientation === "horizontal" ?
-                { left: "1000px", offset: 0 } : { top: "1000px", offset: 0 };
+                { left: "1000px" } : { top: "1000px" };
 
+            const animationId = (animationCount++).toString();
             const leaveAnimation = el.animate(
                 [
                     keyframe
                 ],
                 {
                     duration: 1000,
+                    id: animationId
                 }
             );
-            const i = runningAnimations.push(leaveAnimation);
+            const i = runningAnimations.push(leaveAnimation) - 1;
             leaveAnimation.finished.then(() => {
                 opts.styleOptions.forEach((styleOpts) => styleOpts.stylesheet.delete(id));
                 el.remove();
-                runningAnimations.splice(i, 1);
+                runningAnimations = runningAnimations.filter((a) => a.id !== animationId);
             });
 
             Array.from(opts.queue.children).slice(index + 1)
@@ -175,11 +184,12 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                         const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
                         const prevPosition = declarations.get(styleOpts.orientation === "horizontal" ? "left" : "top");
                         if (!prevPosition) throw new Error("No previous position found");
-                        const newPosition = parseInt(prevPosition) - styleOpts.spaceBetweenElements - elementDimension;
+                        const newPosition = parseInt(prevPosition) - (styleOpts.spaceBetweenElements + elementDimension);
                         declarations.set(styleOpts.orientation === "horizontal" ? "left" : "top", newPosition + "px");
                         styleOpts.stylesheet.put(el.id, declarations);
                         tailPositions[i] = tailPositions[i] - styleOpts.spaceBetweenElements - elementDimension;
 
+                        const animationId = (animationCount++).toString();
                         const moveUpAnimation = el.animate(
                             [
                                 {
@@ -189,11 +199,12 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
                             ],
                             {
                                 duration: 1000,
+                                id: animationId,
                             }
                         );
-                        const j = runningAnimations.push(moveUpAnimation);
+                        const j = runningAnimations.push(moveUpAnimation) - 1;
                         moveUpAnimation.finished.then(() => {
-                            runningAnimations.splice(j, 1);
+                            runningAnimations = runningAnimations.filter((a) => a.id !== animationId);
                         });
                     });
                 });
