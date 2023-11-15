@@ -127,7 +127,7 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
             const keyframe = mediaMatch.orientation === "horizontal" ?
                 { left: "1000px", offset: 0 } : { top: "1000px", offset: 0 };
 
-            const animationId = (animationCount++).toString(); 
+            const animationId = (animationCount++).toString();
             const enterAnimation = el.animate(
                 [
                     keyframe
@@ -179,33 +179,31 @@ export const responsiveQueueAnimationManager = (opts: ResponsiveQueueAnimationOp
             Array.from(opts.queue.children).slice(index + 1)
                 .forEach((c) => {
                     const el = c as HTMLElement;
-                    opts.styleOptions.forEach((styleOpts, i) => {
-                        const declarations = new Map(styleOpts.stylesheet.get(el.id)?.declarations);
-                        const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
-                        const prevPosition = declarations.get(styleOpts.orientation === "horizontal" ? "left" : "top");
-                        if (!prevPosition) throw new Error("No previous position found");
-                        const newPosition = parseInt(prevPosition) - (styleOpts.spaceBetweenElements + elementDimension);
-                        declarations.set(styleOpts.orientation === "horizontal" ? "left" : "top", newPosition + "px");
-                        styleOpts.stylesheet.put(el.id, declarations);
-                        tailPositions[i] = tailPositions[i] - styleOpts.spaceBetweenElements - elementDimension;
+                    const declarations = new Map(mediaMatch.stylesheet.get(el.id)?.declarations);
+                    const elementDimension = mediaMatch.orientation === "horizontal" ? mediaMatch.elementWidth : mediaMatch.elementHeight;
+                    const prevPosition = declarations.get(mediaMatch.orientation === "horizontal" ? "left" : "top");
+                    if (!prevPosition) throw new Error("No previous position found");
+                    const newPosition = parseInt(prevPosition) - (mediaMatch.spaceBetweenElements + elementDimension);
+                    declarations.set(mediaMatch.orientation === "horizontal" ? "left" : "top", newPosition + "px");
+                    mediaMatch.stylesheet.put(el.id, declarations);
+                    tailPositions[i] = tailPositions[i] - mediaMatch.spaceBetweenElements - elementDimension;
 
-                        const animationId = (animationCount++).toString();
-                        const moveUpAnimation = el.animate(
-                            [
-                                {
-                                    [styleOpts.orientation === "horizontal" ? "left" : "top"]: prevPosition,
-                                    offset: 0,
-                                },
-                            ],
+                    const animationId = (animationCount++).toString();
+                    const moveUpAnimation = el.animate(
+                        [
                             {
-                                duration: 1000,
-                                id: animationId,
-                            }
-                        );
-                        const j = runningAnimations.push(moveUpAnimation) - 1;
-                        moveUpAnimation.finished.then(() => {
-                            runningAnimations = runningAnimations.filter((a) => a.id !== animationId);
-                        });
+                                [mediaMatch.orientation === "horizontal" ? "left" : "top"]: prevPosition,
+                                offset: 0,
+                            },
+                        ],
+                        {
+                            duration: 1000,
+                            id: animationId,
+                        }
+                    );
+                    runningAnimations.push(moveUpAnimation) - 1;
+                    moveUpAnimation.finished.then(() => {
+                        runningAnimations = runningAnimations.filter((a) => a.id !== animationId);
                     });
                 });
 
