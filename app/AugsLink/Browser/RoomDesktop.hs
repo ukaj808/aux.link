@@ -33,6 +33,7 @@ styles = do
         do
         "grid-area" -: "usec"
         position relative
+        overflow hidden
     "#drop-section" ?
         do
         "grid-area" -: "dropsec"
