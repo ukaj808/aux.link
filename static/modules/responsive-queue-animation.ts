@@ -29,6 +29,8 @@ export const responsiveQueueAnimationManager = (
   const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition);
   let animationCount = 0;
 
+  // Listen for media query changes and finish all animations
+  // so that animations dont bleed into other media query states
   opts.styleOptions.forEach((styleOpts) => {
     styleOpts.media.addEventListener("change", () => {
         opts.queue.getAnimations({subtree: true}).forEach(a => {
@@ -37,11 +39,9 @@ export const responsiveQueueAnimationManager = (
     })
   });
 
-  // @ts-ignore
-  window.animationDebug = {
-    printRunningAnimations: () => console.log(opts.queue.getAnimations({subtree: true})),
-    printTailPositions: () => console.log(tailPositions),
-  }
+  // A function which iterates through the queue and "rezindexes" the elements
+  // based on their position in the queue. This is necessary for stacking elements.
+  // Should theoretically be called whenever an element is added or removed from the queue.
   const rezindex = () => {
     opts.styleOptions.forEach((styleOpts) => {
       const stacking = styleOpts.spaceBetweenElements < 0;
@@ -112,7 +112,6 @@ export const responsiveQueueAnimationManager = (
 
   return {
     enter: (id: string, styles?: Map<string, string>) => {
-      // 1. if stacking, rezindex previous elements
       rezindex();
 
       const el = document.createElement(opts.childElementType);
@@ -214,7 +213,7 @@ export const responsiveQueueAnimationManager = (
           styleOpts.stylesheet.delete(id)
         );
         leavingEl.remove();
-      });
+              });
 
       Array.from(opts.queue.children)
         .slice(index + 1)
