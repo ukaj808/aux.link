@@ -21,19 +21,25 @@ export type ResponsiveQueueAnimationManager = {
   enter: (id: string, styles?: Map<string, string>) => void;
   leave: (id: string) => void;
   cycle: () => void;
-  cancel: () => void;
 };
 
 export const responsiveQueueAnimationManager = (
   opts: ResponsiveQueueAnimationOptions
 ): ResponsiveQueueAnimationManager => {
-  let runningAnimations: Animation[] = [];
   const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition);
   let animationCount = 0;
 
+  opts.styleOptions.forEach((styleOpts) => {
+    styleOpts.media.addEventListener("change", () => {
+        opts.queue.getAnimations({subtree: true}).forEach(a => {
+            a.finish();
+        })
+    })
+  });
+
   // @ts-ignore
   window.animationDebug = {
-    printRunningAnimations: () => console.log(runningAnimations),
+    printRunningAnimations: () => console.log(opts.queue.getAnimations({subtree: true})),
     printTailPositions: () => console.log(tailPositions),
   }
   const rezindex = () => {
@@ -159,15 +165,8 @@ export const responsiveQueueAnimationManager = (
 
       const animationId = (animationCount++).toString();
       const enterAnimation = el.animate([keyframe], {
-        duration: 1000,
+        duration: 10000,
         id: animationId,
-      });
-
-      runningAnimations.push(enterAnimation);
-      enterAnimation.finished.then(() => {
-        runningAnimations = runningAnimations.filter(
-          (a) => a.id !== animationId
-        );
       });
     },
     leave: (id: string) => {
@@ -199,10 +198,9 @@ export const responsiveQueueAnimationManager = (
 
       const animationId = (animationCount++).toString();
       const leaveAnimation = leavingEl.animate([leaveKeyframe], {
-        duration: 1000,
+        duration: 10000,
         id: animationId,
       });
-      runningAnimations.push(leaveAnimation);
       opts.styleOptions.forEach((styleOpts, i) => {
         tailPositions[i] =
             tailPositions[i] -
@@ -216,9 +214,6 @@ export const responsiveQueueAnimationManager = (
           styleOpts.stylesheet.delete(id)
         );
         leavingEl.remove();
-        runningAnimations = runningAnimations.filter(
-          (a) => a.id !== animationId
-        );
       });
 
       Array.from(opts.queue.children)
@@ -249,20 +244,13 @@ export const responsiveQueueAnimationManager = (
               const moveUpKeyframe = { [attr]: prevValueAsStr, offset: 0 };
               const animationId = (animationCount++).toString();
               const moveUpAnimation = el.animate([moveUpKeyframe], {
-                duration: 1000,
+                duration: 10000,
                 id: animationId,
-              });
-              runningAnimations.push(moveUpAnimation);
-              moveUpAnimation.finished.then(() => {
-                runningAnimations = runningAnimations.filter(
-                  (a) => a.id !== animationId
-                );
               });
             }
           });
         });
     },
     cycle: () => {},
-    cancel: () => {},
   };
 };
