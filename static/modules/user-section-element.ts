@@ -32,6 +32,10 @@ export class UserQueueElement {
     if (!userSectionEl) throw new Error("No user section element found");
     this.userSectionEl = userSectionEl;
 
+    this.userSectionEl.addEventListener("click", () => {
+      this.usersAnimationManager.cycle();
+    });
+
     this.mobileStyleSheet = mobileStyleSheet;
     this.desktopStyleSheet = desktopStyleSheet;
 

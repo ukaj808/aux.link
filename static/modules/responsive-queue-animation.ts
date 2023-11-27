@@ -165,7 +165,7 @@ export const responsiveQueueAnimationManager = (
 
             const animationId = (animationCount++).toString();
             const enterAnimation = el.animate([keyframe], {
-                duration: 10000,
+                duration: 1000,
                 id: animationId,
             });
         },
@@ -198,7 +198,7 @@ export const responsiveQueueAnimationManager = (
 
             const animationId = (animationCount++).toString();
             const leaveAnimation = leavingEl.animate([leaveKeyframe], {
-                duration: 10000,
+                duration: 1000,
                 id: animationId,
             });
             opts.styleOptions.forEach((styleOpts, i) => {
@@ -245,13 +245,50 @@ export const responsiveQueueAnimationManager = (
                             const moveUpKeyframe = { [attr]: prevValueAsStr, offset: 0 };
                             const animationId = (animationCount++).toString();
                             const moveUpAnimation = el.animate([moveUpKeyframe], {
-                                duration: 10000,
+                                duration: 1000,
                                 id: animationId,
                             });
                         }
                     });
                 });
         },
-        cycle: () => { },
+        cycle: () => {
+            if (opts.queue.childElementCount < 2) return;
+            const userId = opts.queue.firstElementChild!.id;
+            const { mediaMatch, index } = opts.styleOptions.reduce((acc, styleOpts, i) => {
+                if (styleOpts.media.matches) {
+                    return { mediaMatch: styleOpts, index: i };
+                }
+                return acc;
+            }, { mediaMatch: undefined as ResponsiveQueueAnimationStyleOptions | undefined, index: -1 });
+            const tailPosition = tailPositions[index];
+            const attr = mediaMatch?.orientation === "horizontal" ? "left" : "top";
+            if (!mediaMatch)
+                throw new Error(
+                    "None of the stylesheets match the current media query"
+                );
+            const prevValueOfFirstElementAsStr = mediaMatch.stylesheet.get(userId)!.declarations.get(attr);
+            opts.styleOptions.forEach((styleOpts, i) => {
+                const declarations = new Map(
+                    styleOpts.stylesheet.get(userId)!.declarations
+                );
+                const attr =
+                    styleOpts.orientation === "horizontal" ? "left" : "top";
+                declarations.set(attr, tailPositions[i] + "px");
+                styleOpts.stylesheet.put(userId, declarations);
+            });
+
+            const moveToEndAndSomeAnimationKeyframe =
+                { [attr]: tailPosition + 100 + "px", offset: 0.5 };
+            const moveToEndKeyframe =
+                { [attr]: prevValueOfFirstElementAsStr!, offset: 0 };
+
+            opts.queue.firstElementChild!.animate(
+                [moveToEndKeyframe, moveToEndAndSomeAnimationKeyframe],
+                {
+                    duration: 1000,
+                }
+            )
+        },
     };
 };
