@@ -56,7 +56,6 @@ export const responsiveQueueAnimationManager = (
                         styleOpts.stylesheet.get(el.id)?.declarations
                     );
                     declarations.set("z-index", j.toString());
-                    console.log(declarations);
                     styleOpts.stylesheet.put(el.id, declarations);
                 }
             }
@@ -267,28 +266,69 @@ export const responsiveQueueAnimationManager = (
                 throw new Error(
                     "None of the stylesheets match the current media query"
                 );
+            const currentMediaIsStacking = mediaMatch.spaceBetweenElements < 0;
             const prevValueOfFirstElementAsStr = mediaMatch.stylesheet.get(userId)!.declarations.get(attr);
             opts.styleOptions.forEach((styleOpts, i) => {
+                const stacking = styleOpts.spaceBetweenElements < 0;
                 const declarations = new Map(
                     styleOpts.stylesheet.get(userId)!.declarations
                 );
                 const attr =
                     styleOpts.orientation === "horizontal" ? "left" : "top";
-                declarations.set(attr, tailPositions[i] + "px");
+                const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
+                if (stacking) {
+                    declarations.set(attr, tailPositions[i] + (styleOpts.spaceBetweenElements * -1) + "px"); // final pos of stacking.. could possible be less?
+                } else {
+                    declarations.set(attr, (tailPositions[i] - styleOpts.spaceBetweenElements - elementDimension) + "px");
+                }
                 styleOpts.stylesheet.put(userId, declarations);
             });
 
-            const moveToEndAndSomeAnimationKeyframe =
-                { [attr]: tailPosition + 100 + "px", offset: 0.5 };
-            const moveToEndKeyframe =
-                { [attr]: prevValueOfFirstElementAsStr!, offset: 0 };
+            if (currentMediaIsStacking) {
+                const moveToEndAndSomeAnimationKeyframe =
+                    { [attr]: prevValueOfFirstElementAsStr!, offset: 0 };
+                opts.queue.firstElementChild!.animate(
+                    [moveToEndAndSomeAnimationKeyframe],
+                    {
+                        duration: 1000,
+                    }
+              ).finished.then(() => {
+                    const el = opts.queue.firstElementChild as HTMLElement;
+                    el.remove();
+                    opts.queue.appendChild(el);
+                    rezindex();
 
-            opts.queue.firstElementChild!.animate(
-                [moveToEndKeyframe, moveToEndAndSomeAnimationKeyframe],
-                {
-                    duration: 1000,
-                }
-            )
+                    const declarations = new Map(
+                        mediaMatch.stylesheet.get(userId)!.declarations
+                    );
+                    const attr =
+                        mediaMatch.orientation === "horizontal" ? "left" : "top";
+                    declarations.set(attr, tailPosition + "px");
+                    mediaMatch.stylesheet.put(userId, declarations);
+
+                    const moveToEndAnimationKeyframe =
+                        { [attr]: tailPosition + (mediaMatch.spaceBetweenElements * -1) + "px", offset: 0 };
+                    
+                    el.animate([moveToEndAnimationKeyframe], {
+                        duration: 1000,
+                    });
+              });
+            } else {
+                const moveToEndAnimationKeyframe =
+                    { [attr]: prevValueOfFirstElementAsStr!, offset: 0 };
+                opts.queue.firstElementChild!.animate(
+                    [moveToEndAnimationKeyframe],
+                    {
+                        duration: 1000,
+                    }
+              ).finished.then(() => {
+                    const el = opts.queue.firstElementChild as HTMLElement;
+                    el.remove();
+                    opts.queue.appendChild(el);
+                    rezindex();
+              });
+            }
+
         },
     };
 };
