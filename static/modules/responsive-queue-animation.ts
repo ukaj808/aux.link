@@ -254,45 +254,41 @@ export const responsiveQueueAnimationManager = (
         cycle: () => {
             if (opts.queue.childElementCount < 2) return;
             const userId = opts.queue.firstElementChild!.id;
+            const lastUserId = opts.queue.lastElementChild!.id;
             const { mediaMatch, index } = opts.styleOptions.reduce((acc, styleOpts, i) => {
                 if (styleOpts.media.matches) {
                     return { mediaMatch: styleOpts, index: i };
                 }
                 return acc;
             }, { mediaMatch: undefined as ResponsiveQueueAnimationStyleOptions | undefined, index: -1 });
-            const tailPosition = tailPositions[index];
-            const attr = mediaMatch?.orientation === "horizontal" ? "left" : "top";
+
+            const mediaAttr = mediaMatch?.orientation === "horizontal" ? "left" : "top";
             if (!mediaMatch)
                 throw new Error(
                     "None of the stylesheets match the current media query"
                 );
             const currentMediaIsStacking = mediaMatch.spaceBetweenElements < 0;
-            const prevValueOfFirstElementAsStr = mediaMatch.stylesheet.get(userId)!.declarations.get(attr);
+            const prevValueOfFirstElementAsStr = mediaMatch.stylesheet.get(userId)!.declarations.get(mediaAttr);
             opts.styleOptions.forEach((styleOpts, i) => {
-                const stacking = styleOpts.spaceBetweenElements < 0;
+                const posAttr = styleOpts.orientation === "horizontal" ? "left" : "top";
+                const positionOfLastElement = styleOpts.stylesheet.get(lastUserId)!.declarations.get(posAttr)!;
                 const declarations = new Map(
                     styleOpts.stylesheet.get(userId)!.declarations
                 );
-                const attr =
-                    styleOpts.orientation === "horizontal" ? "left" : "top";
-                const elementDimension = styleOpts.orientation === "horizontal" ? styleOpts.elementWidth : styleOpts.elementHeight;
-                if (stacking) {
-                    declarations.set(attr, tailPositions[i] + (styleOpts.spaceBetweenElements * -1) + "px"); // final pos of stacking.. could possible be less?
-                } else {
-                    declarations.set(attr, (tailPositions[i] - styleOpts.spaceBetweenElements - elementDimension) + "px");
-                }
+                declarations.set(posAttr, positionOfLastElement);
                 styleOpts.stylesheet.put(userId, declarations);
             });
 
             if (currentMediaIsStacking) {
                 const moveToEndAndSomeAnimationKeyframe =
-                    { [attr]: prevValueOfFirstElementAsStr!, offset: 0 };
+                    { [mediaAttr]: prevValueOfFirstElementAsStr!, offset: 0 };
                 opts.queue.firstElementChild!.animate(
                     [moveToEndAndSomeAnimationKeyframe],
                     {
                         duration: 1000,
                     }
               ).finished.then(() => {
+                    const positionOfLastElement = mediaMatch.stylesheet.get(lastUserId)!.declarations.get(mediaAttr)!;
                     const el = opts.queue.firstElementChild as HTMLElement;
                     el.remove();
                     opts.queue.appendChild(el);
@@ -303,11 +299,11 @@ export const responsiveQueueAnimationManager = (
                     );
                     const attr =
                         mediaMatch.orientation === "horizontal" ? "left" : "top";
-                    declarations.set(attr, tailPosition + "px");
+                    declarations.set(attr, positionOfLastElement + "px");
                     mediaMatch.stylesheet.put(userId, declarations);
 
                     const moveToEndAnimationKeyframe =
-                        { [attr]: tailPosition + (mediaMatch.spaceBetweenElements * -1) + "px", offset: 0 };
+                        { [attr]: positionOfLastElement + (mediaMatch.spaceBetweenElements * -1) + "px", offset: 0 };
                     
                     el.animate([moveToEndAnimationKeyframe], {
                         duration: 1000,
