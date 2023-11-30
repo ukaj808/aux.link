@@ -194,6 +194,8 @@ export const responsiveQueueAnimationManager = (
         });
       }
 
+      opts.queue.appendChild(el);
+
       opts.styleOptions.forEach((styleOpts, i) => {
         const declarations = new Map<string, string>();
         const stacking = styleOpts.spaceBetweenElements < 0;
@@ -215,24 +217,17 @@ export const responsiveQueueAnimationManager = (
         styleOpts.stylesheet.put(el.id, declarations);
         tailPositions[i] =
           tailPositions[i] + styleOpts.spaceBetweenElements + elementDimension;
+        
+        if (styleOpts.media.matches) {
+          const keyframe =
+            styleOpts.orientation === "horizontal"
+              ? { left: "1000px", offset: 0 }
+              : { top: "1000px", offset: 0 };
+
+          animate(el, [keyframe], { duration: 1000 });
+        }
       });
 
-      opts.queue.appendChild(el);
-
-      const mediaMatch = opts.styleOptions.find(
-        (styleOpts) => styleOpts.media.matches
-      );
-      if (!mediaMatch)
-        throw new Error(
-          "None of the stylesheets match the current media query"
-        );
-
-      const keyframe =
-        mediaMatch.orientation === "horizontal"
-          ? { left: "1000px", offset: 0 }
-          : { top: "1000px", offset: 0 };
-
-      animate(el, [keyframe], { duration: 1000 });
     },
     leave: (id: string) => {
       const { leavingEl, index } = (
