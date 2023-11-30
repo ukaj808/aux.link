@@ -275,14 +275,15 @@ export const responsiveQueueAnimationManager = (
               ? styleOpts.elementWidth
               : styleOpts.elementHeight));
       });
-      animate(leavingEl, [leaveKeyframe], { duration: 1000 })
-      .finished.then(() => {
-        opts.styleOptions.forEach((styleOpts) =>
-          styleOpts.stylesheet.delete(id)
-        );
-        leavingEl.remove();
-        rezindex();
-      });
+      animate(leavingEl, [leaveKeyframe], { duration: 1000 }).finished.then(
+        () => {
+          opts.styleOptions.forEach((styleOpts) =>
+            styleOpts.stylesheet.delete(id)
+          );
+          leavingEl.remove();
+          rezindex();
+        }
+      );
 
       Array.from(opts.queue.children)
         .slice(index + 1)
