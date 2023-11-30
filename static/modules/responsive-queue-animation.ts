@@ -101,11 +101,10 @@ export const responsiveQueueAnimationManager = (
     styleOpts.stylesheet.put(el.id, declarations);
   };
 
-  const moveOneUpAnimation = (
+  const moveElementsOneUpAnimation = (
     start: number,
-    end: number,
-    styleOpts: ResponsiveQueueAnimationStyleOptions,
-    finished?: () => void
+    end?: number,
+    finished?: () => void // ???
   ): void => {
     Array.from(opts.queue.children)
       .slice(start, end)
@@ -285,36 +284,7 @@ export const responsiveQueueAnimationManager = (
         }
       );
 
-      Array.from(opts.queue.children)
-        .slice(index + 1)
-        .forEach((c) => {
-          const el = c as HTMLElement;
-          opts.styleOptions.forEach((styleOpts) => {
-            const declarations = new Map(
-              styleOpts.stylesheet.get(el.id)!.declarations
-            );
-            const attr =
-              styleOpts.orientation === "horizontal" ? "left" : "top";
-            const prevValueAsStr =
-              styleOpts.orientation === "horizontal"
-                ? declarations.get("left")
-                : declarations.get("top");
-            const prevValue = parseInt(prevValueAsStr!);
-            const difference =
-              styleOpts.orientation === "horizontal"
-                ? styleOpts.elementWidth
-                : styleOpts.elementHeight;
-            const newValue =
-              prevValue - (styleOpts.spaceBetweenElements + difference);
-            declarations.set(attr, newValue + "px");
-            styleOpts.stylesheet.put(el.id, declarations);
-
-            if (styleOpts.media.matches) {
-              const moveUpKeyframe = { [attr]: prevValueAsStr, offset: 0 };
-              animate(el, [moveUpKeyframe], { duration: 1000 });
-            }
-          });
-        });
+      moveElementsOneUpAnimation(index+1, undefined);
     },
     cycle: () => {
       if (opts.queue.childElementCount < 2) return;
@@ -374,7 +344,7 @@ export const responsiveQueueAnimationManager = (
               rezindex();
             });
           }
-          moveOneUpAnimation(1, opts.queue.childElementCount, styleOpts);
+          moveElementsOneUpAnimation(1, opts.queue.childElementCount);
         }
       });
     },
