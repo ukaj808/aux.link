@@ -62,9 +62,8 @@ export const responsiveQueueAnimationManager = (
           i++, j--
         ) {
           const el = opts.queue.children[i] as HTMLElement;
-          const declarations = new Map(
-            styleOpts.stylesheet.get(el.id)?.declarations
-          );
+          const declarations = 
+            styleOpts.stylesheet.get(el.id)?.declarations!
           declarations.set("z-index", j.toString());
           styleOpts.stylesheet.put(el.id, declarations);
         }
@@ -95,7 +94,7 @@ export const responsiveQueueAnimationManager = (
   ) => {
     const el = document.getElementById(id);
     if (!el) throw new Error(`No element found with id ${id}`);
-    const declarations = new Map(styleOpts.stylesheet.get(el.id)?.declarations);
+    const declarations = styleOpts.stylesheet.get(el.id)?.declarations!;
     const cssAttr = styleOpts.orientation === "horizontal" ? "left" : "top";
     declarations.set(cssAttr, value.toString() + "px");
     styleOpts.stylesheet.put(el.id, declarations);
@@ -104,16 +103,14 @@ export const responsiveQueueAnimationManager = (
   const moveElementsOneUpAnimation = (
     start: number,
     end?: number,
-    finished?: () => void // ???
   ): void => {
     Array.from(opts.queue.children)
       .slice(start, end)
       .forEach((c) => {
         const el = c as HTMLElement;
         opts.styleOptions.forEach((styleOpts) => {
-          const declarations = new Map(
+          const declarations = 
             styleOpts.stylesheet.get(el.id)!.declarations
-          );
           const attr = styleOpts.orientation === "horizontal" ? "left" : "top";
           const prevValueAsStr =
             styleOpts.orientation === "horizontal"
@@ -145,9 +142,7 @@ export const responsiveQueueAnimationManager = (
   Array.from(opts.queue.children).forEach((c, i) => {
     const el = c as HTMLElement;
     opts.styleOptions.forEach((styleOpts, j) => {
-      let declarations = new Map<string, string>(
-        styleOpts.stylesheet.get(el.id)?.declarations
-      );
+      let declarations = new Map();
       const stacking = styleOpts.spaceBetweenElements < 0;
       if (stacking) {
         const dataZIndex = c.getAttribute("data-z-index");
@@ -296,9 +291,8 @@ export const responsiveQueueAnimationManager = (
         const cssAttr = styleOpts.orientation === "horizontal" ? "left" : "top";
         const snapshotPosOfFirstEl = getCurrentValue(styleOpts, firstUserId);
         const snapPosOfLastEl = getCurrentValue(styleOpts, lastUserId);
-        const declarations = new Map(
+        const declarations = 
           styleOpts.stylesheet.get(firstUserId)!.declarations
-        );
         if (stacking) {
           declarations.set(
             cssAttr,
