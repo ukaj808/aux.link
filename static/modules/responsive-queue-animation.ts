@@ -327,9 +327,8 @@ export const responsiveQueueAnimationManager = (
             animate(firstUserElement, [moveToEndAnimationKeyframe], {
               duration: 1000,
             }).finished.then(() => {
-              const el = opts.queue.firstElementChild as HTMLElement;
-              el.remove();
-              opts.queue.appendChild(el);
+              firstUserElement.remove();
+              opts.queue.appendChild(firstUserElement);
               rezindex();
             });
           }
