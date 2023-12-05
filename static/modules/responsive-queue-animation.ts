@@ -321,10 +321,10 @@ export const responsiveQueueAnimationManager = (
             });
           } else {
             const moveToEndAnimationKeyframe = {
-              [cssAttr]: snapshotPosOfFirstEl!,
+              [cssAttr]: snapshotPosOfFirstEl + "px",
               offset: 0,
             };
-            animate(firstUserElement, [moveToEndAnimationKeyframe], {
+                        animate(firstUserElement, [moveToEndAnimationKeyframe], {
               duration: 1000,
             }).finished.then(() => {
               firstUserElement.remove();
