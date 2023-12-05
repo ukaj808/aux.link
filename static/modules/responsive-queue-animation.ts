@@ -302,6 +302,9 @@ export const responsiveQueueAnimationManager = (
               duration: 1000,
             });
           });
+        } else {
+          rezindex(styleOpts);
+          updateCurrentValue(styleOpts, firstUserId, snapPosOfLastEl);
         }
       });
       moveElementsOneUpAnimation(1, opts.queue.childElementCount);
