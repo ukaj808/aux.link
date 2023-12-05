@@ -14,7 +14,7 @@ export type ResponsiveQueueAnimationOptions = {
   queue: HTMLElement;
   childElementType: keyof HTMLElementTagNameMap;
   childElementClassName: string;
-  styleOptions: ResponsiveQueueAnimationStyleOptions[];
+  styleOptionsArr: ResponsiveQueueAnimationStyleOptions[];
 };
 
 export type ResponsiveQueueAnimationManager = {
@@ -26,12 +26,12 @@ export type ResponsiveQueueAnimationManager = {
 export const responsiveQueueAnimationManager = (
   opts: ResponsiveQueueAnimationOptions
 ): ResponsiveQueueAnimationManager => {
-  const tailPositions = opts.styleOptions.map((s) => s.startingTailPosition);
+  const tailPositions = opts.styleOptionsArr.map((s) => s.startingTailPosition);
   let animationCount = 0;
 
   // Listen for media query changes and finish all animations
   // so that animations dont bleed into other media query states
-  opts.styleOptions.forEach((styleOpts) => {
+  opts.styleOptionsArr.forEach((styleOpts) => {
     styleOpts.media.addEventListener("change", () => {
       opts.queue.getAnimations({ subtree: true }).forEach((a) => {
         a.finish();
@@ -52,19 +52,20 @@ export const responsiveQueueAnimationManager = (
   // A function which iterates through the queue and "rezindexes" the elements
   // based on their position in the queue.
   // Should theoretically be called whenever an element is added or removed from the queue.
-  const rezindex = (diff: 1 | 0 = 0) => {
-    opts.styleOptions.forEach((styleOpts) => {
-      for (
-        let i = 0, j = opts.queue.childElementCount - 1 + diff;
-        i < opts.queue.childElementCount;
-        i++, j--
-      ) {
-        const el = opts.queue.children[i] as HTMLElement;
-        const declarations = styleOpts.stylesheet.get(el.id)?.declarations!;
-        declarations.set("z-index", j.toString());
-        styleOpts.stylesheet.put(el.id, declarations);
-      }
-    });
+  const rezindex = (
+    styleOpts: ResponsiveQueueAnimationStyleOptions,
+    diff: 1 | 0 = 0
+  ) => {
+    for (
+      let i = 0, j = opts.queue.childElementCount - 1 + diff;
+      i < opts.queue.childElementCount;
+      i++, j--
+    ) {
+      const el = opts.queue.children[i] as HTMLElement;
+      const declarations = styleOpts.stylesheet.get(el.id)?.declarations!;
+      declarations.set("z-index", j.toString());
+      styleOpts.stylesheet.put(el.id, declarations);
+    }
   };
 
   const getCurrentValue = (
@@ -101,7 +102,7 @@ export const responsiveQueueAnimationManager = (
       .slice(start, end)
       .forEach((c) => {
         const el = c as HTMLElement;
-        opts.styleOptions.forEach((styleOpts) => {
+        opts.styleOptionsArr.forEach((styleOpts) => {
           const declarations = styleOpts.stylesheet.get(el.id)!.declarations;
           const attr = styleOpts.orientation === "horizontal" ? "left" : "top";
           const prevValueAsStr =
@@ -133,7 +134,7 @@ export const responsiveQueueAnimationManager = (
   //    e.g. horizontal = top,left,bottom: 0, vertical = top,left,right: 0
   Array.from(opts.queue.children).forEach((c, i) => {
     const el = c as HTMLElement;
-    opts.styleOptions.forEach((styleOpts, j) => {
+    opts.styleOptionsArr.forEach((styleOpts, j) => {
       let declarations = new Map();
       const dataZIndex = c.getAttribute("data-z-index");
       if (!dataZIndex)
@@ -171,7 +172,7 @@ export const responsiveQueueAnimationManager = (
 
   return {
     enter: (id: string, styles?: Map<string, string>) => {
-      rezindex(1);
+      opts.styleOptionsArr.forEach((styleOpts) => rezindex(styleOpts, 1));
 
       const el = document.createElement(opts.childElementType);
       el.id = id;
@@ -185,7 +186,7 @@ export const responsiveQueueAnimationManager = (
 
       opts.queue.appendChild(el);
 
-      opts.styleOptions.forEach((styleOpts, i) => {
+      opts.styleOptionsArr.forEach((styleOpts, i) => {
         const declarations = new Map<string, string>();
         declarations.set("z-index", "0");
         const elementDimension =
@@ -229,7 +230,7 @@ export const responsiveQueueAnimationManager = (
       if (!leavingEl) throw new Error(`No element found with id ${id}`);
 
       // todo
-      const mediaMatch = opts.styleOptions.find(
+      const mediaMatch = opts.styleOptionsArr.find(
         (styleOpts) => styleOpts.media.matches
       );
       if (!mediaMatch)
@@ -241,7 +242,7 @@ export const responsiveQueueAnimationManager = (
           ? { left: "1000px" }
           : { top: "1000px" };
 
-      opts.styleOptions.forEach((styleOpts, i) => {
+      opts.styleOptionsArr.forEach((styleOpts, i) => {
         tailPositions[i] =
           tailPositions[i] -
           (styleOpts.spaceBetweenElements +
@@ -251,11 +252,11 @@ export const responsiveQueueAnimationManager = (
       });
       animate(leavingEl, [leaveKeyframe], { duration: 1000 }).finished.then(
         () => {
-          opts.styleOptions.forEach((styleOpts) =>
-            styleOpts.stylesheet.delete(id)
-          );
           leavingEl.remove();
-          rezindex();
+          opts.styleOptionsArr.forEach((styleOpts) => {
+            styleOpts.stylesheet.delete(id)
+            rezindex(styleOpts);
+          });
         }
       );
 
@@ -266,7 +267,7 @@ export const responsiveQueueAnimationManager = (
       const firstUserElement = opts.queue.firstElementChild as HTMLElement;
       const firstUserId = firstUserElement.id;
       const lastUserId = opts.queue.lastElementChild!.id;
-      opts.styleOptions.forEach((styleOpts, i) => {
+      opts.styleOptionsArr.forEach((styleOpts) => {
         const cssAttr = styleOpts.orientation === "horizontal" ? "left" : "top";
         const snapshotPosOfFirstEl = getCurrentValue(styleOpts, firstUserId);
         const snapPosOfLastEl = getCurrentValue(styleOpts, lastUserId);
@@ -288,20 +289,22 @@ export const responsiveQueueAnimationManager = (
           }).finished.then(() => {
             firstUserElement.remove();
             opts.queue.appendChild(firstUserElement);
-            rezindex();
+            rezindex(styleOpts);
             updateCurrentValue(styleOpts, firstUserId, snapPosOfLastEl);
             const moveToEndAnimationKeyframe = {
               [cssAttr]:
-                snapPosOfLastEl + Math.abs(styleOpts.spaceBetweenElements) + "px",
+                snapPosOfLastEl +
+                Math.abs(styleOpts.spaceBetweenElements) +
+                "px",
               offset: 0,
             };
             animate(firstUserElement, [moveToEndAnimationKeyframe], {
               duration: 1000,
             });
           });
-          moveElementsOneUpAnimation(1, opts.queue.childElementCount);
         }
       });
+      moveElementsOneUpAnimation(1, opts.queue.childElementCount);
     },
   };
 };

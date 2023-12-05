@@ -76,7 +76,7 @@ export class UserQueueElement {
       queue: this.userSectionEl,
       childElementType: "div",
       childElementClassName: "user",
-      styleOptions: [
+      styleOptionsArr: [
         {
           orientation: "horizontal",
           spaceBetweenElements: -20,
