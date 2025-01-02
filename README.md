@@ -13,12 +13,12 @@ Make it easy to take turns playing music in a room of friends.
    mkcert -install
    mkcert localhost 127.0.0.1
    ```
-2. Install npm packages then compile/bundle client-side code. This project uses Webpack for this. Compilation of Typescript happens via webpack. This step creates an output directory called *dist-static*.
+2. Install npm packages then compile/bundle client-side code. This project uses Webpack for this. Compilation of Typescript happens via webpack. This step creates an output directory called *dist-client*.
    ```
    npm install
    npm run build
    ```
 3. Run webserver. Notice the args p,c, and k are referencing files created from step 1 and 2. The cabal v2-run command will install+build if necessary.
    ```
-   cabal v2-run . -- -p dist-static -c tls/localhost+1.pem -k tls/localhost+1-key.pem
+   cabal v2-run . -- -p dist-client -c tls/localhost+1.pem -k tls/localhost+1-key.pem
    ```
