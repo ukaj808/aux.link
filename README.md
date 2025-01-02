@@ -1,6 +1,9 @@
 # auxwire
 Repository for the auxwire.link web server code and client-side code. The web server is written in Haskell. The client-side is written in raw HTML, CSS, and vanilla Javascript (compiled from Typescript).
 
+## The mission
+Make it super easy to listen to music live with your friends; where you all take turns playing a song.
+
 ## Steps to run the web server locally
 
 *These steps assume you have GHC, Cabal, and Node installed!*
