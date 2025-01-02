@@ -1,11 +1,11 @@
 # auxwire
-Repository for the auxwire.link webserver code and client-side code. The webserver is written in Haskell. The client-side is written in raw html, css, and vanilla javascript (compiled from typscript).
+Repository for the auxwire.link web server code and client-side code. The web server is written in Haskell. The client-side is written in raw html, css, and vanilla javascript (compiled from typscript).
 
 ## Steps to run the web server locally
 
 *These steps assume you have GHC, Cabal, and Node installed!*
 
-1. The webserver runs on https. Use [mkcert](https://github.com/FiloSottile/mkcert) to generate a cert and key... Place these two files in a directory at the root of the project... name this directory *tls* preferably.
+1. The web server runs on https. Use [mkcert](https://github.com/FiloSottile/mkcert) to generate a cert and key... Place these two files in a directory at the root of the project... name this directory *tls* preferably.
    ```
    mkcert -install
    mkcert localhost 127.0.0.1
