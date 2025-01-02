@@ -28,12 +28,12 @@ module.exports = {
     ],
   },
   entry: {
-    room: ['./static/scripts/room-main.ts'],
-    audio_socket_worker: ['./static/scripts/aux-audio-socket-worker.ts'],
-    audio_worklet_processor: ['./static/scripts/aux-worklet-processor.ts'],
+    room: ['./client/scripts/room-main.ts'],
+    audio_socket_worker: ['./client/scripts/aux-audio-socket-worker.ts'],
+    audio_worklet_processor: ['./client/scripts/aux-worklet-processor.ts'],
   },
   output: {
-    path: path.resolve(__dirname, 'dist-static'),
+    path: path.resolve(__dirname, 'dist-client'),
     filename: '[name].bundle.js',
   },
    plugins: [
@@ -41,15 +41,15 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: 'static/styles/*.css',
+          from: 'client/styles/*.css',
           to: '[name][ext]',
         },
         {
-          from: 'static/images/*.*',
+          from: 'client/images/*.*',
           to: '[name][ext]',
         },
         {
-          from: 'static/views/*.html',
+          from: 'client/views/*.html',
           to: '[name][ext]',
         }
       ],

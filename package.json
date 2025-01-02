@@ -5,7 +5,7 @@
     "dev": {
       "patterns": [
         "app",
-        "static",
+        "client",
         "views",
         "."
       ],

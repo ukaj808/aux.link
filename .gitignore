@@ -1,5 +1,5 @@
 dist-newstyle
-dist-static
+dist-client
 scratch.txt
 rooms*
 node_modules
