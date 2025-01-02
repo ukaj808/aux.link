@@ -1,5 +1,5 @@
 # auxwire
-Repository for the auxwire.link web server code and client-side code. The web server is written in Haskell. The client-side is written in raw html, css, and vanilla javascript (compiled from typscript).
+Repository for the auxwire.link web server code and client-side code. The web server is written in Haskell. The client-side is written in raw HTML, CSS, and vanilla Javascript (compiled from Typescript).
 
 ## Steps to run the web server locally
 
