@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Core.API where
+module AuxWire.Core.API where
 
 import Data.Aeson.Types
 import Data.Kind

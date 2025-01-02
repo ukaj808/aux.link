@@ -2,8 +2,8 @@ module Main( main ) where
 
 import Network.Wai.Handler.Warp
 
-import AugsLink.Core.Registry
-import AugsLink.Service.Application
+import AuxWire.Core.Registry
+import AuxWire.Service.Application
 import CommandLine
 import System.IO.Temp (withTempDirectory)
 import Network.Wai.Handler.WarpTLS

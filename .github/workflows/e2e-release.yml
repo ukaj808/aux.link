@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            mkdir -p /opt/augslink
+            mkdir -p /opt/auxwire
 
       - name: Install ghcup (always update too)
         uses: appleboy/ssh-action@master
@@ -92,7 +92,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           overwrite: true
           source: ./
-          target: /opt/augslink
+          target: /opt/auxwire
       
       - name: Build Executable
         uses: appleboy/ssh-action@v1.0.0
@@ -103,7 +103,7 @@ jobs:
           command_timeout: 2h
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink
+            cd /opt/auxwire
             cabal update
             cabal build
             cabal install --overwrite-policy=always
@@ -116,7 +116,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink
+            cd /opt/auxwire
             npm install
             npm run build
 
@@ -128,9 +128,8 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             export PATH="$HOME/.ghcup/bin:$PATH"
-            cd /opt/augslink
-            sudo cp -f augslink.service /etc/systemd/system/augslink.service
+            cd /opt/auxwire cp -f auxwire.service /etc/systemd/system/auxwire.service
             sudo systemctl daemon-reload
-            sudo systemctl enable augslink.service
-            sudo systemctl stop augslink.service
-            sudo systemctl start augslink.service
+            sudo systemctl enable auxwire.service
+            sudo systemctl stop auxwire.service
+            sudo systemctl start auxwire.service

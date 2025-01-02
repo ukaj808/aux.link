@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Handlers.GetRoom
+module AuxWire.Service.Handlers.GetRoom
   (
     roomHandler
   ) where
@@ -16,11 +16,11 @@ import qualified Text.Blaze.Svg11.Attributes as SVGA
 import qualified Data.Aeson                  as Aeson
 import qualified Data.Text                   as T
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 import Data.Maybe (fromMaybe)
 import qualified Clay as CSS
-import qualified AugsLink.Browser.RoomMobile as RoomMobile
-import qualified AugsLink.Browser.RoomDesktop as RoomDesktop
+import qualified AuxWire.Browser.RoomMobile as RoomMobile
+import qualified AuxWire.Browser.RoomDesktop as RoomDesktop
 
 
 musicIconSvg :: S.Svg

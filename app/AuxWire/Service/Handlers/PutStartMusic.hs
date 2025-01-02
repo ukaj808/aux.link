@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Handlers.PutStartMusic
+module AuxWire.Service.Handlers.PutStartMusic
   (
     startHandler
   ) where 
@@ -7,7 +7,7 @@ module AugsLink.Service.Handlers.PutStartMusic
 import Control.Monad.IO.Class
 import Servant
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 
 startHandler :: Registry IO -> RoomId -> Maybe UserId -> Handler NoContent
 startHandler rr rId hUid = do

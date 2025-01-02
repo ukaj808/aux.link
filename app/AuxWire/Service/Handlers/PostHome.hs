@@ -1,4 +1,4 @@
-module AugsLink.Service.Handlers.PostHome 
+module AuxWire.Service.Handlers.PostHome 
   ( 
     createHandler
   ) where
@@ -7,7 +7,7 @@ import Data.Text
 import Control.Monad.IO.Class
 import Servant
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 
 createHandler :: Registry IO -> Handler (Headers '[Header "Location" Text] NoContent)
 createHandler rr = do

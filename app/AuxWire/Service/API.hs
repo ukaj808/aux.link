@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.API
+module AuxWire.Service.API
   ( 
     API
   , EnqueueSongRequest (..)
@@ -21,7 +21,7 @@ import Network.HTTP.Media
 
 import qualified Data.ByteString.Lazy as Lazy
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 
 type ServerHtml    = Html
 

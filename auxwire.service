@@ -1,0 +1,12 @@
+[Unit]
+Description=Auxwire Web Server
+
+[Service]
+ExecStart=/root/.cabal/bin/auxwire -p dist-static -c /etc/letsencrypt/live/auxwire.link/fullchain.pem -k /etc/letsencrypt/live/auxwire.link/privkey.pem
+WorkingDirectory=/opt/auxwire
+Restart=always
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

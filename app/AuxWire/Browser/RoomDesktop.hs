@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Browser.RoomDesktop (
+module AuxWire.Browser.RoomDesktop (
     styles
 ) where
 

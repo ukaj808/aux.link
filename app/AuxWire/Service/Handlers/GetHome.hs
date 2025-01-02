@@ -1,4 +1,4 @@
-module AugsLink.Service.Handlers.GetHome 
+module AuxWire.Service.Handlers.GetHome 
   ( 
     homeHandler
   ) where
@@ -8,7 +8,7 @@ import Servant
 
 import Data.Text.IO as T
 
-import AugsLink.Service.API
+import AuxWire.Service.API
 import CommandLine
 
 import System.FilePath

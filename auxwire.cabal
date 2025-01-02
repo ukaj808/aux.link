@@ -1,10 +1,10 @@
 cabal-version:      3.0
-name:               augslink
+name:               auxwire
 version:            0.1.0
 -- synopsis:
 -- description:
 author:             fisnik
-maintainer:         fisnik.ukaj@justeattakeaway.com
+maintainer:         ukaj808@gmail.com
 -- copyright:
 category:           Network
 build-type:         Simple
@@ -13,29 +13,29 @@ build-type:         Simple
 common warnings
     ghc-options: -Wall
 
-executable augslink
+executable auxwire
     import:           warnings
     main-is:          Main.hs
 
-    other-modules:      AugsLink.Browser.RoomDesktop
-                      , AugsLink.Browser.RoomMobile
-                      , AugsLink.Core.API
-                      , AugsLink.Core.Model 
-                      , AugsLink.Core.Music 
-                      , AugsLink.Core.Registry 
-                      , AugsLink.Core.Room 
-                      , AugsLink.Core.Shared 
-                      , AugsLink.Core.User 
-                      , AugsLink.Service.API 
-                      , AugsLink.Service.Application 
-                      , AugsLink.Service.Handlers.GetHome 
-                      , AugsLink.Service.Handlers.GetRoom 
-                      , AugsLink.Service.Handlers.MusicWs 
-                      , AugsLink.Service.Handlers.PostHome
-                      , AugsLink.Service.Handlers.PostValidateUrl
-                      , AugsLink.Service.Handlers.PutStartMusic
-                      , AugsLink.Service.Handlers.PutUploadSong
-                      , AugsLink.Service.Handlers.RoomWs 
+    other-modules:      AuxWire.Browser.RoomDesktop
+                      , AuxWire.Browser.RoomMobile
+                      , AuxWire.Core.API
+                      , AuxWire.Core.Model 
+                      , AuxWire.Core.Music 
+                      , AuxWire.Core.Registry 
+                      , AuxWire.Core.Room 
+                      , AuxWire.Core.Shared 
+                      , AuxWire.Core.User 
+                      , AuxWire.Service.API 
+                      , AuxWire.Service.Application 
+                      , AuxWire.Service.Handlers.GetHome 
+                      , AuxWire.Service.Handlers.GetRoom 
+                      , AuxWire.Service.Handlers.MusicWs 
+                      , AuxWire.Service.Handlers.PostHome
+                      , AuxWire.Service.Handlers.PostValidateUrl
+                      , AuxWire.Service.Handlers.PutStartMusic
+                      , AuxWire.Service.Handlers.PutUploadSong
+                      , AuxWire.Service.Handlers.RoomWs 
                       , CommandLine 
                       , Commons.FFMpeg
                       , Commons.State

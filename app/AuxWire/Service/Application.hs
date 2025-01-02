@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Application ( server ) where
+module AuxWire.Service.Application ( server ) where
 
 import Servant
 
-import AugsLink.Core.API
-import AugsLink.Service.API
-import AugsLink.Service.Handlers.GetHome
-import AugsLink.Service.Handlers.GetRoom
-import AugsLink.Service.Handlers.MusicWs
-import AugsLink.Service.Handlers.PostHome
-import AugsLink.Service.Handlers.PostValidateUrl
-import AugsLink.Service.Handlers.PutStartMusic
-import AugsLink.Service.Handlers.PutUploadSong
-import AugsLink.Service.Handlers.RoomWs
+import AuxWire.Core.API
+import AuxWire.Service.API
+import AuxWire.Service.Handlers.GetHome
+import AuxWire.Service.Handlers.GetRoom
+import AuxWire.Service.Handlers.MusicWs
+import AuxWire.Service.Handlers.PostHome
+import AuxWire.Service.Handlers.PostValidateUrl
+import AuxWire.Service.Handlers.PutStartMusic
+import AuxWire.Service.Handlers.PutUploadSong
+import AuxWire.Service.Handlers.RoomWs
 import CommandLine
 import Network.Wai
 import Network.HTTP.Types

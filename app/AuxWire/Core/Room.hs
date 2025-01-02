@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Core.Room
+module AuxWire.Core.Room
   (
     initialRoomState
   , Room          (..)
@@ -19,10 +19,10 @@ import qualified Data.Text            as T
 import qualified Data.Map             as Map
 import qualified Network.WebSockets   as WS
 
-import AugsLink.Core.API
-import AugsLink.Core.Music
-import AugsLink.Core.Shared
-import AugsLink.Core.User
+import AuxWire.Core.API
+import AuxWire.Core.Music
+import AuxWire.Core.Shared
+import AuxWire.Core.User
 import Data.UUID
 import Data.UUID.V4
 import System.FilePath

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Core.Music
+module AuxWire.Core.Music
   (
     newMusicStreamer
   ) where
@@ -14,7 +14,7 @@ import qualified Data.HashMap.Lazy  as Map
 import qualified Data.Text as T
 import qualified Network.WebSockets as WS
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 import System.FilePath
 import Commons.FFMpeg
 import System.IO

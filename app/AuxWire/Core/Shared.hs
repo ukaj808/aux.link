@@ -1,4 +1,4 @@
-module AugsLink.Core.Shared 
+module AuxWire.Core.Shared 
   ( 
      RegistryManage(..)
   ) where

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AugsLink.Service.Handlers.PutUploadSong
+module AuxWire.Service.Handlers.PutUploadSong
   (
     uploadHandler
   ) where
@@ -12,7 +12,7 @@ import System.IO.Temp
 
 import qualified Data.Text as T
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 import Commons.YtDlp
 
 uploadHandler :: Registry IO -> RoomId -> Maybe UserId -> MultipartData Tmp -> Handler NoContent

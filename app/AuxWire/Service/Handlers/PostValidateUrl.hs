@@ -1,4 +1,4 @@
-module AugsLink.Service.Handlers.PostValidateUrl
+module AuxWire.Service.Handlers.PostValidateUrl
 (
   validateHandler
 ) where
@@ -7,7 +7,7 @@ import Control.Monad.Cont
 import Data.Text
 import Servant
 
-import AugsLink.Service.API
+import AuxWire.Service.API
 import Commons.YtDlp
 
 validateHandler :: ValidateUrlRequest -> Handler Text

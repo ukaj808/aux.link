@@ -1,4 +1,4 @@
-module AugsLink.Core.Registry 
+module AuxWire.Core.Registry 
   ( 
     RegistryManage(..)
   , newRegistry
@@ -13,9 +13,9 @@ import System.Directory
 
 import qualified Data.HashMap.Lazy as Map
 
-import AugsLink.Core.API
-import AugsLink.Core.Room
-import AugsLink.Core.Shared
+import AuxWire.Core.API
+import AuxWire.Core.Room
+import AuxWire.Core.Shared
 import System.FilePath
 
 data RegistryState = RegistryState

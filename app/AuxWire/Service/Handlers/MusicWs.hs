@@ -1,4 +1,4 @@
-module AugsLink.Service.Handlers.MusicWs
+module AuxWire.Service.Handlers.MusicWs
   ( 
     connectHandler
   ) where
@@ -9,7 +9,7 @@ import Servant
 
 import qualified Network.WebSockets as WS
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 
 type instance Connection IO = WS.PendingConnection
 

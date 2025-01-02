@@ -1,11 +1,11 @@
-module AugsLink.Core.Model where
+module AuxWire.Core.Model where
 
 import Data.UUID
 
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Map as M
 
-import AugsLink.Core.API
+import AuxWire.Core.API
 import Commons.State
 import Data.Text
 
