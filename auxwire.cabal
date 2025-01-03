@@ -82,7 +82,7 @@ executable auxwire
                       , warp-tls
                       , websockets
 
-    hs-source-dirs:   web-server
+    hs-source-dirs:   app
     default-language: GHC2021
     default-extensions: DataKinds
                        

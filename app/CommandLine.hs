@@ -26,9 +26,9 @@ parseStaticAssetsPath :: Parser FilePath
 parseStaticAssetsPath =
   option str $ mconcat 
     [
-      long "path-to-client-files"
+      long "path-to-static-files"
     , short 'p'
-    , help "Directory of the client-side files"
+    , help "Directory of the static files"
     ]
 
 parseCertificatePath :: Parser FilePath

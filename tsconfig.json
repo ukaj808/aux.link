@@ -11,5 +11,5 @@
       // Ensure that Babel can safely transpile files in the TypeScript project
       "isolatedModules": true
     },
-    "include": ["./client/scripts/**/*", "./client/modules/**/*"]
+    "include": ["./static/scripts/**/*", "./static/modules/**/*"]
   }
